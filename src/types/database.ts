@@ -1,0 +1,754 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string;
+          email: string;
+          role: "admin" | "manager" | "accountant" | "viewer";
+          avatar_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          full_name: string;
+          email: string;
+          role?: "admin" | "manager" | "accountant" | "viewer";
+          avatar_url?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          id?: string;
+          full_name?: string;
+          email?: string;
+          role?: "admin" | "manager" | "accountant" | "viewer";
+          avatar_url?: string | null;
+        };
+      };
+      clients: {
+        Row: {
+          id: string;
+          company_name: string;
+          display_name: string | null;
+          client_type: "indian_gst" | "indian_non_gst" | "international";
+          region: "india" | "usa" | "uae" | "uk" | "other";
+          currency: "INR" | "USD" | "AED" | "GBP" | "EUR";
+          address: string | null;
+          city: string | null;
+          state: string | null;
+          country: string;
+          pincode: string | null;
+          gstin: string | null;
+          tax_number: string | null;
+          tax_number_label: string | null;
+          signing_authority: string | null;
+          designation: string | null;
+          billing_emails: string[] | null;
+          phone: string | null;
+          website: string | null;
+          notes: string | null;
+          health_score: number;
+          status: "active" | "inactive" | "churned";
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          company_name: string;
+          display_name?: string | null;
+          client_type: "indian_gst" | "indian_non_gst" | "international";
+          region?: "india" | "usa" | "uae" | "uk" | "other";
+          currency?: "INR" | "USD" | "AED" | "GBP" | "EUR";
+          address?: string | null;
+          city?: string | null;
+          state?: string | null;
+          country?: string;
+          pincode?: string | null;
+          gstin?: string | null;
+          tax_number?: string | null;
+          tax_number_label?: string | null;
+          signing_authority?: string | null;
+          designation?: string | null;
+          billing_emails?: string[] | null;
+          phone?: string | null;
+          website?: string | null;
+          notes?: string | null;
+          health_score?: number;
+          status?: "active" | "inactive" | "churned";
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          company_name?: string;
+          display_name?: string | null;
+          client_type?: "indian_gst" | "indian_non_gst" | "international";
+          region?: "india" | "usa" | "uae" | "uk" | "other";
+          currency?: "INR" | "USD" | "AED" | "GBP" | "EUR";
+          address?: string | null;
+          city?: string | null;
+          state?: string | null;
+          country?: string;
+          pincode?: string | null;
+          gstin?: string | null;
+          tax_number?: string | null;
+          tax_number_label?: string | null;
+          signing_authority?: string | null;
+          designation?: string | null;
+          billing_emails?: string[] | null;
+          phone?: string | null;
+          website?: string | null;
+          notes?: string | null;
+          health_score?: number;
+          status?: "active" | "inactive" | "churned";
+          created_by?: string | null;
+        };
+      };
+      client_contacts: {
+        Row: {
+          id: string;
+          client_id: string;
+          name: string;
+          email: string;
+          phone: string | null;
+          designation: string | null;
+          is_primary: boolean;
+          is_billing_contact: boolean;
+          created_at: string;
+        };
+        Insert: {
+          client_id: string;
+          name: string;
+          email: string;
+          phone?: string | null;
+          designation?: string | null;
+          is_primary?: boolean;
+          is_billing_contact?: boolean;
+        };
+        Relationships: never[];
+        Update: {
+          client_id?: string;
+          name?: string;
+          email?: string;
+          phone?: string | null;
+          designation?: string | null;
+          is_primary?: boolean;
+          is_billing_contact?: boolean;
+        };
+      };
+      projects: {
+        Row: {
+          id: string;
+          client_id: string;
+          name: string;
+          description: string | null;
+          project_type: "branding" | "ui_ux_design" | "web_development" | "seo" | "google_ads" | "social_media" | "gmb" | "content_marketing" | "full_service" | "other";
+          engagement_type: "one_time" | "retainer";
+          total_value: number | null;
+          payment_split: Json | null;
+          retainer_amount: number | null;
+          retainer_currency: string | null;
+          billing_cycle: "monthly" | "quarterly" | "annual" | null;
+          contract_start_date: string | null;
+          contract_end_date: string | null;
+          min_contract_months: number | null;
+          status: "onboarding" | "design_phase" | "development_phase" | "deployment_qa" | "setup_strategy" | "active_execution" | "maintenance" | "completed" | "on_hold" | "cancelled";
+          projected_completion_date: string | null;
+          actual_completion_date: string | null;
+          timeline_days: number | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          client_id: string;
+          name: string;
+          description?: string | null;
+          project_type: "branding" | "ui_ux_design" | "web_development" | "seo" | "google_ads" | "social_media" | "gmb" | "content_marketing" | "full_service" | "other";
+          engagement_type: "one_time" | "retainer";
+          total_value?: number | null;
+          payment_split?: Json | null;
+          retainer_amount?: number | null;
+          retainer_currency?: string | null;
+          billing_cycle?: "monthly" | "quarterly" | "annual" | null;
+          contract_start_date?: string | null;
+          contract_end_date?: string | null;
+          min_contract_months?: number | null;
+          status?: "onboarding" | "design_phase" | "development_phase" | "deployment_qa" | "setup_strategy" | "active_execution" | "maintenance" | "completed" | "on_hold" | "cancelled";
+          projected_completion_date?: string | null;
+          actual_completion_date?: string | null;
+          timeline_days?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          client_id?: string;
+          name?: string;
+          description?: string | null;
+          project_type?: "branding" | "ui_ux_design" | "web_development" | "seo" | "google_ads" | "social_media" | "gmb" | "content_marketing" | "full_service" | "other";
+          engagement_type?: "one_time" | "retainer";
+          total_value?: number | null;
+          payment_split?: Json | null;
+          retainer_amount?: number | null;
+          retainer_currency?: string | null;
+          billing_cycle?: "monthly" | "quarterly" | "annual" | null;
+          contract_start_date?: string | null;
+          contract_end_date?: string | null;
+          min_contract_months?: number | null;
+          status?: "onboarding" | "design_phase" | "development_phase" | "deployment_qa" | "setup_strategy" | "active_execution" | "maintenance" | "completed" | "on_hold" | "cancelled";
+          projected_completion_date?: string | null;
+          actual_completion_date?: string | null;
+          timeline_days?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+      };
+      invoices: {
+        Row: {
+          id: string;
+          invoice_number: string | null;
+          proforma_ref: string | null;
+          invoice_type: "gst" | "international" | "non_gst" | "proforma";
+          client_id: string;
+          project_ids: string[];
+          currency: string;
+          subtotal: number;
+          tax_rate: number;
+          tax_amount: number;
+          total_amount: number;
+          total_amount_inr: number | null;
+          invoice_date: string;
+          due_date: string | null;
+          status: "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled";
+          sent_at: string | null;
+          viewed_at: string | null;
+          paid_at: string | null;
+          cancelled_at: string | null;
+          total_received: number;
+          total_tds_deducted: number;
+          total_other_deductions: number;
+          balance_due: number;
+          billing_period_start: string | null;
+          billing_period_end: string | null;
+          notes: string | null;
+          internal_notes: string | null;
+          pdf_url: string | null;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          invoice_number?: string | null;
+          proforma_ref?: string | null;
+          invoice_type: "gst" | "international" | "non_gst" | "proforma";
+          client_id: string;
+          project_ids?: string[];
+          currency?: string;
+          subtotal: number;
+          tax_rate?: number;
+          tax_amount?: number;
+          total_amount: number;
+          total_amount_inr?: number | null;
+          invoice_date: string;
+          due_date?: string | null;
+          status?: "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled";
+          sent_at?: string | null;
+          viewed_at?: string | null;
+          paid_at?: string | null;
+          cancelled_at?: string | null;
+          total_received?: number;
+          total_tds_deducted?: number;
+          total_other_deductions?: number;
+          balance_due?: number;
+          billing_period_start?: string | null;
+          billing_period_end?: string | null;
+          notes?: string | null;
+          internal_notes?: string | null;
+          pdf_url?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          invoice_number?: string | null;
+          proforma_ref?: string | null;
+          invoice_type?: "gst" | "international" | "non_gst" | "proforma";
+          client_id?: string;
+          project_ids?: string[];
+          currency?: string;
+          subtotal?: number;
+          tax_rate?: number;
+          tax_amount?: number;
+          total_amount?: number;
+          total_amount_inr?: number | null;
+          invoice_date?: string;
+          due_date?: string | null;
+          status?: "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled";
+          sent_at?: string | null;
+          viewed_at?: string | null;
+          paid_at?: string | null;
+          cancelled_at?: string | null;
+          total_received?: number;
+          total_tds_deducted?: number;
+          total_other_deductions?: number;
+          balance_due?: number;
+          billing_period_start?: string | null;
+          billing_period_end?: string | null;
+          notes?: string | null;
+          internal_notes?: string | null;
+          pdf_url?: string | null;
+          created_by?: string | null;
+        };
+      };
+      invoice_line_items: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          description: string;
+          amount: number;
+          quantity: number;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          invoice_id: string;
+          description: string;
+          amount: number;
+          quantity?: number;
+          sort_order?: number;
+        };
+        Relationships: never[];
+        Update: {
+          invoice_id?: string;
+          description?: string;
+          amount?: number;
+          quantity?: number;
+          sort_order?: number;
+        };
+      };
+      invoice_payments: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          payment_date: string;
+          amount_received: number;
+          amount_received_inr: number | null;
+          currency: string;
+          tds_amount: number;
+          tds_section: string | null;
+          skydo_fx_margin: number;
+          skydo_processing_fee: number;
+          bank_charges: number;
+          other_deductions: number;
+          deduction_notes: string | null;
+          payment_method: "bank_transfer" | "skydo_usd" | "skydo_aed" | "skydo_gbp" | "upi" | "other" | null;
+          reference_number: string | null;
+          notes: string | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          invoice_id: string;
+          payment_date: string;
+          amount_received: number;
+          amount_received_inr?: number | null;
+          currency?: string;
+          tds_amount?: number;
+          tds_section?: string | null;
+          skydo_fx_margin?: number;
+          skydo_processing_fee?: number;
+          bank_charges?: number;
+          other_deductions?: number;
+          deduction_notes?: string | null;
+          payment_method?: "bank_transfer" | "skydo_usd" | "skydo_aed" | "skydo_gbp" | "upi" | "other" | null;
+          reference_number?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          invoice_id?: string;
+          payment_date?: string;
+          amount_received?: number;
+          amount_received_inr?: number | null;
+          currency?: string;
+          tds_amount?: number;
+          tds_section?: string | null;
+          skydo_fx_margin?: number;
+          skydo_processing_fee?: number;
+          bank_charges?: number;
+          other_deductions?: number;
+          deduction_notes?: string | null;
+          payment_method?: "bank_transfer" | "skydo_usd" | "skydo_aed" | "skydo_gbp" | "upi" | "other" | null;
+          reference_number?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+      };
+      contracts: {
+        Row: {
+          id: string;
+          client_id: string;
+          project_id: string | null;
+          contract_type: "design_development" | "seo_retainer" | "custom";
+          title: string;
+          contract_data: Json;
+          status: "draft" | "sent" | "signed" | "active" | "completed" | "terminated";
+          contract_date: string | null;
+          signed_date: string | null;
+          pdf_url: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          client_id: string;
+          project_id?: string | null;
+          contract_type: "design_development" | "seo_retainer" | "custom";
+          title: string;
+          contract_data?: Json;
+          status?: "draft" | "sent" | "signed" | "active" | "completed" | "terminated";
+          contract_date?: string | null;
+          signed_date?: string | null;
+          pdf_url?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          client_id?: string;
+          project_id?: string | null;
+          contract_type?: "design_development" | "seo_retainer" | "custom";
+          title?: string;
+          contract_data?: Json;
+          status?: "draft" | "sent" | "signed" | "active" | "completed" | "terminated";
+          contract_date?: string | null;
+          signed_date?: string | null;
+          pdf_url?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+      };
+      expense_categories: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          is_default: boolean;
+          color: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          description?: string | null;
+          is_default?: boolean;
+          color?: string | null;
+          sort_order?: number;
+        };
+        Relationships: never[];
+        Update: {
+          name?: string;
+          description?: string | null;
+          is_default?: boolean;
+          color?: string | null;
+          sort_order?: number;
+        };
+      };
+      expense_rules: {
+        Row: {
+          id: string;
+          category_id: string;
+          pattern: string;
+          match_type: "contains" | "starts_with" | "regex" | "exact";
+          priority: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          category_id: string;
+          pattern: string;
+          match_type: "contains" | "starts_with" | "regex" | "exact";
+          priority?: number;
+          is_active?: boolean;
+        };
+        Relationships: never[];
+        Update: {
+          category_id?: string;
+          pattern?: string;
+          match_type?: "contains" | "starts_with" | "regex" | "exact";
+          priority?: number;
+          is_active?: boolean;
+        };
+      };
+      bank_statements: {
+        Row: {
+          id: string;
+          filename: string;
+          bank_name: string;
+          account_number: string | null;
+          statement_period_start: string | null;
+          statement_period_end: string | null;
+          opening_balance: number | null;
+          closing_balance: number | null;
+          total_debit: number | null;
+          total_credit: number | null;
+          transaction_count: number;
+          status: "processing" | "completed" | "error";
+          uploaded_at: string;
+          uploaded_by: string | null;
+        };
+        Insert: {
+          filename: string;
+          bank_name: string;
+          account_number?: string | null;
+          statement_period_start?: string | null;
+          statement_period_end?: string | null;
+          opening_balance?: number | null;
+          closing_balance?: number | null;
+          total_debit?: number | null;
+          total_credit?: number | null;
+          transaction_count?: number;
+          status?: "processing" | "completed" | "error";
+          uploaded_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          filename?: string;
+          bank_name?: string;
+          account_number?: string | null;
+          statement_period_start?: string | null;
+          statement_period_end?: string | null;
+          opening_balance?: number | null;
+          closing_balance?: number | null;
+          total_debit?: number | null;
+          total_credit?: number | null;
+          transaction_count?: number;
+          status?: "processing" | "completed" | "error";
+          uploaded_by?: string | null;
+        };
+      };
+      transactions: {
+        Row: {
+          id: string;
+          statement_id: string;
+          transaction_date: string;
+          value_date: string | null;
+          particulars: string;
+          cheque_number: string | null;
+          debit: number | null;
+          credit: number | null;
+          balance: number | null;
+          category_id: string | null;
+          is_auto_categorized: boolean;
+          is_manually_reviewed: boolean;
+          matched_rule_id: string | null;
+          linked_invoice_id: string | null;
+          transaction_type: "expense" | "income" | "transfer" | "tax" | "loan" | "uncategorized" | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          statement_id: string;
+          transaction_date: string;
+          value_date?: string | null;
+          particulars: string;
+          cheque_number?: string | null;
+          debit?: number | null;
+          credit?: number | null;
+          balance?: number | null;
+          category_id?: string | null;
+          is_auto_categorized?: boolean;
+          is_manually_reviewed?: boolean;
+          matched_rule_id?: string | null;
+          linked_invoice_id?: string | null;
+          transaction_type?: "expense" | "income" | "transfer" | "tax" | "loan" | "uncategorized" | null;
+          notes?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          statement_id?: string;
+          transaction_date?: string;
+          value_date?: string | null;
+          particulars?: string;
+          cheque_number?: string | null;
+          debit?: number | null;
+          credit?: number | null;
+          balance?: number | null;
+          category_id?: string | null;
+          is_auto_categorized?: boolean;
+          is_manually_reviewed?: boolean;
+          matched_rule_id?: string | null;
+          linked_invoice_id?: string | null;
+          transaction_type?: "expense" | "income" | "transfer" | "tax" | "loan" | "uncategorized" | null;
+          notes?: string | null;
+        };
+      };
+      financial_targets: {
+        Row: {
+          id: string;
+          title: string;
+          target_type: "revenue" | "mrr" | "new_clients" | "expense_reduction" | "custom";
+          period_type: "monthly" | "quarterly" | "annual";
+          financial_year: string;
+          month: number | null;
+          quarter: number | null;
+          target_amount: number;
+          current_amount: number;
+          service_type: string | null;
+          currency: string;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          title: string;
+          target_type: "revenue" | "mrr" | "new_clients" | "expense_reduction" | "custom";
+          period_type: "monthly" | "quarterly" | "annual";
+          financial_year: string;
+          month?: number | null;
+          quarter?: number | null;
+          target_amount: number;
+          current_amount?: number;
+          service_type?: string | null;
+          currency?: string;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          title?: string;
+          target_type?: "revenue" | "mrr" | "new_clients" | "expense_reduction" | "custom";
+          period_type?: "monthly" | "quarterly" | "annual";
+          financial_year?: string;
+          month?: number | null;
+          quarter?: number | null;
+          target_amount?: number;
+          current_amount?: number;
+          service_type?: string | null;
+          currency?: string;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+      };
+      investor_reports: {
+        Row: {
+          id: string;
+          title: string;
+          report_month: number;
+          report_year: number;
+          financial_year: string;
+          report_data: Json;
+          status: "draft" | "generated" | "sent";
+          pdf_url: string | null;
+          sent_to: string[] | null;
+          sent_at: string | null;
+          generated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          title: string;
+          report_month: number;
+          report_year: number;
+          financial_year: string;
+          report_data?: Json;
+          status?: "draft" | "generated" | "sent";
+          pdf_url?: string | null;
+          sent_to?: string[] | null;
+          sent_at?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          title?: string;
+          report_month?: number;
+          report_year?: number;
+          financial_year?: string;
+          report_data?: Json;
+          status?: "draft" | "generated" | "sent";
+          pdf_url?: string | null;
+          sent_to?: string[] | null;
+          sent_at?: string | null;
+          created_by?: string | null;
+        };
+      };
+      tds_certificates: {
+        Row: {
+          id: string;
+          client_id: string;
+          financial_year: string;
+          quarter: number;
+          certificate_received: boolean;
+          received_date: string | null;
+          amount: number | null;
+          file_url: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          client_id: string;
+          financial_year: string;
+          quarter: number;
+          certificate_received?: boolean;
+          received_date?: string | null;
+          amount?: number | null;
+          file_url?: string | null;
+          notes?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          client_id?: string;
+          financial_year?: string;
+          quarter?: number;
+          certificate_received?: boolean;
+          received_date?: string | null;
+          amount?: number | null;
+          file_url?: string | null;
+          notes?: string | null;
+        };
+      };
+      invoice_sequences: {
+        Row: {
+          id: string;
+          current_number: number;
+          prefix: string;
+          padding: number;
+        };
+        Insert: {
+          id: string;
+          current_number?: number;
+          prefix: string;
+          padding?: number;
+        };
+        Relationships: never[];
+        Update: {
+          current_number?: number;
+          prefix?: string;
+          padding?: number;
+        };
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      get_next_invoice_number: {
+        Args: { seq_type: string };
+        Returns: string;
+      };
+    };
+    Enums: Record<string, never>;
+  };
+};
