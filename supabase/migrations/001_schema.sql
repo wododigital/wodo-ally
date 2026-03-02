@@ -462,3 +462,61 @@ CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON invoices FOR EACH ROW
 CREATE TRIGGER update_contracts_updated_at BEFORE UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_financial_targets_updated_at BEFORE UPDATE ON financial_targets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- AUTO-PROFILE TRIGGER (on new auth user signup)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, email, role, created_at, updated_at)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    NEW.email,
+    'viewer',
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
+-- invoice_sequences RLS (was missing)
+-- ============================================================
+ALTER TABLE public.invoice_sequences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth read invoice_sequences" ON public.invoice_sequences FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "accountant write invoice_sequences" ON public.invoice_sequences FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager','accountant']))
+);
+
+-- ============================================================
+-- STORAGE BUCKETS (created via Supabase dashboard/API)
+-- invoices (10MB limit, private)
+-- contracts (10MB limit, private)
+-- bank-statements (50MB limit, private)
+-- avatars (2MB limit, public)
+-- ============================================================
+
+-- Storage RLS policies
+CREATE POLICY "auth read invoices storage" ON storage.objects FOR SELECT USING (bucket_id = 'invoices' AND auth.uid() IS NOT NULL);
+CREATE POLICY "accountant write invoices storage" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'invoices' AND EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager','accountant'])));
+CREATE POLICY "accountant delete invoices storage" ON storage.objects FOR DELETE USING (bucket_id = 'invoices' AND EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager','accountant'])));
+
+CREATE POLICY "auth read contracts storage" ON storage.objects FOR SELECT USING (bucket_id = 'contracts' AND auth.uid() IS NOT NULL);
+CREATE POLICY "manager write contracts storage" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'contracts' AND EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager'])));
+CREATE POLICY "manager delete contracts storage" ON storage.objects FOR DELETE USING (bucket_id = 'contracts' AND EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager'])));
+
+CREATE POLICY "auth read bank-statements storage" ON storage.objects FOR SELECT USING (bucket_id = 'bank-statements' AND auth.uid() IS NOT NULL);
+CREATE POLICY "accountant write bank-statements storage" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'bank-statements' AND EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager','accountant'])));
+CREATE POLICY "accountant delete bank-statements storage" ON storage.objects FOR DELETE USING (bucket_id = 'bank-statements' AND EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = ANY (ARRAY['admin','manager','accountant'])));
+
+CREATE POLICY "public read avatars storage" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+CREATE POLICY "auth write avatars storage" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.uid() IS NOT NULL);
+CREATE POLICY "own delete avatars storage" ON storage.objects FOR DELETE USING (bucket_id = 'avatars' AND auth.uid() IS NOT NULL);
