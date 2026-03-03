@@ -589,9 +589,9 @@ function ServicesTab() {
             <p className="text-sm font-medium text-text-primary">How services appear on invoices</p>
             <p className="text-xs text-text-muted mt-1 leading-relaxed">
               When a service is selected on a line item, the PDF invoice will format it as
-              <span className="font-sans font-semibold text-text-primary"> "Service: Your description"</span>.
+              <span className="font-sans font-semibold text-text-primary"> &quot;Service: Your description&quot;</span>.
               {" "}Example:{" "}
-              <span className="font-sans text-accent font-medium">"SEO: Monthly Management - April 2026"</span>
+              <span className="font-sans text-accent font-medium">&quot;SEO: Monthly Management - April 2026&quot;</span>
             </p>
           </div>
         </div>
