@@ -447,31 +447,45 @@ function PdfPreviewModal({ report, onClose }: { report: ReportRow; onClose: () =
   }, [report]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(0,0,0,0.6)" }}>
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ background: "rgba(255,255,255,0.98)", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-        <p className="text-sm font-semibold text-gray-900">{getReportPeriodLabel(report)} - Preview</p>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-          <X className="w-4 h-4 text-gray-500" />
-        </button>
-      </div>
-      {/* Content */}
-      <div className="flex-1 overflow-hidden p-4">
-        {loading && (
-          <div className="h-full flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-white/60" />
-          </div>
-        )}
-        {error && (
-          <div className="h-full flex items-center justify-center text-white/70 text-sm">{error}</div>
-        )}
-        {pdfUrl && (
-          <iframe
-            src={pdfUrl}
-            className="w-full h-full rounded-xl"
-            title="Report Preview"
-          />
-        )}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative flex flex-col w-full max-w-[860px] rounded-2xl overflow-hidden"
+        style={{ height: "90vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header bar */}
+        <div
+          className="flex items-center justify-between px-5 py-3 shrink-0"
+          style={{ background: "rgba(255,255,255,0.98)", borderBottom: "1px solid rgba(0,0,0,0.08)" }}
+        >
+          <p className="text-sm font-semibold text-gray-900">{getReportPeriodLabel(report)} - Preview</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        {/* PDF content */}
+        <div className="flex-1 overflow-hidden bg-[#525659]">
+          {loading && (
+            <div className="h-full flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-white/60" />
+            </div>
+          )}
+          {error && (
+            <div className="h-full flex items-center justify-center text-white/70 text-sm">{error}</div>
+          )}
+          {pdfUrl && (
+            <iframe
+              src={pdfUrl}
+              className="w-full h-full border-0"
+              title="Report Preview"
+            />
+          )}
+        </div>
       </div>
     </div>
   );
