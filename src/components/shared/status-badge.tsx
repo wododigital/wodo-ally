@@ -7,7 +7,8 @@ type Status =
   | "onboarding" | "design_phase" | "development_phase"
   | "deployment_qa" | "setup_strategy" | "active_execution"
   | "maintenance" | "completed" | "on_hold"
-  | "signed" | "terminated" | "generated";
+  | "signed" | "terminated" | "generated"
+  | "closed";
 
 const statusConfig: Record<Status, { label: string; className: string }> = {
   draft: { label: "Draft", className: "bg-surface-DEFAULT text-text-muted border-surface-border" },
@@ -32,6 +33,7 @@ const statusConfig: Record<Status, { label: string; className: string }> = {
   signed: { label: "Signed", className: "bg-green-500/10 text-green-400 border-green-500/20" },
   terminated: { label: "Terminated", className: "bg-red-500/10 text-red-400 border-red-500/20" },
   generated: { label: "Generated", className: "bg-green-500/10 text-green-400 border-green-500/20" },
+  closed: { label: "Closed", className: "bg-gray-500/10 text-gray-500 border-gray-500/20" },
 };
 
 interface StatusBadgeProps {

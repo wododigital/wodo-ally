@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, TrendingUp, AlertCircle, CheckCircle2, Search, Filter } from "lucide-react";
+import { AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { StatCard } from "@/components/shared/stat-card";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge } from "@/components/shared/status-badge";
+
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
+
+// ─── Mock data ─────────────────────────────────────────────────────────────
 
 const PAYMENTS = [
   {
@@ -78,6 +79,16 @@ const PAYMENTS = [
   },
 ];
 
+// Client payment behaviour table data
+const CLIENT_BEHAVIOR = [
+  { client: "Nandhini Hotel",   avg_days: 7.2,  on_time_pct: 100, label: "Prompt",         color: "#16a34a" },
+  { client: "Dentique",         avg_days: 9.0,  on_time_pct: 95,  label: "Prompt",         color: "#16a34a" },
+  { client: "Sea Wonders",      avg_days: 11.3, on_time_pct: 90,  label: "On time",         color: "#3b82f6" },
+  { client: "Godavari Heritage",avg_days: 14.0, on_time_pct: 85,  label: "On time",         color: "#3b82f6" },
+  { client: "Maximus OIGA",     avg_days: 18.5, on_time_pct: 72,  label: "Occasional delays",color: "#f59e0b" },
+  { client: "Raj Enterprises",  avg_days: 31.0, on_time_pct: 50,  label: "Slow payer",     color: "#ef4444" },
+];
+
 const METHOD_LABELS: Record<string, string> = {
   bank_transfer: "Bank Transfer",
   skydo_usd: "Skydo (USD)",
@@ -89,8 +100,10 @@ const METHOD_LABELS: Record<string, string> = {
 
 const OVERDUE_INVOICES = [
   { client: "Raj Enterprises", invoice: "NG00201", amount: 17500, days_overdue: 8 },
-  { client: "Nandhini Hotel", invoice: "G00111", amount: 76700, days_due: 5 },
+  { client: "Nandhini Hotel",  invoice: "G00111",  amount: 76700, days_due: 5 },
 ];
+
+// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function PaymentsPage() {
   const [search, setSearch] = useState("");
@@ -101,8 +114,9 @@ export default function PaymentsPage() {
   );
 
   const totalReceived = PAYMENTS.reduce((s, p) => s + p.amount_received, 0);
-  const totalTds = PAYMENTS.reduce((s, p) => s + p.tds_amount, 0);
-  const totalSkydo = PAYMENTS.reduce((s, p) => s + p.skydo_margin, 0);
+  const totalTds      = PAYMENTS.reduce((s, p) => s + p.tds_amount, 0);
+  const totalSkydo    = PAYMENTS.reduce((s, p) => s + p.skydo_margin, 0);
+  const totalOutstanding = 94200; // 76.7K + 17.5K
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -111,37 +125,22 @@ export default function PaymentsPage() {
         description="Track all incoming payments and deductions"
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Received"
-          value={`Rs.${(totalReceived / 100000).toFixed(1)}L`}
-          icon={CheckCircle2}
-          trend="up"
-          change="This FY"
-        />
-        <StatCard
-          title="Outstanding"
-          value="Rs.94.2K"
-          icon={AlertCircle}
-          trend="neutral"
-          change="2 invoices"
-        />
-        <StatCard
-          title="TDS Deducted"
-          value={`Rs.${totalTds.toLocaleString("en-IN")}`}
-          icon={TrendingUp}
-          trend="neutral"
-          change="From clients"
-        />
-        <StatCard
-          title="Skydo Fees"
-          value={`Rs.${totalSkydo.toLocaleString("en-IN")}`}
-          icon={CreditCard}
-          trend="neutral"
-          change="Conversion charges"
-        />
-      </div>
+      {/* Compact summary bar - replaces 4 stat cards */}
+      <GlassCard padding="md">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
+          {[
+            { label: "Total Received",  value: `Rs.${(totalReceived / 100000).toFixed(1)}L`, color: "#16a34a" },
+            { label: "Outstanding",     value: `Rs.${(totalOutstanding / 1000).toFixed(0)}K`, color: "#f59e0b" },
+            { label: "TDS Deducted",    value: `Rs.${totalTds.toLocaleString("en-IN")}`, color: "#6b7280" },
+            { label: "Skydo Fees",      value: `Rs.${totalSkydo.toLocaleString("en-IN")}`, color: "#6b7280" },
+          ].map((item) => (
+            <div key={item.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{item.label}</span>
+              <span className="text-lg font-bold font-sans" style={{ color: item.color }}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Payment list */}
@@ -208,8 +207,9 @@ export default function PaymentsPage() {
           </GlassCard>
         </div>
 
-        {/* Overdue / pending sidebar */}
+        {/* Right sidebar */}
         <div className="space-y-4">
+          {/* Needs follow-up */}
           <GlassCard padding="md">
             <h3 className="text-sm font-semibold text-text-primary mb-4">Needs Follow-Up</h3>
             <div className="space-y-3">
@@ -238,14 +238,15 @@ export default function PaymentsPage() {
             </div>
           </GlassCard>
 
+          {/* Monthly summary */}
           <GlassCard padding="md">
             <h3 className="text-sm font-semibold text-text-primary mb-3">Monthly Summary</h3>
             <div className="space-y-2">
               {[
-                { month: "Mar 2026", amount: 76700, status: "partial" },
-                { month: "Feb 2026", amount: 335830, status: "complete" },
-                { month: "Jan 2026", amount: 76700, status: "complete" },
-                { month: "Dec 2025", amount: 115830, status: "complete" },
+                { month: "Mar 2026", amount: 76700, status: "partial", label: "Partial" },
+                { month: "Feb 2026", amount: 335830, status: "complete", label: "All paid" },
+                { month: "Jan 2026", amount: 76700, status: "complete", label: "All paid" },
+                { month: "Dec 2025", amount: 115830, status: "complete", label: "All paid" },
               ].map((item) => (
                 <div key={item.month} className="flex items-center justify-between py-1.5">
                   <span className="text-sm text-text-secondary">{item.month}</span>
@@ -253,13 +254,41 @@ export default function PaymentsPage() {
                     <span className="text-sm font-sans text-text-primary">
                       Rs.{(item.amount / 1000).toFixed(0)}K
                     </span>
-                    <div
+                    <span
                       className={cn(
-                        "w-2 h-2 rounded-full",
-                        item.status === "complete" ? "bg-green-400" : "bg-yellow-400"
+                        "text-[10px] font-medium px-2 py-0.5 rounded-full",
+                        item.status === "complete"
+                          ? "bg-green-500/10 text-green-400"
+                          : "bg-yellow-500/10 text-yellow-400"
                       )}
-                    />
+                    >
+                      {item.label}
+                    </span>
                   </div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* Client payment behaviour */}
+          <GlassCard padding="md">
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Payment Behaviour</h3>
+            <div className="space-y-2.5">
+              {CLIENT_BEHAVIOR.map((c) => (
+                <div key={c.client} className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-text-primary truncate">{c.client}</p>
+                    <p className="text-[10px] text-text-muted font-sans">avg {c.avg_days}d - {c.on_time_pct}% on time</p>
+                  </div>
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0"
+                    style={{
+                      background: `${c.color}15`,
+                      color: c.color,
+                    }}
+                  >
+                    {c.label}
+                  </span>
                 </div>
               ))}
             </div>
