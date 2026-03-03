@@ -17,6 +17,7 @@ const NAV_TABS = [
   { href: "/payments",  label: "Payments"  },
   { href: "/expenses",  label: "Expenses"  },
   { href: "/analytics", label: "Analytics" },
+  { href: "/pipeline",  label: "Pipeline"  },
   { href: "/targets",   label: "Targets"   },
 ];
 
@@ -27,6 +28,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/payments":   "Payments",
   "/expenses":   "Expenses",
   "/analytics":  "Analytics",
+  "/pipeline":   "Pipeline",
   "/targets":    "Targets",
   "/projects":   "Projects",
   "/reports":    "Reports",

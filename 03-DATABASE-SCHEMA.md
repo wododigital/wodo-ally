@@ -11,23 +11,31 @@
 
 ```
 profiles (extends auth.users)
-clients
+clients                              [+billing_day, +avg_days_to_pay, +on_time_payment_pct, +payment_terms_days]
   -> client_contacts
-projects
+projects                             [+progress_pct]
   -> project_phases
 invoices
   -> invoice_line_items
   -> invoice_payments (tracks each payment/deduction against an invoice)
+scheduled_invoices                   [NEW - pipeline/cash flow forecasting]
 contracts
 expense_categories
 expense_rules (pattern matching for auto-categorization)
 bank_statements (upload tracking)
-transactions (parsed from bank statements)
+transactions (parsed from bank statements) [+project_id]
 financial_targets
-investor_reports
+investor_reports                     [+report_type]
+tds_certificates
+invoice_sequences
 settings (app-wide key-value settings)
 audit_log
 ```
+
+**Migration files:**
+- `supabase/migrations/001_schema.sql` - base schema
+- `supabase/migrations/002_schema_additions.sql` - Phase 2 additions (run via Supabase MCP 2026-03-03)
+- `supabase/migrations/003_pipeline.sql` - Pipeline feature: payment_terms_days + scheduled_invoices (ready to run)
 
 ## SQL Migrations
 
@@ -78,7 +86,14 @@ CREATE TABLE clients (
   website TEXT,
   notes TEXT,
   health_score INTEGER DEFAULT 50 CHECK (health_score >= 0 AND health_score <= 100),
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'churned')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'churned', 'closed')),
+  -- Payment behaviour stats (added via 002_schema_additions.sql)
+  avg_days_to_pay NUMERIC(5,1),
+  on_time_payment_pct INTEGER CHECK (on_time_payment_pct >= 0 AND on_time_payment_pct <= 100),
+  -- Retainer billing (added via 002_schema_additions.sql)
+  billing_day SMALLINT CHECK (billing_day >= 1 AND billing_day <= 28), -- day of month for retainer invoice generation
+  -- Pipeline / cash flow (added via 003_pipeline.sql)
+  payment_terms_days SMALLINT DEFAULT 7 CHECK (payment_terms_days BETWEEN 1 AND 90), -- NET days expected to receive payment
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
   created_by UUID REFERENCES profiles(id)
@@ -482,7 +497,47 @@ CREATE TABLE audit_log (
 );
 ```
 
-### 14. Invoice Number Sequences
+### 14. Scheduled Invoices (Pipeline) - added via 003_pipeline.sql
+
+Tracks upcoming invoices to be generated each billing cycle. Auto-populated when billing_day arrives for active retainer clients. One-time milestone payments can also be tracked here manually.
+
+```sql
+CREATE TABLE IF NOT EXISTS scheduled_invoices (
+  id                    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id             UUID          NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  project_id            UUID          REFERENCES projects(id) ON DELETE SET NULL,
+  -- Scheduling
+  billing_month         TEXT          NOT NULL,  -- 'YYYY-MM', e.g. '2026-04'
+  scheduled_date        DATE          NOT NULL,  -- when the invoice should be created
+  expected_payment_date DATE,                    -- predicted receipt date (scheduled_date + payment_terms_days)
+  -- Invoice details
+  amount                NUMERIC(12,2) NOT NULL,
+  currency              TEXT          NOT NULL DEFAULT 'INR',
+  description           TEXT,                   -- e.g. 'SEO Retainer - April 2026'
+  -- Lifecycle
+  status                TEXT          NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'generated', 'skipped', 'cancelled')),
+  invoice_id            UUID          REFERENCES invoices(id) ON DELETE SET NULL, -- set when generated
+  invoice_type          TEXT          NOT NULL DEFAULT 'retainer'
+    CHECK (invoice_type IN ('retainer', 'milestone', 'one_time')),
+  notes                 TEXT,
+  created_at            TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  updated_at            TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+-- RLS: authenticated users can read; admin/manager can write
+ALTER TABLE scheduled_invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_read_scheduled_invoices" ON scheduled_invoices FOR SELECT TO authenticated USING (true);
+CREATE POLICY "managers_write_scheduled_invoices" ON scheduled_invoices FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'manager')));
+```
+
+**Key usage in Phase 3:**
+- Query `WHERE status = 'pending' AND billing_month = 'YYYY-MM'` to populate the Pipeline page
+- When an invoice is created from a scheduled item, set `status = 'generated'` and `invoice_id = <new invoice id>`
+- Auto-create new entries each month when `billing_day` is reached for retainer clients
+
+### 15. Invoice Number Sequences
 
 ```sql
 -- Separate sequences for G and NG numbers

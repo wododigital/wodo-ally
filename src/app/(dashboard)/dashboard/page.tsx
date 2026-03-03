@@ -89,6 +89,45 @@ const TARGETS = [
   { title: "New Clients Q4",            current: 2,       target: 5,       unit: "clients" },
 ];
 
+const PIPELINE_ITEMS = [
+  {
+    id: "1",
+    client: "Nandhini Hotel",
+    description: "SEO & GMB Retainer - April 2026",
+    amount: "Rs.76,700",
+    scheduledDate: "Apr 1",
+    expectedPaymentDate: "Apr 8",
+    type: "retainer" as const,
+  },
+  {
+    id: "2",
+    client: "Maximus OIGA",
+    description: "SEO Retainer - April 2026",
+    amount: "Rs.59,000",
+    scheduledDate: "Apr 1",
+    expectedPaymentDate: "Apr 16",
+    type: "retainer" as const,
+  },
+  {
+    id: "3",
+    client: "Sea Wonders Tourism",
+    description: "SEO & Digital Marketing - April 2026",
+    amount: "Rs.89,600",
+    scheduledDate: "Apr 1",
+    expectedPaymentDate: "Apr 11",
+    type: "retainer" as const,
+  },
+  {
+    id: "4",
+    client: "Godavari Heritage",
+    description: "Brand Identity - Final Delivery",
+    amount: "Rs.85,000",
+    scheduledDate: "Apr 15",
+    expectedPaymentDate: "Apr 29",
+    type: "milestone" as const,
+  },
+];
+
 export default function DashboardPage() {
   return (
     <div className="space-y-10">
@@ -112,6 +151,7 @@ export default function DashboardPage() {
         attentionItems={ATTENTION_ITEMS}
         payments={RECENT_PAYMENTS}
         targets={TARGETS}
+        pipelineItems={PIPELINE_ITEMS}
       />
     </div>
   );

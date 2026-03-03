@@ -44,12 +44,15 @@ The build is organized into 5 phases. Within each phase, multiple agents work in
 ## Phase 2: Core Pages (UI Only)
 **Goal**: Build all page UIs with seed data. No backend logic yet - use hardcoded/seed data.
 **User reviews**: Page layouts, component designs, mobile responsiveness
+**STATUS: COMPLETE** (as of 2026-03-03)
 
 ### Track 2A: Dashboard + Clients
 - Dashboard home: KPI cards, attention items, goal progress, recent activity
-- Client list page with search, filters, grid view
+- Client list page with search, filters, grid view, "Bills Nth" retainer pill
 - Client detail page with tabs (overview, projects, invoices, payments, TDS)
-- Client create/edit form
+- Client detail: Close Client modal, Re-activate, billing day display, closed banner
+- Client create/edit form with Billing Settings section (engagement type, invoice day) and Danger Zone
+- StatusBadge: added "closed" status
 
 ### Track 2B: Invoices + Payments
 - Invoice list page with status tabs and filters
@@ -65,6 +68,20 @@ The build is organized into 5 phases. Within each phase, multiple agents work in
 - P&L statement view
 - Financial targets page with progress cards
 
+### Track 2D: Pipeline (added during Phase 2 iteration)
+- `/pipeline` page: KPI cards (Apr to invoice, expected in, 2-month forecast)
+- Month tabs (Apr/May/Jun) with retainer + milestone rows and Create CTAs
+- Expected Collections section grouped by urgency (overdue/due_soon/upcoming)
+- 6-month stacked BarChart forecast (retainer=orange, one_time=blue)
+- Pipeline tab added to dashboard DarkSectionTabs (4th tab, count badge)
+- Pipeline nav item added to TopNavV2 dark pill
+
+### UI/UX Additions
+- TopNavV2: Bell icon notification dropdown with 5 mock notifications (overdue, due_soon, upcoming, payment)
+- TopNavV2: Settings icon now links to /settings
+- New pages: /settings (complete settings form), /error.tsx, /global-error.tsx
+- Supabase: billing_day, avg_days_to_pay, on_time_payment_pct, progress_pct, report_type, project_id on transactions - all added via MCP
+
 ### Deliverables for Review:
 - All pages render with real-looking seed data
 - Mobile responsive on all pages
@@ -76,18 +93,27 @@ The build is organized into 5 phases. Within each phase, multiple agents work in
 ## Phase 3: Core Backend Logic
 **Goal**: Wire up all CRUD operations, invoice generation, payment recording.
 
+### SQL Migrations to run before Phase 3
+- `supabase/migrations/001_schema.sql` - base schema (already run)
+- `supabase/migrations/002_schema_additions.sql` - billing_day, avg_days_to_pay, on_time_payment_pct, progress_pct, report_type, project_id on transactions (run via MCP 2026-03-03)
+- `supabase/migrations/003_pipeline.sql` - payment_terms_days on clients, scheduled_invoices table (ready to run)
+
 ### Track 3A: Client & Project CRUD
 - TanStack Query hooks for clients and projects
 - Create, update, delete operations through Supabase
 - Real-time search and filtering
 - Client health score calculation
+- Close/re-activate client (update status field)
+- Update billing_day and engagement_type when editing clients
 
 ### Track 3B: Invoice Engine
 - Invoice CRUD with line items
 - Invoice number generation (G/NG sequences)
 - Pro forma reference generation
 - Pro forma to final invoice conversion
-- Retainer invoice auto-draft generation
+- Retainer invoice auto-draft generation (triggered by billing_day)
+- scheduled_invoices CRUD: read pending items, mark as generated when invoice created, mark skipped/cancelled
+- Pipeline data fetching: query scheduled_invoices filtered by status=pending, grouped by billing_month
 - PDF generation with @react-pdf/renderer (all 4 templates)
 - PDF download and preview
 
@@ -103,6 +129,8 @@ The build is organized into 5 phases. Within each phase, multiple agents work in
 - PDF invoices generate correctly for all types
 - Bank statement upload parses and categorizes
 - Payments record and update invoice statuses
+- Pipeline page shows real data from scheduled_invoices table
+- Retainer billing day triggers scheduled invoice creation
 
 ---
 

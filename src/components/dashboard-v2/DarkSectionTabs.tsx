@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Target, ArrowRight, AlertCircle, Clock, FileText, TrendingUp, IndianRupee, Zap } from "lucide-react";
+import { CheckCircle2, Target, ArrowRight, AlertCircle, Clock, FileText, TrendingUp, IndianRupee, Zap, Calendar } from "lucide-react";
 import { NeedsAttentionV2 } from "./NeedsAttentionV2";
 import { FinancialTargetsV2 } from "./FinancialTargetsV2";
 import { formatDate } from "@/lib/utils/format";
@@ -22,14 +22,24 @@ interface PaymentItem {
 interface TargetItem {
   title: string; current: number; target: number; unit: string;
 }
+interface PipelineItem {
+  id: string;
+  client: string;
+  description: string;
+  amount: string;
+  scheduledDate: string;
+  expectedPaymentDate: string;
+  type: "retainer" | "milestone" | "one_time";
+}
 
 interface DarkSectionTabsProps {
   attentionItems: AttentionItem[];
   payments: PaymentItem[];
   targets: TargetItem[];
+  pipelineItems: PipelineItem[];
 }
 
-type TabId = "attention" | "payments" | "targets";
+type TabId = "attention" | "payments" | "targets" | "pipeline";
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
@@ -57,13 +67,14 @@ function InnerCard({ children, className }: { children: React.ReactNode; classNa
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DarkSectionTabs({ attentionItems, payments, targets }: DarkSectionTabsProps) {
+export function DarkSectionTabs({ attentionItems, payments, targets, pipelineItems }: DarkSectionTabsProps) {
   const [active, setActive] = useState<TabId>("attention");
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "attention", label: "Attention", count: attentionItems.length },
     { id: "payments",  label: "Payments"  },
     { id: "targets",   label: "Targets"   },
+    { id: "pipeline",  label: "Pipeline", count: pipelineItems.length },
   ];
 
   return (
@@ -107,6 +118,7 @@ export function DarkSectionTabs({ attentionItems, payments, targets }: DarkSecti
       {active === "attention" && <AttentionTab items={attentionItems} />}
       {active === "payments"  && <PaymentsTab  payments={payments}    />}
       {active === "targets"   && <TargetsTab   targets={targets}      />}
+      {active === "pipeline"  && <PipelineTab  items={pipelineItems}  />}
     </div>
   );
 }
@@ -360,6 +372,121 @@ function TargetsTab({ targets }: { targets: TargetItem[] }) {
           <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
             Rs.21.55L more to close the year. With current MRR of Rs.3.85L, you need 5.6 strong months.
           </p>
+        </InnerCard>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pipeline tab ─────────────────────────────────────────────────────────────
+
+function PipelineTab({ items }: { items: PipelineItem[] }) {
+  const retainerCount  = items.filter((i) => i.type === "retainer").length;
+  const milestoneCount = items.filter((i) => i.type === "milestone").length;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 items-stretch">
+      {/* Invoice list — 2 cols */}
+      <div className="lg:col-span-2 flex flex-col">
+        <div className="flex items-center justify-between mb-5">
+          <SectionLabel>Invoices to Raise - April 2026</SectionLabel>
+          <Link href="/pipeline"
+            className="text-xs font-semibold flex items-center gap-1 hover:opacity-80"
+            style={{ color: "#fd7e14" }}>
+            Full pipeline <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+        <InnerCard className="flex-1">
+          {items.map((item, idx) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: idx < items.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: item.type === "retainer" ? "rgba(253,126,20,0.15)" : "rgba(59,130,246,0.15)" }}
+                >
+                  <Calendar
+                    className="w-3.5 h-3.5"
+                    style={{ color: item.type === "retainer" ? "#fd7e14" : "#3b82f6" }}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    {item.client}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>
+                    {item.description}
+                  </p>
+                  <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>
+                    Invoice {item.scheduledDate} &middot; Pay by {item.expectedPaymentDate}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-sm font-light font-sans" style={{ color: "rgba(255,255,255,0.9)" }}>
+                  {item.amount}
+                </span>
+                <Link
+                  href="/invoices/new"
+                  className="text-[11px] px-2.5 py-1 rounded-full font-semibold transition-all hover:opacity-80"
+                  style={{ background: "rgba(253,126,20,0.2)", color: "#fd7e14" }}
+                >
+                  Create
+                </Link>
+              </div>
+            </div>
+          ))}
+        </InnerCard>
+      </div>
+
+      {/* Summary card — 1 col */}
+      <div>
+        <InnerCard className="p-6 h-full">
+          <p className="text-[11px] uppercase tracking-widest font-bold mb-5"
+            style={{ color: "rgba(255,255,255,0.3)" }}>
+            April Pipeline
+          </p>
+          <div className="space-y-5 mb-6">
+            {[
+              { label: "Total to invoice",  value: "Rs.3,10,300", icon: FileText,     color: "#fd7e14" },
+              { label: "Retainer invoices", value: `${retainerCount} clients`,  icon: IndianRupee, color: "#22c55e" },
+              { label: "Milestone items",   value: `${milestoneCount} delivery`, icon: Calendar,   color: "#3b82f6" },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div className="flex items-center gap-2 mb-1">
+                  <stat.icon className="w-3.5 h-3.5 shrink-0" style={{ color: stat.color }} />
+                  <span className="text-xs" style={{ color: "rgba(255,255,255,0.38)" }}>
+                    {stat.label}
+                  </span>
+                </div>
+                <p className="text-lg font-light font-sans pl-5" style={{ color: "rgba(255,255,255,0.9)" }}>
+                  {stat.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-3"
+              style={{ color: "rgba(255,255,255,0.3)" }}>
+              May + Jun forecast
+            </p>
+            <p className="text-3xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
+              Rs.6,20,600
+            </p>
+            <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Retainer MRR over next 2 months
+            </p>
+            <Link href="/pipeline"
+              className="flex items-center gap-2 text-xs font-semibold hover:opacity-80 transition-opacity"
+              style={{ color: "#fd7e14" }}>
+              <TrendingUp className="w-3.5 h-3.5" />
+              View full pipeline
+            </Link>
+          </div>
         </InnerCard>
       </div>
     </div>
