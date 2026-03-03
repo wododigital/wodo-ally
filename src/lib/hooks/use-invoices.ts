@@ -456,6 +456,196 @@ export function useGenerateRetainerInvoices() {
   });
 }
 
+// ─── useScheduledInvoices ─────────────────────────────────────────────────────
+
+type ScheduledInvoiceRow = Database["public"]["Tables"]["scheduled_invoices"]["Row"];
+
+export type ScheduledInvoiceEnriched = ScheduledInvoiceRow & {
+  client_name: string;
+  payment_terms_days: number;
+  project_name: string;
+  engagement_type: "retainer" | "milestone" | "fixed_price" | "hourly" | null;
+  expected_payment_date: string;
+  display_amount: string;
+};
+
+export function useScheduledInvoices() {
+  return useQuery({
+    queryKey: ["scheduled-invoices"],
+    queryFn: async (): Promise<ScheduledInvoiceEnriched[]> => {
+      const supabase = createClient();
+
+      const { data: rows, error } = await supabase
+        .from("scheduled_invoices")
+        .select("*")
+        .in("status", ["pending", "generated"])
+        .order("billing_month", { ascending: true });
+
+      if (error) throw new Error(error.message);
+      if (!rows || rows.length === 0) return [];
+
+      // Fetch clients
+      const clientIds = Array.from(new Set(rows.map((r) => r.client_id)));
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, company_name, payment_terms_days, currency")
+        .in("id", clientIds);
+
+      // Fetch projects
+      const projectIds = Array.from(
+        new Set(rows.map((r) => r.project_id).filter(Boolean) as string[])
+      );
+      const { data: projects } =
+        projectIds.length > 0
+          ? await supabase
+              .from("projects")
+              .select("id, name, engagement_type")
+              .in("id", projectIds)
+          : { data: [] };
+
+      const clientMap = new Map((clients ?? []).map((c) => [c.id, c]));
+      const projectMap = new Map((projects ?? []).map((p) => [p.id, p]));
+
+      return rows.map((row) => {
+        const client = clientMap.get(row.client_id);
+        const project = row.project_id ? projectMap.get(row.project_id) : undefined;
+        const terms = client?.payment_terms_days ?? 15;
+
+        // Compute expected payment date
+        const base = new Date(row.scheduled_date);
+        base.setDate(base.getDate() + terms);
+        const expected = base.toISOString().slice(0, 10);
+
+        // Format display amount
+        const display =
+          row.currency === "INR"
+            ? `Rs.${row.amount.toLocaleString("en-IN")}`
+            : `${row.currency} ${row.amount.toLocaleString()}`;
+
+        return {
+          ...row,
+          client_name: client?.company_name ?? "Unknown",
+          payment_terms_days: terms,
+          project_name: project?.name ?? row.description,
+          engagement_type: (project?.engagement_type ?? null) as ScheduledInvoiceEnriched["engagement_type"],
+          expected_payment_date: expected,
+          display_amount: display,
+        };
+      });
+    },
+  });
+}
+
+export function useUpdateScheduledInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+      generated_invoice_id,
+    }: {
+      id: string;
+      status: "pending" | "generated" | "skipped" | "cancelled";
+      generated_invoice_id?: string;
+    }) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("scheduled_invoices")
+        .update({ status, ...(generated_invoice_id ? { generated_invoice_id } : {}) })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scheduled-invoices"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update scheduled invoice: ${error.message}`);
+    },
+  });
+}
+
+// ─── useCollectionsInvoices ───────────────────────────────────────────────────
+
+export type CollectionUrgency = "overdue" | "due_soon" | "upcoming";
+
+export type CollectionInvoice = InvoiceListItem & {
+  urgency: CollectionUrgency;
+  days_label: string;
+};
+
+export function useCollectionsInvoices() {
+  return useQuery({
+    queryKey: ["collections-invoices"],
+    queryFn: async (): Promise<CollectionInvoice[]> => {
+      const supabase = createClient();
+
+      const { data: invoiceData, error } = await supabase
+        .from("invoices")
+        .select(
+          `id, invoice_number, proforma_ref, invoice_type, client_id, currency,
+           subtotal, tax_rate, tax_amount, total_amount, balance_due, total_received,
+           project_ids, total_amount_inr, sent_at, viewed_at, paid_at, cancelled_at,
+           total_tds_deducted, total_other_deductions,
+           invoice_date, due_date, billing_period_start, billing_period_end,
+           status, notes, internal_notes, pdf_url, created_at, updated_at, created_by`
+        )
+        .in("status", ["sent", "overdue", "partially_paid"])
+        .gt("balance_due", 0)
+        .order("due_date", { ascending: true });
+
+      if (error) throw new Error(error.message);
+      const invoices = invoiceData ?? [];
+      if (invoices.length === 0) return [];
+
+      // Fetch clients
+      const clientIds = Array.from(new Set(invoices.map((i) => i.client_id)));
+      const { data: clientData } = await supabase
+        .from("clients")
+        .select("id, company_name, currency")
+        .in("id", clientIds);
+
+      const clientMap = new Map((clientData ?? []).map((c) => [c.id, c]));
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return invoices.map((row) => {
+        const client = clientMap.get(row.client_id);
+        const dueDate = row.due_date ? new Date(row.due_date) : null;
+
+        let urgency: CollectionUrgency = "upcoming";
+        let days_label = "Upcoming";
+
+        if (dueDate) {
+          const diffDays = Math.floor(
+            (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          if (diffDays < 0) {
+            urgency = "overdue";
+            days_label = `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? "s" : ""} overdue`;
+          } else if (diffDays <= 7) {
+            urgency = "due_soon";
+            const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            days_label = `Due ${months[dueDate.getMonth()]} ${dueDate.getDate()}`;
+          } else {
+            urgency = "upcoming";
+            const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            days_label = `Expected ${months[dueDate.getMonth()]} ${dueDate.getDate()}`;
+          }
+        }
+
+        return {
+          ...row,
+          client_name: client?.company_name ?? "Unknown",
+          client_currency: client?.currency ?? "INR",
+          urgency,
+          days_label,
+        } as CollectionInvoice;
+      });
+    },
+  });
+}
+
 // ─── useInvoicePayments ───────────────────────────────────────────────────────
 
 export function useInvoicePayments(invoiceId: string) {
