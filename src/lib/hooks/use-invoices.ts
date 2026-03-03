@@ -173,8 +173,8 @@ export function useCreateInvoice() {
 
       return newInvoice;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Invoice created successfully");
     },
     onError: (error: Error) => {
@@ -207,9 +207,11 @@ export function useUpdateInvoice() {
       if (error) throw new Error(error.message);
       return updated;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["invoice", data.id] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["invoices"] }),
+        queryClient.invalidateQueries({ queryKey: ["invoice", data.id] }),
+      ]);
       toast.success("Invoice updated");
     },
     onError: (error: Error) => {
@@ -245,8 +247,8 @@ export function useDeleteInvoice() {
       const { error } = await supabase.from("invoices").delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Invoice deleted");
     },
     onError: (error: Error) => {
@@ -315,9 +317,11 @@ export function useFinalizeInvoice() {
       if (updateError) throw new Error(updateError.message);
       return updated;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["invoice", data.id] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["invoices"] }),
+        queryClient.invalidateQueries({ queryKey: ["invoice", data.id] }),
+      ]);
       toast.success(
         data.invoice_type === "proforma"
           ? `Pro forma ${data.proforma_ref} finalized`
@@ -442,8 +446,8 @@ export function useGenerateRetainerInvoices() {
 
       return { created };
     },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["invoices"] });
       if (result.created === 0) {
         toast.info("All retainer invoices for this month are already created");
       } else {
@@ -555,8 +559,8 @@ export function useUpdateScheduledInvoice() {
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["scheduled-invoices"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["scheduled-invoices"] });
     },
     onError: (error: Error) => {
       toast.error(`Failed to update scheduled invoice: ${error.message}`);
@@ -666,6 +670,81 @@ export function useInvoicePayments(invoiceId: string) {
   });
 }
 
+// ─── useConvertProformaToInvoice ──────────────────────────────────────────────
+
+export function useConvertProformaToInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invoiceId: string): Promise<InvoiceRow> => {
+      const supabase = createClient();
+
+      // Fetch the proforma invoice
+      const { data: inv, error: fetchError } = await supabase
+        .from("invoices")
+        .select("invoice_type, invoice_date, total_amount, client_id, currency, status")
+        .eq("id", invoiceId)
+        .single();
+
+      if (fetchError) throw new Error(fetchError.message);
+      if (inv.invoice_type !== "proforma") {
+        throw new Error("Only proforma invoices can be converted");
+      }
+
+      // Fetch client to determine new invoice type
+      const { data: client, error: clientError } = await supabase
+        .from("clients")
+        .select("client_type")
+        .eq("id", inv.client_id)
+        .single();
+
+      if (clientError) throw new Error(clientError.message);
+
+      const newType: "gst" | "non_gst" | "international" =
+        client.client_type === "indian_gst"
+          ? "gst"
+          : client.client_type === "indian_non_gst"
+          ? "non_gst"
+          : "international";
+
+      // Get next invoice number (international uses gst sequence)
+      const seqType = newType === "non_gst" ? "non_gst" : "gst";
+      const invoiceNumber = await getNextInvoiceNumber(supabase, seqType);
+
+      const now = new Date().toISOString();
+
+      // Convert proforma: assign real invoice number + mark paid
+      const { data: updated, error: updateError } = await supabase
+        .from("invoices")
+        .update({
+          invoice_type: newType,
+          invoice_number: invoiceNumber,
+          status: "paid" as any,
+          paid_at: now,
+          total_received: inv.total_amount,
+          balance_due: 0,
+          // invoice_date kept as-is (proforma date)
+        })
+        .eq("id", invoiceId)
+        .select()
+        .single();
+
+      if (updateError) throw new Error(updateError.message);
+      return updated;
+    },
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["invoices"] }),
+        queryClient.invalidateQueries({ queryKey: ["invoice", data.id] }),
+      ]);
+      toast.success(`Converted to ${data.invoice_number} and marked paid`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to convert proforma: ${error.message}`);
+    },
+  });
+}
+
 // ─── useRecordPayment ─────────────────────────────────────────────────────────
 
 export function useRecordPayment() {
@@ -735,11 +814,13 @@ export function useRecordPayment() {
 
       if (updateError) throw new Error(updateError.message);
     },
-    onSuccess: (_, payload) => {
+    onSuccess: async (_, payload) => {
       const invoiceId = payload.payment.invoice_id;
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
-      queryClient.invalidateQueries({ queryKey: ["invoice-payments", invoiceId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["invoices"] }),
+        queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] }),
+        queryClient.invalidateQueries({ queryKey: ["invoice-payments", invoiceId] }),
+      ]);
       toast.success("Payment recorded successfully");
     },
     onError: (error: Error) => {

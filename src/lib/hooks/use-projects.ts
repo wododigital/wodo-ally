@@ -100,9 +100,11 @@ export function useCreateProject() {
       if (error) throw new Error(error.message);
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", { clientId: data.client_id }] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects", { clientId: data.client_id }] }),
+      ]);
       toast.success("Project created successfully");
     },
     onError: (error: Error) => {
@@ -135,10 +137,12 @@ export function useUpdateProject() {
       if (error) throw new Error(error.message);
       return updated;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", data.id] });
-      queryClient.invalidateQueries({ queryKey: ["projects", { clientId: data.client_id }] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects", data.id] }),
+        queryClient.invalidateQueries({ queryKey: ["projects", { clientId: data.client_id }] }),
+      ]);
       toast.success("Project updated successfully");
     },
     onError: (error: Error) => {
@@ -165,10 +169,12 @@ export function useUpdateProjectStatus(id: string) {
       if (error) throw new Error(error.message);
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", id] });
-      queryClient.invalidateQueries({ queryKey: ["projects", { clientId: data.client_id }] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects", id] }),
+        queryClient.invalidateQueries({ queryKey: ["projects", { clientId: data.client_id }] }),
+      ]);
       toast.success("Project status updated");
     },
     onError: (error: Error) => {

@@ -274,8 +274,8 @@ export function useGenerateReport() {
       if (insertErr) throw insertErr;
       return created;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
       toast.success("Report generated successfully");
     },
     onError: (err: Error) => {
@@ -307,8 +307,8 @@ export function useUpdateReport() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
     },
     onError: (err: Error) => {
       toast.error(`Failed to update report: ${err.message}`);
@@ -331,8 +331,8 @@ export function useDeleteReport() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
       toast.success("Report deleted");
     },
     onError: (err: Error) => {
@@ -389,8 +389,8 @@ export function useSendReport() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
       toast.success("Report sent successfully");
     },
     onError: (err: Error) => {

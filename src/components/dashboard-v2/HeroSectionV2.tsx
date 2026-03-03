@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 import {
   ChevronDown,
   ChevronRight,
@@ -34,15 +35,21 @@ const PROJECT_GROWTH: MonthlyGrowth[] = [
 
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 
-const QUICK_ACTIONS = [
-  { href: "/onboard",         label: "Onboard new client",       icon: UserPlus  },
-  { href: "/invoices/new",    label: "Create invoice",           icon: FileText  },
-  { href: "/expenses/upload", label: "Upload bank statement",    icon: Upload    },
-  { href: "/reports",         label: "Generate investor report", icon: BarChart2 },
-];
+type HeroAction = { label: string; icon: React.ElementType } & (
+  | { href: string; onClick?: never }
+  | { onClick: () => void; href?: never }
+);
 
 function QuickActionsDropdown() {
   const [open, setOpen] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
+  const QUICK_ACTIONS: HeroAction[] = [
+    { href: "/onboard",         label: "Onboard new client",       icon: UserPlus  },
+    { onClick: () => setShowInvoiceModal(true), label: "Create invoice", icon: FileText },
+    { href: "/expenses/upload", label: "Upload bank statement",    icon: Upload    },
+    { href: "/reports",         label: "Generate investor report", icon: BarChart2 },
+  ];
 
   useEffect(() => {
     if (!open) return;
@@ -54,47 +61,44 @@ function QuickActionsDropdown() {
   }, [open]);
 
   return (
-    <div className="relative" data-hero-qa>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
-        style={{ background: "#fd7e14" }}
-      >
-        Quick Actions
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <div
-          className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden z-50"
-          style={{
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(255,255,255,0.9)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)",
-          }}
+    <>
+      {showInvoiceModal && <NewInvoiceModal onClose={() => setShowInvoiceModal(false)} />}
+      <div className="relative" data-hero-qa>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+          style={{ background: "#fd7e14" }}
         >
-          {QUICK_ACTIONS.map((action, idx) => (
-            <Link
-              key={action.href}
-              href={action.href}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-black/5 transition-colors"
-              style={{
-                borderBottom:
-                  idx < QUICK_ACTIONS.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none",
-              }}
-            >
-              <action.icon className="w-4 h-4 shrink-0" style={{ color: "#fd7e14" }} />
-              {action.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
+          Quick Actions
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {open && (
+          <div
+            className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden z-50"
+            style={{
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.9)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)",
+            }}
+          >
+            {QUICK_ACTIONS.map((action, idx) => {
+              const itemClass = "flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-black/5 transition-colors w-full text-left";
+              const itemStyle = { borderBottom: idx < QUICK_ACTIONS.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none" };
+              const content = <><action.icon className="w-4 h-4 shrink-0" style={{ color: "#fd7e14" }} />{action.label}</>;
+              if (action.href) {
+                return <Link key={action.label} href={action.href} onClick={() => setOpen(false)} className={itemClass} style={itemStyle}>{content}</Link>;
+              }
+              return <button key={action.label} onClick={() => { action.onClick!(); setOpen(false); }} className={itemClass} style={itemStyle}>{content}</button>;
+            })}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

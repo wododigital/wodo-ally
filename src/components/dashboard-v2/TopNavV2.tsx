@@ -3,19 +3,32 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Bell, Settings, LogOut, ChevronLeft, AlertCircle, Clock, Calendar, CheckCircle2, X, Menu } from "lucide-react";
+import { Bell, Settings, LogOut, ChevronLeft, AlertCircle, Clock, Calendar, CheckCircle2, X, Menu, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useEffect, useRef, useState } from "react";
 
-const NAV_TABS = [
+type NavTab = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  dropdown?: { href: string; label: string }[];
+};
+
+const NAV_TABS: NavTab[] = [
   { href: "/dashboard", label: "Dashboard", exact: true },
   { href: "/clients",   label: "Clients"   },
-  { href: "/invoices",  label: "Invoices"  },
-  { href: "/tds",       label: "TDS"       },
-  { href: "/finance",   label: "Finance"   },
+  {
+    href: "/invoices",
+    label: "Invoices",
+    dropdown: [
+      { href: "/invoices",  label: "Invoices"  },
+      { href: "/payments",  label: "Payments"  },
+    ],
+  },
+  { href: "/expenses",  label: "Expenses"  },
   { href: "/analytics", label: "Analytics" },
   { href: "/pipeline",  label: "Pipeline"  },
   { href: "/targets",   label: "Targets"   },
@@ -26,8 +39,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard":  "Dashboard",
   "/clients":    "Clients",
   "/invoices":   "Invoices",
-  "/tds":        "TDS Certificates",
-  "/finance":    "Finance",
   "/analytics":  "Analytics",
   "/pipeline":   "Pipeline",
   "/targets":    "Targets",
@@ -77,7 +88,7 @@ const NOTIFICATIONS: {
     body: "Maximus OIGA · Rs.59,000 - Draft before Apr 1",
     time: "In 28 days",
     read: false,
-    href: "/invoices/new?client=22222222-0000-0000-0000-000000000002",
+    href: "/invoices",
   },
   {
     id: "4",
@@ -86,7 +97,7 @@ const NOTIFICATIONS: {
     body: "Nandhini Hotel · Rs.76,700 - Draft before Apr 1",
     time: "In 28 days",
     read: true,
-    href: "/invoices/new?client=11111111-0000-0000-0000-000000000001",
+    href: "/invoices",
   },
   {
     id: "5",
@@ -211,7 +222,9 @@ export function TopNavV2() {
   const [scrolled,   setScrolled]   = useState(false);
   const [notifOpen,  setNotifOpen]  = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -225,12 +238,18 @@ export function TopNavV2() {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setNotifOpen(false);
       }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
     }
-    if (notifOpen) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [notifOpen]);
+  }, []);
 
-  function isActive(tab: (typeof NAV_TABS)[0]) {
+  function isActive(tab: NavTab) {
+    if (tab.dropdown) {
+      return tab.dropdown.some((d) => pathname.startsWith(d.href));
+    }
     return tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
   }
 
@@ -272,11 +291,57 @@ export function TopNavV2() {
 
         {/* Dark pill - absolutely centered - hidden on mobile */}
         <div
+          ref={dropdownRef}
           className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-0.5 px-1.5 py-1.5 rounded-full"
           style={{ background: "#1e2030" }}
         >
           {NAV_TABS.map((tab) => {
             const active = isActive(tab);
+            if (tab.dropdown) {
+              const isOpen = openDropdown === tab.href;
+              return (
+                <div key={tab.href} className="relative">
+                  <button
+                    onClick={() => setOpenDropdown(isOpen ? null : tab.href)}
+                    className={cn(
+                      "flex items-center gap-1 px-3.5 py-1 rounded-full text-[12px] font-semibold transition-all duration-150 whitespace-nowrap select-none",
+                      active ? "text-white" : "text-gray-400 hover:text-gray-200"
+                    )}
+                    style={active ? { background: "#fd7e14" } : undefined}
+                  >
+                    {tab.label}
+                    <ChevronDown className="w-3 h-3 opacity-70" />
+                  </button>
+                  {isOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-2 py-1.5 rounded-xl min-w-[140px] z-50"
+                      style={{
+                        background: "rgba(255,255,255,0.97)",
+                        backdropFilter: "blur(16px)",
+                        border: "1px solid rgba(0,0,0,0.08)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      {tab.dropdown.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setOpenDropdown(null)}
+                          className={cn(
+                            "block px-4 py-2 text-sm font-medium transition-colors",
+                            pathname.startsWith(item.href)
+                              ? "text-accent bg-accent-muted"
+                              : "text-text-secondary hover:text-text-primary hover:bg-black/[0.03]"
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             return (
               <Link
                 key={tab.href}
@@ -363,9 +428,28 @@ export function TopNavV2() {
           }}
         >
           <nav className="grid grid-cols-3 gap-2 mb-4">
-            {NAV_TABS.map((tab) => {
+            {NAV_TABS.flatMap((tab) => {
+              if (tab.dropdown) {
+                return tab.dropdown.map((item) => {
+                  const active = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center justify-center px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-all",
+                        active ? "text-white" : "text-gray-600 bg-black/[0.04] hover:bg-black/[0.07]"
+                      )}
+                      style={active ? { background: "#fd7e14" } : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                });
+              }
               const active = isActive(tab);
-              return (
+              return [
                 <Link
                   key={tab.href}
                   href={tab.href}
@@ -377,8 +461,8 @@ export function TopNavV2() {
                   style={active ? { background: "#fd7e14" } : undefined}
                 >
                   {tab.label}
-                </Link>
-              );
+                </Link>,
+              ];
             })}
           </nav>
           <div className="flex items-center justify-between pt-3 border-t border-black/[0.06]">

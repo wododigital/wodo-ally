@@ -90,8 +90,8 @@ export function useCreateTarget() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
         queryKey: ["financial_targets", variables.financial_year],
       });
       toast.success("Target created");
@@ -126,8 +126,8 @@ export function useUpdateTarget() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
         queryKey: ["financial_targets", variables.financial_year],
       });
       toast.success("Target updated");
@@ -158,8 +158,8 @@ export function useDeleteTarget() {
 
       if (error) throw error;
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
         queryKey: ["financial_targets", variables.financial_year],
       });
       toast.success("Target deleted");
@@ -324,8 +324,8 @@ export function useRefreshTargetProgress() {
         )
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["financial_targets"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["financial_targets"] });
       toast.success("Target progress refreshed");
     },
     onError: (err: Error) => {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 import { CheckCircle2, Target, ArrowRight, AlertCircle, Clock, FileText, TrendingUp, IndianRupee, Zap, Calendar } from "lucide-react";
 import { NeedsAttentionV2 } from "./NeedsAttentionV2";
 import { FinancialTargetsV2 } from "./FinancialTargetsV2";
@@ -69,6 +70,7 @@ function InnerCard({ children, className }: { children: React.ReactNode; classNa
 
 export function DarkSectionTabs({ attentionItems, payments, targets, pipelineItems }: DarkSectionTabsProps) {
   const [active, setActive] = useState<TabId>("attention");
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "attention", label: "Attention", count: attentionItems.length },
@@ -79,6 +81,7 @@ export function DarkSectionTabs({ attentionItems, payments, targets, pipelineIte
 
   return (
     <div className="rounded-[20px] md:rounded-[24px] p-4 md:p-7 lg:p-10" style={{ background: "#1d1f2e" }}>
+      {showInvoiceModal && <NewInvoiceModal onClose={() => setShowInvoiceModal(false)} />}
 
       {/* ── Tab bar ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-5 md:mb-7 lg:mb-10">
@@ -118,7 +121,7 @@ export function DarkSectionTabs({ attentionItems, payments, targets, pipelineIte
       {active === "attention" && <AttentionTab items={attentionItems} />}
       {active === "payments"  && <PaymentsTab  payments={payments}    />}
       {active === "targets"   && <TargetsTab   targets={targets}      />}
-      {active === "pipeline"  && <PipelineTab  items={pipelineItems}  />}
+      {active === "pipeline"  && <PipelineTab  items={pipelineItems} onCreateInvoice={() => setShowInvoiceModal(true)} />}
     </div>
   );
 }
@@ -381,7 +384,7 @@ function TargetsTab({ targets }: { targets: TargetItem[] }) {
 
 // ─── Pipeline tab ─────────────────────────────────────────────────────────────
 
-function PipelineTab({ items }: { items: PipelineItem[] }) {
+function PipelineTab({ items, onCreateInvoice }: { items: PipelineItem[]; onCreateInvoice: () => void }) {
   const retainerCount  = items.filter((i) => i.type === "retainer").length;
   const milestoneCount = items.filter((i) => i.type === "milestone").length;
 
@@ -432,13 +435,13 @@ function PipelineTab({ items }: { items: PipelineItem[] }) {
                 <span className="text-sm font-light font-sans" style={{ color: "rgba(255,255,255,0.9)" }}>
                   {item.amount}
                 </span>
-                <Link
-                  href="/invoices/new"
+                <button
+                  onClick={onCreateInvoice}
                   className="text-[11px] px-2.5 py-1 rounded-full font-semibold transition-all hover:opacity-80"
                   style={{ background: "rgba(253,126,20,0.2)", color: "#fd7e14" }}
                 >
                   Create
-                </Link>
+                </button>
               </div>
             </div>
           ))}

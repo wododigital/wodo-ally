@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Plus, Search, Users, FileText, TrendingUp, Star, CheckCircle2,
-  BarChart2, X, Loader2, ChevronDown, Check,
+  BarChart2, X, Loader2,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
 import { useClients, useCreateClient } from "@/lib/hooks/use-clients";
+import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -135,78 +136,6 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-red-500 mt-0.5">{message}</p>;
 }
 
-// ─── Status Dropdown ─────────────────────────────────────────────────────────
-
-function StatusDropdown({
-  value,
-  onChange,
-  options,
-}: {
-  value: StatusFilter;
-  onChange: (v: StatusFilter) => void;
-  options: { value: StatusFilter; label: string }[];
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const selected = options.find((o) => o.value === value) ?? options[0];
-  const isFiltered = value !== "all";
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "flex items-center gap-1.5 px-3 py-2 rounded-button text-xs font-medium transition-all duration-150 whitespace-nowrap",
-          isFiltered
-            ? "bg-accent-muted text-accent border border-accent-light"
-            : "bg-surface-DEFAULT text-text-secondary hover:text-text-primary border border-black/[0.05] hover:border-black/[0.08]"
-        )}
-      >
-        {selected.label}
-        <ChevronDown className={cn("w-3 h-3 transition-transform duration-150", open && "rotate-180")} />
-      </button>
-
-      {open && (
-        <div
-          className="absolute right-0 top-full mt-1.5 z-30 rounded-xl overflow-hidden min-w-[130px]"
-          style={{
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(0,0,0,0.07)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.6) inset",
-          }}
-        >
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={cn(
-                "w-full flex items-center justify-between gap-3 px-3 py-2 text-xs transition-colors text-left",
-                opt.value === value
-                  ? "text-accent font-semibold bg-accent/[0.06]"
-                  : "text-text-secondary hover:text-text-primary hover:bg-black/[0.03] font-medium"
-              )}
-            >
-              {opt.label}
-              {opt.value === value && <Check className="w-3 h-3 shrink-0 text-accent" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function AddClientModal({ onClose }: { onClose: () => void }) {
   const createClient = useCreateClient();
@@ -402,6 +331,8 @@ export default function ClientsPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceClientId, setInvoiceClientId] = useState("");
 
   const { data: clients = [], isLoading, isError, error } = useClients();
 
@@ -429,6 +360,13 @@ export default function ClientsPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       {showAddModal && <AddClientModal onClose={() => setShowAddModal(false)} />}
+      {showInvoiceModal && (
+        <NewInvoiceModal
+          onClose={() => setShowInvoiceModal(false)}
+          preselectedClientId={invoiceClientId}
+          preselectedType="proforma"
+        />
+      )}
 
       {/* Client KPIs */}
       <DarkSection>
@@ -472,8 +410,8 @@ export default function ClientsPage() {
       </DarkSection>
 
       {/* Search + filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
@@ -483,33 +421,53 @@ export default function ClientsPage() {
             className="glass-input pl-9"
           />
         </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {/* Invoice type filters */}
+
+        {/* Invoice type pill group */}
+        <div
+          className="flex items-center gap-0.5 p-1 rounded-button"
+          style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.04)" }}
+        >
           {INVOICE_FILTERS.map((f) => (
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-button text-xs font-medium transition-all duration-150 whitespace-nowrap",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium transition-all whitespace-nowrap",
                 filter === f.value
-                  ? "bg-accent-muted text-accent border border-accent-light"
-                  : "bg-surface-DEFAULT text-text-secondary hover:text-text-primary border border-black/[0.05] hover:border-black/[0.08]"
+                  ? "bg-white text-text-primary shadow-sm"
+                  : "text-text-muted hover:text-text-secondary"
               )}
             >
               {f.label}
-              <span className={cn("text-[10px] font-sans px-1.5 py-0.5 rounded-full", filter === f.value ? "bg-accent/20 text-accent" : "bg-black/[0.04] text-text-muted")}>
+              <span className={cn(
+                "text-[10px] font-sans px-1 py-0.5 rounded-full leading-none",
+                filter === f.value ? "bg-black/[0.06] text-text-secondary" : "bg-black/[0.04] text-text-muted"
+              )}>
                 {counts[f.value] ?? 0}
               </span>
             </button>
           ))}
-          {/* Separator */}
-          <div className="w-px bg-black/[0.06] self-stretch mx-0.5" />
-          {/* Status dropdown */}
-          <StatusDropdown
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={STATUS_FILTERS}
-          />
+        </div>
+
+        {/* Status pill group */}
+        <div
+          className="flex items-center gap-0.5 p-1 rounded-button"
+          style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.04)" }}
+        >
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={cn(
+                "px-3 py-1.5 rounded-button text-xs font-medium transition-all whitespace-nowrap",
+                statusFilter === f.value
+                  ? "bg-white text-text-primary shadow-sm"
+                  : "text-text-muted hover:text-text-secondary"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -609,15 +567,14 @@ export default function ClientsPage() {
                 </Link>
 
                 {/* Hover invoice button */}
-                <Link
-                  href={`/invoices/new?client=${client.id}&type=proforma`}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setInvoiceClientId(client.id); setShowInvoiceModal(true); }}
                   className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center gap-1.5 px-2.5 py-1.5 rounded-button text-[11px] font-medium text-white z-10"
                   style={{ background: "#fd7e14" }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <FileText className="w-3 h-3" />
                   Invoice
-                </Link>
+                </button>
               </div>
             );
           })}

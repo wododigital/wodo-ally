@@ -18,6 +18,7 @@ import {
   useUpdateScheduledInvoice,
   useCollectionsInvoices,
 } from "@/lib/hooks/use-invoices";
+import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,8 @@ export default function PipelinePage() {
   const { data: scheduledItems = [], isLoading: siLoading } = useScheduledInvoices();
   const { data: collections = [], isLoading: colLoading } = useCollectionsInvoices();
   const updateScheduled = useUpdateScheduledInvoice();
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceClientId, setInvoiceClientId] = useState("");
 
   // Derive billing months from real data (sorted unique)
   const billingMonths = useMemo(() => {
@@ -109,6 +112,12 @@ export default function PipelinePage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {showInvoiceModal && (
+        <NewInvoiceModal
+          onClose={() => setShowInvoiceModal(false)}
+          preselectedClientId={invoiceClientId}
+        />
+      )}
 
       {/* ── KPI summary ─────────────────────────────────────────────────────── */}
       <DarkSection>
@@ -119,12 +128,13 @@ export default function PipelinePage() {
               className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
               Analytics
             </Link>
-            <Link href="/invoices/new"
+            <button
+              onClick={() => { setInvoiceClientId(""); setShowInvoiceModal(true); }}
               className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
               style={{ background: "rgba(253,126,20,0.85)" }}>
               <Plus className="w-3 h-3" />
               New Invoice
-            </Link>
+            </button>
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -180,14 +190,14 @@ export default function PipelinePage() {
         <div className="xl:col-span-3 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Invoices to Raise</h2>
-            <Link
-              href="/invoices/new"
+            <button
+              onClick={() => { setInvoiceClientId(""); setShowInvoiceModal(true); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold text-white"
               style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
             >
               <Plus className="w-3 h-3" />
               New Invoice
-            </Link>
+            </button>
           </div>
 
           {/* Month tabs */}
@@ -293,11 +303,12 @@ export default function PipelinePage() {
                           Done
                         </span>
                       ) : (
-                        <Link
-                          href={`/invoices/new?client=${item.client_id}`}
-                          onClick={() =>
-                            updateScheduled.mutate({ id: item.id, status: "generated" })
-                          }
+                        <button
+                          onClick={() => {
+                            updateScheduled.mutate({ id: item.id, status: "generated" });
+                            setInvoiceClientId(item.client_id);
+                            setShowInvoiceModal(true);
+                          }}
                           className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
                           style={{ background: "#fd7e14" }}
                         >
@@ -307,7 +318,7 @@ export default function PipelinePage() {
                             <FileText className="w-3 h-3" />
                           )}
                           Create
-                        </Link>
+                        </button>
                       )}
                     </div>
                   );

@@ -136,8 +136,8 @@ export function useCreateClient() {
 
       return newClient;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Client created successfully");
     },
     onError: (error: Error) => {
@@ -164,9 +164,11 @@ export function useUpdateClient() {
       if (error) throw new Error(error.message);
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      queryClient.invalidateQueries({ queryKey: ["clients", data.id] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["clients", data.id] }),
+      ]);
       toast.success("Client updated successfully");
     },
     onError: (error: Error) => {
@@ -190,9 +192,11 @@ export function useCloseClient(id: string) {
 
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      queryClient.invalidateQueries({ queryKey: ["clients", id] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["clients", id] }),
+      ]);
       toast.success("Client account closed");
     },
     onError: (error: Error) => {
@@ -216,9 +220,11 @@ export function useReactivateClient(id: string) {
 
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      queryClient.invalidateQueries({ queryKey: ["clients", id] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["clients", id] }),
+      ]);
       toast.success("Client reactivated");
     },
     onError: (error: Error) => {
@@ -242,8 +248,8 @@ export function useDeleteClient(id: string) {
 
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Client deleted");
     },
     onError: (error: Error) => {

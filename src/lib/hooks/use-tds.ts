@@ -92,8 +92,8 @@ export function useCreateTdsCertificate() {
         .insert(payload);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tds-certificates"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["tds-certificates"] });
       toast.success("TDS certificate added");
     },
     onError: (error: Error) => {
@@ -116,8 +116,8 @@ export function useDeleteTdsCertificate() {
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tds-certificates"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["tds-certificates"] });
       toast.success("Certificate deleted");
     },
     onError: (error: Error) => {

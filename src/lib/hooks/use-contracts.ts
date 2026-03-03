@@ -170,8 +170,8 @@ export function useCreateContract() {
       if (error) throw new Error(error.message);
       return data as ContractRow;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["contracts"] });
       toast.success("Contract created successfully");
     },
     onError: (error: Error) => {
@@ -204,9 +204,11 @@ export function useUpdateContract() {
       if (error) throw new Error(error.message);
       return updated as ContractRow;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["contracts", data.id] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["contracts"] }),
+        queryClient.invalidateQueries({ queryKey: ["contracts", data.id] }),
+      ]);
       toast.success("Contract updated");
     },
     onError: (error: Error) => {
@@ -243,8 +245,8 @@ export function useDeleteContract() {
 
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["contracts"] });
       toast.success("Contract deleted");
     },
     onError: (error: Error) => {
@@ -283,9 +285,11 @@ export function useUpdateContractStatus() {
       if (error) throw new Error(error.message);
       return data as ContractRow;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["contracts", data.id] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["contracts"] }),
+        queryClient.invalidateQueries({ queryKey: ["contracts", data.id] }),
+      ]);
       toast.success(`Contract status updated to ${data.status}`);
     },
     onError: (error: Error) => {

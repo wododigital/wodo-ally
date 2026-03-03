@@ -88,8 +88,8 @@ export function useCreateService() {
       if (error) throw new Error(error.message);
       return data as Service;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
       toast.success("Service created successfully");
     },
     onError: (error: Error) => {
@@ -122,8 +122,8 @@ export function useUpdateService() {
       if (error) throw new Error(error.message);
       return updated as Service;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
       toast.success("Service updated");
     },
     onError: (error: Error) => {
@@ -157,8 +157,8 @@ export function useDeleteService() {
         throw new Error(error.message);
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
       toast.success("Service deleted");
     },
     onError: (error: Error) => {
@@ -195,8 +195,8 @@ export function useToggleService(id: string) {
       if (updateError) throw new Error(updateError.message);
       return updated as Service;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
       toast.success(
         data.is_active ? "Service activated" : "Service deactivated"
       );

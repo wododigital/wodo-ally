@@ -1,32 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Plus, FileText, Search, ChevronDown, Pencil, CheckCircle2, AlertCircle, Clock, RefreshCw, Download } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Plus, FileText, Search, ChevronDown,
+  CheckCircle2, AlertCircle, Clock, Download,
+  ArrowUpDown, ArrowUp, ArrowDown, ChevronRight,
+  BarChart2,
+} from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { EmptyState } from "@/components/shared/empty-state";
+import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
-import { useInvoices, useUpdateInvoice, useGenerateRetainerInvoices } from "@/lib/hooks/use-invoices";
+import { useInvoices, useUpdateInvoice, useConvertProformaToInvoice } from "@/lib/hooks/use-invoices";
 import type { InvoiceListItem } from "@/lib/hooks/use-invoices";
 
-// Suppress unused import warning - DarkLabel is imported from dark-section
-void DarkLabel;
-
-const STATUS_TABS = ["all", "draft", "sent", "paid", "overdue", "proforma"] as const;
-type StatusTab = typeof STATUS_TABS[number];
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ["sent", "cancelled"],
   sent: ["paid", "overdue", "cancelled"],
   overdue: ["paid", "sent", "cancelled"],
   paid: [],
-  proforma: ["sent", "cancelled"],
   cancelled: ["draft"],
+  archived: [],
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -43,50 +45,88 @@ const TYPE_COLORS: Record<string, string> = {
   proforma: "text-text-muted bg-surface-DEFAULT border-black/[0.05]",
 };
 
-type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled";
+const STATUS_OPTIONS = ["all", "draft", "sent", "paid", "overdue", "proforma", "archived"];
+const STATUS_LABELS: Record<string, string> = {
+  all: "All Status",
+  draft: "Draft",
+  sent: "Sent",
+  paid: "Paid",
+  overdue: "Overdue",
+  proforma: "Proforma",
+  archived: "Archived",
+};
+const TYPE_OPTIONS = ["all", "gst", "international", "non_gst", "proforma"];
 
-function StatusDropdown({
+type SortField = "invoice" | "client" | "type" | "date" | "amount" | "status";
+type SortDir = "asc" | "desc";
+type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled" | "archived";
+
+
+// ─── Status change dropdown ───────────────────────────────────────────────────
+
+function StatusChangeDropdown({
   status,
+  invoiceType,
   onChange,
+  onConvertProforma,
 }: {
   status: string;
+  invoiceType?: string;
   onChange: (s: string) => void;
+  onConvertProforma?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const options = STATUS_TRANSITIONS[status] ?? [];
 
-  if (options.length === 0) {
-    return <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />;
+  if (invoiceType === "proforma") {
+    if (status === "cancelled") {
+      return <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />;
+    }
+    return (
+      <div className="relative">
+        <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }} className="flex items-center gap-1 group/sd" title="Change status">
+          <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />
+          <ChevronDown className="w-3 h-3 text-text-muted opacity-0 group-hover/sd:opacity-100 transition-opacity" />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
+            <div className="absolute left-0 top-full mt-1 z-20 py-1.5 rounded-xl min-w-[140px]"
+              style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); onConvertProforma?.(); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-xs text-green-600 font-medium hover:bg-green-50 transition-colors"
+              >
+                Record Payment
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onChange("cancelled"); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-black/[0.04] transition-colors text-text-secondary hover:text-text-primary"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
+  const options = STATUS_TRANSITIONS[status] ?? [];
+  if (options.length === 0) return <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />;
   return (
     <div className="relative">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-        className="flex items-center gap-1 group/sd"
-        title="Change status"
-      >
+      <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }} className="flex items-center gap-1 group/sd" title="Change status">
         <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />
         <ChevronDown className="w-3 h-3 text-text-muted opacity-0 group-hover/sd:opacity-100 transition-opacity" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
-          <div
-            className="absolute left-0 top-full mt-1 z-20 py-1.5 rounded-xl min-w-[110px]"
-            style={{
-              background: "rgba(255,255,255,0.95)",
-              backdropFilter: "blur(16px)",
-              border: "1px solid rgba(0,0,0,0.08)",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
-            }}
-          >
+          <div className="absolute left-0 top-full mt-1 z-20 py-1.5 rounded-xl min-w-[110px]"
+            style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}>
             {options.map((s) => (
-              <button
-                key={s}
-                onClick={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
-                className="w-full text-left px-3 py-1.5 text-xs capitalize hover:bg-black/[0.04] transition-colors text-text-secondary hover:text-text-primary"
-              >
+              <button key={s} onClick={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-xs capitalize hover:bg-black/[0.04] transition-colors text-text-secondary hover:text-text-primary">
                 {s === "paid" ? "Mark Paid" : s === "sent" ? "Mark Sent" : s === "overdue" ? "Mark Overdue" : s.charAt(0).toUpperCase() + s.slice(1)}
               </button>
             ))}
@@ -97,162 +137,238 @@ function StatusDropdown({
   );
 }
 
+// ─── Status filter dropdown ───────────────────────────────────────────────────
+
+function StatusFilterDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-button text-xs font-medium transition-all border whitespace-nowrap",
+          value !== "all"
+            ? "bg-white text-text-primary border-black/[0.12] shadow-sm"
+            : "bg-transparent text-text-muted border-black/[0.06] hover:border-black/[0.10]"
+        )}
+      >
+        <span>{STATUS_LABELS[value] ?? value}</span>
+        <ChevronDown className="w-3 h-3 opacity-60" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 top-full mt-1 z-20 py-1.5 rounded-xl min-w-[130px]"
+            style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(16px)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => { onChange(opt); setOpen(false); }}
+                className={cn(
+                  "w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-black/[0.04]",
+                  value === opt ? "text-accent font-semibold" : "text-text-secondary"
+                )}
+              >
+                {STATUS_LABELS[opt] ?? opt}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+
+// ─── CSV export ───────────────────────────────────────────────────────────────
+
 function downloadCsv(rows: InvoiceListItem[]) {
-  const headers = [
-    "Invoice #",
-    "Client",
-    "Issue Date",
-    "Due Date",
-    "Status",
-    "Subtotal",
-    "Tax",
-    "TDS",
-    "Total",
-    "Paid",
-    "Balance",
-    "Currency",
-  ];
-  const escape = (val: string | number) => {
-    const s = String(val);
-    // Wrap in quotes if value contains comma, quote, or newline
-    return s.includes(",") || s.includes('"') || s.includes("\n")
-      ? `"${s.replace(/"/g, '""')}"`
-      : s;
-  };
-  const lines = rows
-    .map((inv) =>
-      [
-        inv.invoice_number ?? "",
-        inv.client_name ?? "",
-        inv.invoice_date ?? "",
-        inv.due_date ?? "",
-        inv.status,
-        inv.subtotal ?? 0,
-        inv.tax_amount ?? 0,
-        inv.total_tds_deducted ?? 0,
-        inv.total_amount ?? 0,
-        (inv.total_amount ?? 0) - (inv.balance_due ?? 0),
-        inv.balance_due ?? 0,
-        inv.currency ?? "INR",
-      ]
-        .map(escape)
-        .join(",")
-    )
-    .join("\n");
+  const headers = ["Invoice #", "Client", "Type", "Issue Date", "Due Date", "Status", "Subtotal", "Tax", "TDS", "Total", "Paid", "Balance", "Currency"];
+  const escape = (val: string | number) => { const s = String(val); return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s; };
+  const lines = rows.map((inv) => [inv.invoice_number ?? "", inv.client_name ?? "", inv.invoice_type, inv.invoice_date ?? "", inv.due_date ?? "", inv.status, inv.subtotal ?? 0, inv.tax_amount ?? 0, inv.total_tds_deducted ?? 0, inv.total_amount ?? 0, (inv.total_amount ?? 0) - (inv.balance_due ?? 0), inv.balance_due ?? 0, inv.currency ?? "INR"].map(escape).join(",")).join("\n");
   const csv = [headers.map(escape).join(","), lines].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
+  a.href = url; a.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
   URL.revokeObjectURL(url);
 }
 
-export default function InvoicesPage() {
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+function InvoicesContent() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<StatusTab>("all");
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [modalClientId, setModalClientId] = useState("");
+  const [modalType, setModalType] = useState<string | null>(null);
 
   const { data: invoices = [], isLoading } = useInvoices();
   const updateInvoice = useUpdateInvoice();
-  const generateRetainer = useGenerateRetainerInvoices();
+  const convertProforma = useConvertProformaToInvoice();
+  const hasAutoArchived = useRef(false);
 
-  function getDisplayNumber(inv: InvoiceListItem): string {
+  // Open modal if ?new=1 in URL (e.g. from client page)
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setModalClientId(searchParams.get("client") ?? "");
+      setModalType(searchParams.get("type") ?? null);
+      setShowNewModal(true);
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("new");
+      url.searchParams.delete("client");
+      url.searchParams.delete("type");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+
+  // Auto-archive proforma invoices with no payment recorded after 30 days
+  useEffect(() => {
+    if (hasAutoArchived.current || invoices.length === 0) return;
+    hasAutoArchived.current = true;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const toArchive = invoices.filter(
+      (inv) =>
+        inv.invoice_type === "proforma" &&
+        inv.invoice_date != null &&
+        inv.invoice_date <= cutoffStr &&
+        !(["paid", "cancelled", "archived"] as string[]).includes(inv.status as string)
+    );
+    for (const inv of toArchive) {
+      updateInvoice.mutate(
+        { id: inv.id, data: { status: "archived" as any } },
+        { onSuccess: () => {}, onError: () => {} }
+      );
+    }
+  }, [invoices]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function openNewModal(clientId = "", type: string | null = null) {
+    setModalClientId(clientId);
+    setModalType(type);
+    setShowNewModal(true);
+  }
+
+  function getDisplayNumber(inv: InvoiceListItem) {
     if (inv.invoice_type === "proforma") return inv.proforma_ref ?? "PF-DRAFT";
     return inv.invoice_number ?? "DRAFT";
   }
 
-  const filtered = invoices.filter((inv) => {
-    const matchTab =
-      activeTab === "all" ||
-      (activeTab === "proforma" ? inv.invoice_type === "proforma" : inv.status === activeTab);
+  const filtered = useMemo(() => invoices.filter((inv) => {
+    // Archived invoices only visible when explicitly filtering for them
+    if ((inv.status as string) === "archived" && statusFilter !== "archived") return false;
+    const matchStatus = statusFilter === "all" || (statusFilter === "proforma" ? inv.invoice_type === "proforma" : inv.status === statusFilter);
+    const matchType = typeFilter === "all" || (typeFilter === "proforma" ? inv.invoice_type === "proforma" : inv.invoice_type === typeFilter);
     const displayNum = getDisplayNumber(inv);
-    const matchSearch =
-      displayNum.toLowerCase().includes(search.toLowerCase()) ||
-      inv.client_name.toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
-  });
+    const matchSearch = !search || displayNum.toLowerCase().includes(search.toLowerCase()) || inv.client_name.toLowerCase().includes(search.toLowerCase());
+    return matchStatus && matchType && matchSearch;
+  }), [invoices, statusFilter, typeFilter, search]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "invoice") cmp = getDisplayNumber(a).localeCompare(getDisplayNumber(b));
+      else if (sortField === "client") cmp = a.client_name.localeCompare(b.client_name);
+      else if (sortField === "type") cmp = a.invoice_type.localeCompare(b.invoice_type);
+      else if (sortField === "date") cmp = (a.invoice_date ?? "").localeCompare(b.invoice_date ?? "");
+      else if (sortField === "amount") cmp = (a.total_amount ?? 0) - (b.total_amount ?? 0);
+      else if (sortField === "status") cmp = a.status.localeCompare(b.status);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [filtered, sortField, sortDir]);
 
   const totals = {
-    outstanding: invoices
-      .filter((i) => ["sent", "overdue"].includes(i.status))
-      .reduce((s, i) => s + (i.balance_due ?? 0), 0),
-    paid_this_month: invoices
-      .filter((i) => i.status === "paid" && i.invoice_date >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10))
-      .reduce((s, i) => s + (i.total_amount ?? 0), 0),
+    outstanding: invoices.filter((i) => ["sent", "overdue"].includes(i.status)).reduce((s, i) => s + (i.balance_due ?? 0), 0),
+    paid_this_month: invoices.filter((i) => i.status === "paid" && i.invoice_date >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)).reduce((s, i) => s + (i.total_amount ?? 0), 0),
     overdue_count: invoices.filter((i) => i.status === "overdue").length,
   };
 
   function handleStatusChange(invoiceId: string, newStatus: string) {
-    updateInvoice.mutate({
-      id: invoiceId,
-      data: {
-        status: newStatus as InvoiceStatus,
-        ...(newStatus === "paid" ? { paid_at: new Date().toISOString() } : {}),
-        ...(newStatus === "sent" ? { sent_at: new Date().toISOString() } : {}),
-      },
-    });
+    updateInvoice.mutate({ id: invoiceId, data: { status: newStatus as any, ...(newStatus === "paid" ? { paid_at: new Date().toISOString() } : {}), ...(newStatus === "sent" ? { sent_at: new Date().toISOString() } : {}) } });
   }
 
-  function getTabCount(tab: StatusTab): number {
-    if (tab === "all") return invoices.length;
-    if (tab === "proforma") return invoices.filter((i) => i.invoice_type === "proforma").length;
-    return invoices.filter((i) => i.status === tab).length;
+  function toggleSort(field: SortField) {
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortField(field); setSortDir("desc"); }
+  }
+
+  function SortIcon({ field }: { field: SortField }) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-accent" /> : <ArrowDown className="w-3 h-3 text-accent" />;
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {showNewModal && (
+        <NewInvoiceModal
+          onClose={() => setShowNewModal(false)}
+          preselectedClientId={modalClientId}
+          preselectedType={modalType}
+        />
+      )}
 
       {/* Invoice KPIs */}
       <DarkSection>
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Overview</p>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <button
-              onClick={() => generateRetainer.mutate()}
-              disabled={generateRetainer.isPending}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70 disabled:opacity-50"
-              title="Generate retainer invoices for this month"
-            >
-              <RefreshCw className={cn("w-3 h-3", generateRetainer.isPending && "animate-spin")} />
-              Retainer Invoices
-            </button>
+          <div className="flex items-center gap-2.5 flex-wrap justify-end">
             <button
               onClick={() => downloadCsv(invoices)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70"
-              title="Export all invoices as CSV"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-button text-xs font-medium transition-all border bg-white/[0.06] text-white/60 border-white/[0.10] hover:border-white/[0.18] hover:text-white/80"
             >
-              <Download className="w-3 h-3" />
+              <Download className="w-3.5 h-3.5" />
               Export CSV
             </button>
-            <Link href="/analytics/invoices"
-              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+            <Link
+              href="/analytics/invoices"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-button text-xs font-medium transition-all border bg-white/[0.06] text-white/60 border-white/[0.10] hover:border-white/[0.18] hover:text-white/80"
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
               Analytics
             </Link>
-            <Link href="/invoices/new"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "rgba(253,126,20,0.85)" }}>
-              <Plus className="w-3 h-3" />
+            <button
+              onClick={() => openNewModal()}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(253,126,20,0.85)" }}
+            >
+              <Plus className="w-3.5 h-3.5" />
               New Invoice
-            </Link>
+            </button>
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: FileText,     label: "Total invoices",   value: `${invoices.length}`,                                  sub: "All time",                      color: "#3b82f6" },
-            { icon: CheckCircle2, label: "Paid this month",  value: `Rs.${(totals.paid_this_month / 1000).toFixed(0)}K`,   sub: "Current month collections",     color: "#22c55e" },
-            { icon: Clock,        label: "Outstanding",      value: `Rs.${(totals.outstanding / 1000).toFixed(0)}K`,       sub: "Sent + awaiting payment",       color: "#f59e0b" },
-            { icon: AlertCircle,  label: "Overdue",          value: `${totals.overdue_count} invoice${totals.overdue_count !== 1 ? "s" : ""}`, sub: "Follow-up needed", color: "#ef4444" },
+            { icon: FileText,     label: "Total invoices",  value: `${invoices.length}`,                                color: "#3b82f6", sub: "All time" },
+            { icon: CheckCircle2, label: "Paid this month", value: `Rs.${(totals.paid_this_month / 1000).toFixed(0)}K`, color: "#22c55e", sub: "Current month" },
+            { icon: Clock,        label: "Outstanding",     value: `Rs.${(totals.outstanding / 1000).toFixed(0)}K`,     color: "#f59e0b", sub: "Awaiting payment" },
+            { icon: AlertCircle,  label: "Overdue",         value: `${totals.overdue_count} invoice${totals.overdue_count !== 1 ? "s" : ""}`, color: "#ef4444", sub: "Follow-up needed" },
           ].map((stat) => (
             <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3" style={{ background: `${stat.color}18` }}>
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
               </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {isLoading ? "-" : stat.value}
-              </p>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>{isLoading ? "-" : stat.value}</p>
               <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
               <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
             </DarkCard>
@@ -260,127 +376,160 @@ export default function InvoicesPage() {
         </div>
       </DarkSection>
 
-      {/* Status tabs */}
-      <div className="flex border-b border-black/[0.05] gap-1 overflow-x-auto">
-        {STATUS_TABS.map((tab) => {
-          const count = getTabCount(tab);
-          return (
+      {/* Search + filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by invoice number or client..." className="glass-input pl-9" />
+        </div>
+
+        {/* Status dropdown */}
+        <StatusFilterDropdown value={statusFilter} onChange={setStatusFilter} />
+
+        {/* Type pill group */}
+        <div
+          className="flex items-center gap-0.5 p-1 rounded-button"
+          style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.04)" }}
+        >
+          {TYPE_OPTIONS.map((opt) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={opt}
+              onClick={() => setTypeFilter(opt)}
               className={cn(
-                "px-4 py-2.5 text-sm font-medium transition-all duration-150 border-b-2 -mb-px capitalize whitespace-nowrap flex items-center gap-1.5",
-                activeTab === tab
-                  ? "text-accent border-accent"
-                  : "text-text-muted hover:text-text-secondary border-transparent"
+                "px-3 py-1.5 rounded-button text-xs font-medium transition-all whitespace-nowrap",
+                typeFilter === opt
+                  ? "bg-white text-text-primary shadow-sm"
+                  : "text-text-muted hover:text-text-secondary"
               )}
             >
-              {tab}
-              <span className={cn(
-                "text-xs px-1.5 py-0.5 rounded-full font-sans",
-                activeTab === tab ? "bg-accent-muted text-accent" : "bg-surface-DEFAULT text-text-muted"
-              )}>
-                {count}
-              </span>
+              {opt === "all" ? "All Types" : (TYPE_LABELS[opt] ?? opt)}
             </button>
-          );
-        })}
+          ))}
+        </div>
+
+        {(statusFilter !== "all" || typeFilter !== "all") && (
+          <button
+            onClick={() => { setStatusFilter("all"); setTypeFilter("all"); }}
+            className="text-xs text-text-muted hover:text-accent transition-colors"
+          >
+            Clear
+          </button>
+        )}
+        <span className="text-xs text-text-muted ml-auto hidden sm:block">
+          {sorted.length} invoice{sorted.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by invoice number or client..."
-          className="glass-input pl-9"
-        />
-      </div>
-
-      {/* Loading state */}
+      {/* Table */}
       {isLoading ? (
         <GlassCard padding="md">
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-text-muted">Loading invoices...</p>
           </div>
         </GlassCard>
-      ) : filtered.length === 0 ? (
-        <EmptyState icon={FileText} title="No invoices found" description="Create your first invoice." />
+      ) : sorted.length === 0 ? (
+        <EmptyState icon={FileText} title="No invoices found" description="Create your first invoice or adjust your filters." />
       ) : (
         <GlassCard padding="none">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-black/[0.05]">
-                  <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-wider text-text-muted">Invoice</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted">Client</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted hidden sm:table-cell">Type</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted hidden md:table-cell">Date</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted">Amount</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted">Status</th>
-                  <th className="w-12 px-4 py-3" />
+                <tr className="border-b border-black/[0.06]" style={{ background: "rgba(255,255,255,0.70)" }}>
+                  <th className="text-left px-5 py-3">
+                    <button onClick={() => toggleSort("invoice")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-accent transition-colors">
+                      Invoice <SortIcon field="invoice" />
+                    </button>
+                  </th>
+                  <th className="text-left px-4 py-3">
+                    <button onClick={() => toggleSort("client")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-accent transition-colors">
+                      Client <SortIcon field="client" />
+                    </button>
+                  </th>
+                  <th className="text-left px-4 py-3 hidden sm:table-cell">
+                    <button onClick={() => toggleSort("type")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-accent transition-colors">
+                      Type <SortIcon field="type" />
+                    </button>
+                  </th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">
+                    <button onClick={() => toggleSort("date")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-accent transition-colors">
+                      Date <SortIcon field="date" />
+                    </button>
+                  </th>
+                  <th className="text-right px-4 py-3">
+                    <button onClick={() => toggleSort("amount")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-accent transition-colors ml-auto">
+                      Amount <SortIcon field="amount" />
+                    </button>
+                  </th>
+                  <th className="text-left px-4 py-3 hidden sm:table-cell">
+                    <button onClick={() => toggleSort("status")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-accent transition-colors">
+                      Status <SortIcon field="status" />
+                    </button>
+                  </th>
+                  <th className="w-10 px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((invoice, idx) => (
-                  <tr
-                    key={invoice.id}
-                    onClick={() => router.push(`/invoices/${invoice.id}`)}
-                    className={cn(
-                      "hover:bg-surface-DEFAULT transition-colors cursor-pointer group",
-                      idx < filtered.length - 1 && "border-b border-black/[0.05]"
-                    )}
-                  >
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-sans font-semibold text-text-primary group-hover:text-accent transition-colors">
-                        {getDisplayNumber(invoice)}
-                      </p>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="text-sm text-text-secondary">{invoice.client_name}</p>
-                    </td>
-                    <td className="px-4 py-4 hidden sm:table-cell">
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded border font-medium",
-                        TYPE_COLORS[invoice.invoice_type]
-                      )}>
-                        {TYPE_LABELS[invoice.invoice_type]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 hidden md:table-cell">
-                      <p className="text-sm text-text-muted font-sans">{formatDate(invoice.invoice_date)}</p>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <CurrencyDisplay
-                        amount={invoice.total_amount}
-                        currency={invoice.currency as "INR" | "USD" | "AED"}
-                        size="sm"
-                      />
-                    </td>
-                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                      <StatusDropdown
-                        status={invoice.status}
-                        onChange={(s) => handleStatusChange(invoice.id, s)}
-                      />
-                    </td>
-                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href={`/invoices/${invoice.id}/edit`}
-                        className="p-1.5 rounded-button text-text-muted hover:text-accent hover:bg-accent-muted transition-all opacity-0 group-hover:opacity-100 inline-flex"
-                        title="Edit invoice"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {sorted.map((invoice, idx) => {
+                  const isIntl = invoice.invoice_type === "international";
+                  const inrAmount = invoice.total_amount_inr ?? null;
+                  return (
+                    <tr key={invoice.id} onClick={() => router.push(`/invoices/${invoice.id}`)}
+                      className={cn("hover:bg-surface-DEFAULT transition-colors cursor-pointer group", idx < sorted.length - 1 && "border-b border-black/[0.05]")}>
+                      <td className="px-5 py-4">
+                        <p className="text-sm font-sans font-semibold text-text-primary group-hover:text-accent transition-colors">
+                          {getDisplayNumber(invoice)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-sm text-text-secondary">{invoice.client_name}</p>
+                      </td>
+                      <td className="px-4 py-4 hidden sm:table-cell">
+                        <span className={cn("text-xs px-2 py-0.5 rounded border font-medium", TYPE_COLORS[invoice.invoice_type])}>
+                          {TYPE_LABELS[invoice.invoice_type]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 hidden md:table-cell">
+                        <p className="text-sm text-text-muted font-sans">{formatDate(invoice.invoice_date)}</p>
+                      </td>
+                      <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-col items-end">
+                          <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency as "INR" | "USD" | "AED"} size="sm" />
+                          {isIntl && inrAmount && inrAmount > 0 && (
+                            <span className="text-[11px] text-text-muted font-sans mt-0.5">~Rs.{(inrAmount / 1000).toFixed(1)}K</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
+                        <StatusChangeDropdown
+                          status={invoice.status}
+                          invoiceType={invoice.invoice_type}
+                          onChange={(s) => handleStatusChange(invoice.id, s)}
+                          onConvertProforma={() => convertProforma.mutate(invoice.id)}
+                        />
+                      </td>
+                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        <Link href={`/invoices/${invoice.id}/edit`}
+                          className="p-1.5 rounded-button text-text-muted hover:text-accent hover:bg-accent-muted transition-all opacity-0 group-hover:opacity-100 inline-flex">
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </GlassCard>
       )}
     </div>
+  );
+}
+
+export default function InvoicesPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <InvoicesContent />
+    </Suspense>
   );
 }

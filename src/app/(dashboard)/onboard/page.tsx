@@ -789,7 +789,7 @@ export default function OnboardPage() {
                 icon: FileText,
                 label: "Create Invoice",
                 description: "Send your first invoice",
-                href: "/invoices/new",
+                href: "/invoices",
                 color: "#fd7e14",
                 bg: "rgba(253,126,20,0.08)",
                 border: "rgba(253,126,20,0.2)",

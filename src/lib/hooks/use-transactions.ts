@@ -135,9 +135,11 @@ export function useUpdateTransaction() {
       if (error) throw new Error(error.message);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["expense-summary"] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+        queryClient.invalidateQueries({ queryKey: ["expense-summary"] }),
+      ]);
       toast.success("Transaction updated");
     },
     onError: (error: Error) => {
@@ -244,10 +246,12 @@ export function useUploadBankStatement() {
 
       return statementRow;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["bank-statements"] });
-      queryClient.invalidateQueries({ queryKey: ["expense-summary"] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+        queryClient.invalidateQueries({ queryKey: ["bank-statements"] }),
+        queryClient.invalidateQueries({ queryKey: ["expense-summary"] }),
+      ]);
       toast.success(`Statement uploaded - ${data.transaction_count} transactions imported`);
     },
     onError: (error: Error) => {
