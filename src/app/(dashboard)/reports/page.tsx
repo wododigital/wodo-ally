@@ -564,8 +564,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-xl font-bold text-text-primary">Investor Reports</h1>
+      <div className="flex items-center justify-end flex-wrap gap-4">
         <button
           onClick={() => setShowGenerateModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white transition-all"
