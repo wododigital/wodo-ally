@@ -87,7 +87,7 @@ export default function NewInvoicePage() {
                   "p-3 rounded-card text-left border transition-all duration-150",
                   invoiceType === type.value
                     ? "border-accent bg-accent-muted"
-                    : "border-white/5 bg-surface-DEFAULT hover:border-white/10"
+                    : "border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08]"
                 )}
               >
                 <p className={cn("text-sm font-medium", invoiceType === type.value ? "text-accent" : "text-text-primary")}>
@@ -205,7 +205,7 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Totals */}
-          <div className="mt-6 pt-4 border-t border-white/5">
+          <div className="mt-6 pt-4 border-t border-black/[0.05]">
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center justify-between w-56">
                 <span className="text-sm text-text-muted">Subtotal</span>
@@ -221,7 +221,7 @@ export default function NewInvoicePage() {
                   </span>
                 </div>
               )}
-              <div className="flex items-center justify-between w-56 pt-2 border-t border-white/5">
+              <div className="flex items-center justify-between w-56 pt-2 border-t border-black/[0.05]">
                 <span className="text-sm font-semibold text-text-primary">Total</span>
                 <span className="text-lg font-sans font-bold text-accent">
                   {client?.currency === "USD" ? "$" : client?.currency === "AED" ? "AED " : "Rs."}{total.toLocaleString("en-IN")}
@@ -235,7 +235,7 @@ export default function NewInvoicePage() {
         <div className="flex items-center justify-end gap-3 pb-6">
           <Link
             href="/invoices"
-            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-white/5 transition-all"
+            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all"
           >
             Cancel
           </Link>
@@ -243,7 +243,7 @@ export default function NewInvoicePage() {
             type="submit"
             name="action"
             value="draft"
-            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-white/5 transition-all"
+            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all"
           >
             Save as Draft
           </button>

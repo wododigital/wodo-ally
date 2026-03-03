@@ -46,7 +46,7 @@ export default function UploadStatementPage() {
           padding="lg"
           className={cn(
             "border-2 border-dashed transition-all duration-200 cursor-pointer",
-            state === "dragging" ? "border-accent bg-accent-muted" : "border-white/10 hover:border-white/20"
+            state === "dragging" ? "border-accent bg-accent-muted" : "border-black/[0.08] hover:border-black/[0.12]"
           )}
           onClick={() => inputRef.current?.click()}
         >
@@ -75,7 +75,7 @@ export default function UploadStatementPage() {
               </>
             ) : (
               <>
-                <div className="w-14 h-14 rounded-2xl bg-surface-DEFAULT border border-white/6 flex items-center justify-center mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-surface-DEFAULT border border-black/[0.05] flex items-center justify-center mb-4">
                   <Upload className="w-7 h-7 text-text-muted" />
                 </div>
                 <p className="text-base font-semibold text-text-primary">Drop your bank statement here</p>

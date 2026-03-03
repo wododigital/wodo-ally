@@ -124,7 +124,7 @@ const TYPE_COLORS: Record<string, string> = {
   gst: "text-blue-400 bg-blue-500/10 border-blue-500/20",
   international: "text-purple-400 bg-purple-500/10 border-purple-500/20",
   non_gst: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-  proforma: "text-text-muted bg-surface-DEFAULT border-white/5",
+  proforma: "text-text-muted bg-surface-DEFAULT border-black/[0.05]",
 };
 
 export default function InvoicesPage() {
@@ -185,7 +185,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Status tabs */}
-      <div className="flex border-b border-white/5 gap-1 overflow-x-auto">
+      <div className="flex border-b border-black/[0.05] gap-1 overflow-x-auto">
         {STATUS_TABS.map((tab) => {
           const count = tab === "all"
             ? INVOICES.length
@@ -235,7 +235,7 @@ export default function InvoicesPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/5">
+                <tr className="border-b border-black/[0.05]">
                   <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-wider text-text-muted">Invoice</th>
                   <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted">Client</th>
                   <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text-muted hidden sm:table-cell">Type</th>
@@ -251,7 +251,7 @@ export default function InvoicesPage() {
                     key={invoice.id}
                     className={cn(
                       "hover:bg-surface-DEFAULT transition-colors group",
-                      idx < filtered.length - 1 && "border-b border-white/5"
+                      idx < filtered.length - 1 && "border-b border-black/[0.05]"
                     )}
                   >
                     <td className="px-5 py-4">

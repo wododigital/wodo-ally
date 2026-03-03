@@ -125,7 +125,7 @@ function SaveButton({ saved, onClick }: { saved: boolean; onClick?: () => void }
       type={onClick ? "button" : "submit"}
       onClick={onClick}
       className="flex items-center gap-2 px-5 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-300"
-      style={{ background: saved ? "#22c55e" : "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+      style={{ background: saved ? "#16a34a" : "linear-gradient(135deg, #fd7e14, #e8720f)" }}
     >
       {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
       {saved ? "Saved!" : "Save Changes"}
@@ -262,7 +262,7 @@ function BankTab() {
                 {!isEditing ? (
                   <button
                     onClick={() => setEditingId(account.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-white/5 hover:border-white/15 hover:text-text-primary transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     Edit
@@ -292,7 +292,7 @@ function BankTab() {
                       className={cn("glass-input text-sm", field.mono && "font-sans tracking-wide")}
                     />
                   ) : (
-                    <p className={cn("text-sm text-text-primary py-2 px-3 rounded-button bg-surface-DEFAULT border border-white/5 break-all", field.mono && "font-sans tracking-wide")}>
+                    <p className={cn("text-sm text-text-primary py-2 px-3 rounded-button bg-surface-DEFAULT border border-black/[0.05] break-all", field.mono && "font-sans tracking-wide")}>
                       {field.value}
                     </p>
                   )}
@@ -413,7 +413,7 @@ function UsersTab() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-white/5">
+            <tr className="border-b border-black/[0.05]">
               <th className="text-left pb-3 text-xs font-medium uppercase tracking-wider text-text-muted">Name</th>
               <th className="text-left pb-3 text-xs font-medium uppercase tracking-wider text-text-muted">Email</th>
               <th className="text-left pb-3 text-xs font-medium uppercase tracking-wider text-text-muted">Role</th>
@@ -423,7 +423,7 @@ function UsersTab() {
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.email} className="border-b border-white/5 last:border-0">
+              <tr key={user.email} className="border-b border-black/[0.05] last:border-0">
                 <td className="py-4 pr-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-xs font-bold text-accent shrink-0">
@@ -475,7 +475,7 @@ function NotificationsTab() {
   return (
     <GlassCard padding="lg">
       <h3 className="text-sm font-semibold text-text-primary mb-6">Notification Preferences</h3>
-      <div className="divide-y divide-white/5">
+      <div className="divide-y divide-black/[0.05]">
         {NOTIFICATION_ITEMS.map((item) => (
           <div key={item.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
             <div className="pr-6">
@@ -490,7 +490,7 @@ function NotificationsTab() {
               onClick={() => toggle(item.id)}
               className={cn(
                 "relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-accent/40",
-                enabled[item.id] ? "bg-accent" : "bg-white/10"
+                enabled[item.id] ? "bg-accent" : "bg-black/[0.08]"
               )}
             >
               <span
@@ -533,7 +533,7 @@ export default function SettingsPage() {
                   "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm whitespace-nowrap transition-all duration-150 sm:w-full",
                   activeTab === tab.id
                     ? "bg-accent/10 text-accent font-semibold border border-accent/20"
-                    : "text-text-secondary hover:text-text-primary hover:bg-white/4 border border-transparent"
+                    : "text-text-secondary hover:text-text-primary hover:bg-black/[0.03] border border-transparent"
                 )}
               >
                 <tab.icon className="w-4 h-4 shrink-0" />

@@ -162,7 +162,7 @@ export default function ContractsPage() {
         <div className="relative">
           <button
             onClick={() => setFilterOpen((prev) => !prev)}
-            className="flex items-center gap-2 px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-white/5 hover:border-white/15 hover:text-text-primary transition-all whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all whitespace-nowrap"
           >
             <span className="font-medium">{statusFilter === "All" ? "All Statuses" : statusFilter}</span>
             <ChevronDown className={cn("w-4 h-4 transition-transform", filterOpen && "rotate-180")} />
@@ -178,7 +178,7 @@ export default function ContractsPage() {
                     "w-full text-left px-4 py-2 text-sm transition-colors",
                     statusFilter === f
                       ? "text-accent bg-accent/5 font-medium"
-                      : "text-text-secondary hover:text-text-primary hover:bg-white/4"
+                      : "text-text-secondary hover:text-text-primary hover:bg-black/[0.03]"
                   )}
                 >
                   {f === "All" ? "All Statuses" : f}
@@ -219,10 +219,10 @@ export default function ContractsPage() {
 
 function ContractCard({ contract }: { contract: Contract }) {
   return (
-    <GlassCard padding="md" className="group hover:border-white/12 transition-all">
+    <GlassCard padding="md" className="group hover:border-black/[0.08] transition-all">
       <div className="flex items-start gap-4">
         {/* Icon */}
-        <div className="w-10 h-10 rounded-xl bg-surface-DEFAULT border border-white/5 flex items-center justify-center shrink-0 group-hover:border-white/10 transition-all">
+        <div className="w-10 h-10 rounded-xl bg-surface-DEFAULT border border-black/[0.05] flex items-center justify-center shrink-0 group-hover:border-black/[0.08] transition-all">
           <FileText className="w-5 h-5 text-text-muted" />
         </div>
 
@@ -255,7 +255,7 @@ function ContractCard({ contract }: { contract: Contract }) {
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
           <button
             title="Download PDF"
-            className="p-2 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT border border-transparent hover:border-white/5 transition-all"
+            className="p-2 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT border border-transparent hover:border-black/[0.05] transition-all"
           >
             <Download className="w-4 h-4" />
           </button>

@@ -27,8 +27,8 @@ const CATEGORY_SUMMARY = [
   { name: "Software & Tools", amount: 2699, color: "#3b82f6", pct: 9 },
   { name: "Hosting & Infrastructure", amount: 6200, color: "#8b5cf6", pct: 21 },
   { name: "Freelancer Payments", amount: 15000, color: "#ec4899", pct: 50 },
-  { name: "Office & Admin", amount: 4300, color: "#22c55e", pct: 14 },
-  { name: "Travel & Conveyance", amount: 380, color: "#eab308", pct: 1 },
+  { name: "Office & Admin", amount: 4300, color: "#16a34a", pct: 14 },
+  { name: "Travel & Conveyance", amount: 380, color: "#f59e0b", pct: 1 },
   { name: "Banking & Finance", amount: 17.7, color: "#ef4444", pct: 1 },
 ];
 
@@ -80,7 +80,7 @@ export default function ExpensesPage() {
                   <span className="text-xs text-text-secondary">{cat.name}</span>
                   <span className="text-xs font-sans text-text-primary">Rs.{cat.amount.toLocaleString("en-IN")}</span>
                 </div>
-                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-black/[0.04] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${cat.pct}%`, backgroundColor: cat.color }}
@@ -89,7 +89,7 @@ export default function ExpensesPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 pt-4 border-t border-white/5 flex justify-between">
+          <div className="mt-4 pt-4 border-t border-black/[0.05] flex justify-between">
             <span className="text-sm font-semibold text-text-primary">Total</span>
             <span className="text-sm font-sans font-bold text-text-primary">Rs.{totalExpenses.toLocaleString("en-IN")}</span>
           </div>
@@ -114,7 +114,7 @@ export default function ExpensesPage() {
                 "px-3 py-2 rounded-button text-xs font-medium border transition-all",
                 showOnly === "unreviewed"
                   ? "bg-accent-muted text-accent border-accent-light"
-                  : "bg-surface-DEFAULT text-text-secondary border-white/5"
+                  : "bg-surface-DEFAULT text-text-secondary border-black/[0.05]"
               )}
             >
               Unreviewed
@@ -130,7 +130,7 @@ export default function ExpensesPage() {
                   key={txn.id}
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5",
-                    idx < filtered.length - 1 && "border-b border-white/5"
+                    idx < filtered.length - 1 && "border-b border-black/[0.05]"
                   )}
                 >
                   <div className="flex-1 min-w-0">

@@ -53,7 +53,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 const TYPE_COLORS: Record<string, string> = {
   revenue: "#fd7e14",
   mrr: "#3b82f6",
-  new_clients: "#22c55e",
+  new_clients: "#16a34a",
   expense_reduction: "#ef4444",
   custom: "#8b5cf6",
 };
@@ -117,7 +117,7 @@ export default function TargetsPage() {
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-white/5">Cancel</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-black/[0.05]">Cancel</button>
             <button className="px-4 py-2 rounded-button text-sm font-semibold text-white" style={{ background: "#fd7e14" }}>Save Target</button>
           </div>
         </GlassCard>
@@ -144,28 +144,28 @@ export default function TargetsPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-2">
-                  <span className="text-lg font-bold font-sans" style={{ color: pct >= 80 ? "#22c55e" : pct >= 50 ? color : "#3b82f6" }}>
+                  <span className="text-lg font-bold font-sans" style={{ color: pct >= 80 ? "#16a34a" : pct >= 50 ? color : "#3b82f6" }}>
                     {pct}%
                   </span>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 bg-black/[0.04] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, backgroundColor: pct >= 80 ? "#22c55e" : pct >= 50 ? color : "#3b82f6" }}
+                    style={{ width: `${pct}%`, backgroundColor: pct >= 80 ? "#16a34a" : pct >= 50 ? color : "#3b82f6" }}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-card" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="p-3 rounded-card" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.05)" }}>
                     <p className="text-xs text-text-muted">Current</p>
                     <p className="text-base font-bold font-sans text-text-primary mt-0.5">
                       {isCount ? target.current_amount : `Rs.${(target.current_amount / 100000).toFixed(1)}L`}
                     </p>
                   </div>
-                  <div className="p-3 rounded-card" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="p-3 rounded-card" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.05)" }}>
                     <p className="text-xs text-text-muted">Target</p>
                     <p className="text-base font-bold font-sans text-text-primary mt-0.5">
                       {isCount ? target.target_amount : `Rs.${(target.target_amount / 100000).toFixed(1)}L`}
@@ -180,7 +180,7 @@ export default function TargetsPage() {
                 </p>
 
                 {target.notes && (
-                  <p className="text-xs text-text-muted italic border-t border-white/5 pt-2">{target.notes}</p>
+                  <p className="text-xs text-text-muted italic border-t border-black/[0.05] pt-2">{target.notes}</p>
                 )}
               </div>
             </GlassCard>

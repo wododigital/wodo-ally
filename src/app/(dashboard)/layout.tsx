@@ -1,5 +1,4 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
+import { TopNavV2 } from "@/components/dashboard-v2/TopNavV2";
 
 export default function DashboardLayout({
   children,
@@ -7,31 +6,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar - hidden on mobile */}
-      <div className="hidden md:block">
-        <Sidebar />
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 md:ml-[260px] min-h-screen flex flex-col">
-        {/* Background wave image */}
-        <div
-          className="fixed top-0 right-0 bottom-0 pointer-events-none z-0"
-          style={{
-            left: "260px",
-            backgroundImage: "url('/bg-wave.webp')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.06,
-          }}
-        />
-
-        {/* Header */}
-        <Header className="relative z-20" />
-
-        {/* Page content */}
-        <main className="flex-1 relative z-10 p-6">
+    <div
+      style={{
+        backgroundImage: "url('/white-bg.webp')",
+        backgroundSize: "cover",
+        backgroundAttachment: "fixed",
+        minHeight: "100vh",
+      }}
+    >
+      <div style={{ background: "rgba(255,255,255,0.55)", minHeight: "100vh" }}>
+        <TopNavV2 />
+        <main className="max-w-[1440px] mx-auto px-10 pt-6 pb-16">
           {children}
         </main>
       </div>

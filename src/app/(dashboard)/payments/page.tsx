@@ -163,7 +163,7 @@ export default function PaymentsPage() {
                 key={payment.id}
                 className={cn(
                   "flex items-start gap-4 px-5 py-4",
-                  idx < filtered.length - 1 && "border-b border-white/5"
+                  idx < filtered.length - 1 && "border-b border-black/[0.05]"
                 )}
               >
                 <div

@@ -136,7 +136,7 @@ export default function ReportsPage() {
                   <StatusBadge status={displayStatus} />
 
                   <button
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-white/5 hover:border-white/15 hover:text-text-primary transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
                     View PDF
@@ -166,7 +166,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Metric pills */}
-              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-black/[0.05]">
                 <MetricPill
                   icon={DollarSign}
                   label="Revenue"

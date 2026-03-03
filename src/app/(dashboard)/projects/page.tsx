@@ -146,7 +146,7 @@ export default function ProjectsPage() {
                 "px-3 py-2 rounded-button text-xs font-medium transition-all duration-150",
                 filter === f
                   ? "bg-accent-muted text-accent border border-accent-light"
-                  : "bg-surface-DEFAULT text-text-secondary border border-white/5 hover:border-white/10"
+                  : "bg-surface-DEFAULT text-text-secondary border border-black/[0.05] hover:border-black/[0.08]"
               )}
             >
               {f === "all" ? "All" : f === "retainer" ? "Retainer" : "One-Time"}
@@ -168,17 +168,17 @@ export default function ProjectsPage() {
               <div className="flex items-center gap-4 px-5 py-4">
                 <div
                   className="w-9 h-9 rounded-button flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                  style={{ background: "rgba(253,126,20,0.10)", border: "1px solid rgba(253,126,20,0.15)" }}
                 >
                   <FolderKanban className="w-4 h-4 text-text-muted" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-text-primary">{project.name}</p>
-                    <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-white/5">
+                    <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-black/[0.05]">
                       {TYPE_LABELS[project.type] ?? project.type}
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-white/5">
+                    <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-black/[0.05]">
                       {project.engagement === "retainer" ? "Retainer" : "One-Time"}
                     </span>
                   </div>

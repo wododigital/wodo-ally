@@ -11,23 +11,27 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { useEffect, useState } from "react";
 
 const NAV_TABS = [
-  { href: "/dashboard-v2", label: "Dashboard", exact: true },
-  { href: "/clients",      label: "Clients"   },
-  { href: "/invoices",     label: "Invoices"  },
-  { href: "/payments",     label: "Payments"  },
-  { href: "/expenses",     label: "Expenses"  },
-  { href: "/analytics",    label: "Analytics" },
-  { href: "/targets",      label: "Targets"   },
+  { href: "/dashboard", label: "Dashboard", exact: true },
+  { href: "/clients",   label: "Clients"   },
+  { href: "/invoices",  label: "Invoices"  },
+  { href: "/payments",  label: "Payments"  },
+  { href: "/expenses",  label: "Expenses"  },
+  { href: "/analytics", label: "Analytics" },
+  { href: "/targets",   label: "Targets"   },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard-v2": "Dashboard",
-  "/clients":   "Clients",
-  "/invoices":  "Invoices",
-  "/payments":  "Payments",
-  "/expenses":  "Expenses",
-  "/analytics": "Analytics",
-  "/targets":   "Targets",
+  "/dashboard":  "Dashboard",
+  "/clients":    "Clients",
+  "/invoices":   "Invoices",
+  "/payments":   "Payments",
+  "/expenses":   "Expenses",
+  "/analytics":  "Analytics",
+  "/targets":    "Targets",
+  "/projects":   "Projects",
+  "/reports":    "Reports",
+  "/settings":   "Settings",
+  "/contracts":  "Contracts",
 };
 
 export function TopNavV2() {
@@ -47,10 +51,10 @@ export function TopNavV2() {
   }
 
   const pageKey = Object.keys(PAGE_TITLES).find((k) =>
-    k === "/dashboard-v2" ? pathname === k : pathname.startsWith(k)
+    k === "/dashboard" ? pathname === k : pathname.startsWith(k)
   );
-  const pageTitle    = pageKey ? PAGE_TITLES[pageKey] : "";
-  const isDashboard  = pathname === "/dashboard-v2";
+  const pageTitle   = pageKey ? PAGE_TITLES[pageKey] : "";
+  const isDashboard = pathname === "/dashboard";
 
   async function handleSignOut() {
     const supabase = createClient();

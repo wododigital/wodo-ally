@@ -43,7 +43,7 @@ export default function NewClientPage() {
                   "p-3 rounded-card text-left border transition-all duration-150",
                   clientType === type.value
                     ? "border-accent bg-accent-muted"
-                    : "border-white/5 bg-surface-DEFAULT hover:border-white/10"
+                    : "border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08]"
                 )}
               >
                 <p className={cn("text-sm font-medium", clientType === type.value ? "text-accent" : "text-text-primary")}>
@@ -127,7 +127,7 @@ export default function NewClientPage() {
         <div className="flex items-center justify-end gap-3 pb-6">
           <Link
             href="/clients"
-            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-white/5 transition-all"
+            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all"
           >
             Cancel
           </Link>

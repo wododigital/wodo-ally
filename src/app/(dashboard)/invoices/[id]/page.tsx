@@ -112,7 +112,7 @@ export default function InvoiceDetailPage() {
             <StatusBadge status={invoice.status} />
             {invoice.status === "draft" || invoice.status === "sent" ? (
               <>
-                <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-white/5 hover:border-white/10 transition-all">
+                <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all">
                   <Download className="w-4 h-4" />
                   PDF
                 </button>
@@ -125,7 +125,7 @@ export default function InvoiceDetailPage() {
                 </button>
               </>
             ) : (
-              <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-white/5 hover:border-white/10 transition-all">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all">
                 <Download className="w-4 h-4" />
                 Download PDF
               </button>
@@ -139,7 +139,7 @@ export default function InvoiceDetailPage() {
         <div className="lg:col-span-2 space-y-4">
           <GlassCard padding="md">
             {/* Header info */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 pb-6 border-b border-white/5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 pb-6 border-b border-black/[0.05]">
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
                   <Hash className="w-3 h-3" /> Invoice
@@ -183,7 +183,7 @@ export default function InvoiceDetailPage() {
             {/* Line items */}
             <table className="w-full mb-6">
               <thead>
-                <tr className="border-b border-white/5">
+                <tr className="border-b border-black/[0.05]">
                   <th className="text-left pb-2 text-xs font-medium uppercase tracking-wider text-text-muted">Description</th>
                   <th className="text-center pb-2 text-xs font-medium uppercase tracking-wider text-text-muted w-12">Qty</th>
                   <th className="text-right pb-2 text-xs font-medium uppercase tracking-wider text-text-muted">Amount</th>
@@ -191,7 +191,7 @@ export default function InvoiceDetailPage() {
               </thead>
               <tbody>
                 {invoice.line_items.map((item, idx) => (
-                  <tr key={idx} className={idx < invoice.line_items.length - 1 ? "border-b border-white/5" : ""}>
+                  <tr key={idx} className={idx < invoice.line_items.length - 1 ? "border-b border-black/[0.05]" : ""}>
                     <td className="py-3 pr-4">
                       <p className="text-sm text-text-secondary">{item.description}</p>
                     </td>
@@ -207,7 +207,7 @@ export default function InvoiceDetailPage() {
             </table>
 
             {/* Totals */}
-            <div className="flex flex-col items-end gap-2 pt-4 border-t border-white/5">
+            <div className="flex flex-col items-end gap-2 pt-4 border-t border-black/[0.05]">
               <div className="flex justify-between w-48">
                 <span className="text-sm text-text-muted">Subtotal</span>
                 <CurrencyDisplay amount={invoice.subtotal} currency={invoice.currency} size="sm" />
@@ -218,7 +218,7 @@ export default function InvoiceDetailPage() {
                   <CurrencyDisplay amount={invoice.tax_amount} currency={invoice.currency} size="sm" className="text-text-secondary" />
                 </div>
               )}
-              <div className="flex justify-between w-48 pt-2 border-t border-white/5">
+              <div className="flex justify-between w-48 pt-2 border-t border-black/[0.05]">
                 <span className="text-sm font-bold text-text-primary">Total</span>
                 <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency} size="md" className="text-accent" />
               </div>
@@ -244,7 +244,7 @@ export default function InvoiceDetailPage() {
                   className="text-green-400"
                 />
               </div>
-              <div className="flex justify-between pt-2 border-t border-white/5">
+              <div className="flex justify-between pt-2 border-t border-black/[0.05]">
                 <span className="text-sm font-semibold text-text-primary">Balance Due</span>
                 <CurrencyDisplay
                   amount={balance}

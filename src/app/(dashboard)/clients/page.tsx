@@ -123,10 +123,10 @@ const REGION_FLAGS = {
 };
 
 function HealthBar({ score }: { score: number }) {
-  const color = score >= 80 ? "#22c55e" : score >= 60 ? "#eab308" : "#ef4444";
+  const color = score >= 80 ? "#16a34a" : score >= 60 ? "#f59e0b" : "#ef4444";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+      <div className="flex-1 h-1 bg-black/[0.04] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${score}%`, backgroundColor: color }}
@@ -188,7 +188,7 @@ export default function ClientsPage() {
                 "px-3 py-2 rounded-button text-xs font-medium transition-all duration-150",
                 filter === f
                   ? "bg-accent-muted text-accent border border-accent-light"
-                  : "bg-surface-DEFAULT text-text-secondary hover:text-text-primary border border-white/5 hover:border-white/10"
+                  : "bg-surface-DEFAULT text-text-secondary hover:text-text-primary border border-black/[0.05] hover:border-black/[0.08]"
               )}
             >
               {f === "all" ? "All" : CLIENT_TYPE_LABELS[f]}
@@ -209,7 +209,7 @@ export default function ClientsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((client) => (
             <Link key={client.id} href={`/clients/${client.id}`}>
-              <GlassCard padding="md" className="group hover:border-white/15 transition-all duration-200 h-full">
+              <GlassCard padding="md" className="group hover:border-black/[0.10] transition-all duration-200 h-full">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div
@@ -248,7 +248,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+                <div className="mt-4 pt-4 border-t border-black/[0.05] space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-text-muted">Health score</span>
                     <span className="text-text-secondary">{client.active_projects} active project{client.active_projects !== 1 ? "s" : ""}</span>

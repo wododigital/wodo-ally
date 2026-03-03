@@ -31,7 +31,7 @@ const REVENUE_BY_SERVICE = [
   { name: "SEO", value: 1890000, color: "#fd7e14" },
   { name: "Web Dev", value: 1265830, color: "#3b82f6" },
   { name: "Branding", value: 450000, color: "#8b5cf6" },
-  { name: "Google Ads", value: 240000, color: "#22c55e" },
+  { name: "Google Ads", value: 240000, color: "#16a34a" },
 ];
 
 const CLIENT_REVENUE = [
@@ -48,15 +48,15 @@ const TOTAL_EXPENSES = MONTHLY_REVENUE.reduce((s, m) => s + m.expenses, 0);
 const NET_PROFIT = TOTAL_REVENUE - TOTAL_EXPENSES;
 
 const CHART_TOOLTIP_STYLE = {
-  backgroundColor: "rgba(18,18,26,0.95)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  backgroundColor: "rgba(255,255,255,0.92)",
+  border: "1px solid rgba(0,0,0,0.08)",
   borderRadius: "10px",
-  color: "rgba(255,255,255,0.92)",
+  color: "#111827",
   fontSize: "12px",
 };
 
-const GRID_STYLE = { stroke: "rgba(255,255,255,0.05)" };
-const AXIS_STYLE = { fill: "rgba(255,255,255,0.4)", fontSize: 11 };
+const GRID_STYLE = { stroke: "rgba(0,0,0,0.06)" };
+const AXIS_STYLE = { fill: "#9ca3af", fontSize: 11 };
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<"fy" | "q4" | "ytd">("fy");
@@ -74,7 +74,7 @@ export default function AnalyticsPage() {
                 "px-3 py-1.5 rounded-button text-xs font-medium uppercase transition-all",
                 period === p
                   ? "bg-accent-muted text-accent border border-accent-light"
-                  : "bg-surface-DEFAULT text-text-muted border border-white/5 hover:border-white/10"
+                  : "bg-surface-DEFAULT text-text-muted border border-black/[0.05] hover:border-black/[0.08]"
               )}
             >
               {p === "fy" ? "Full Year" : p === "q4" ? "Q4" : "YTD"}
@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
                     </span>
                     <span className="font-sans text-text-primary">Rs.{(item.value/100000).toFixed(1)}L</span>
                   </div>
-                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 bg-black/[0.04] rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${(item.value / TOTAL_REVENUE * 100).toFixed(0)}%`, backgroundColor: item.color }} />
                   </div>
                 </div>
@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/5">
+              <tr className="border-b border-black/[0.05]">
                 <th className="text-left py-2 text-xs font-medium uppercase tracking-wider text-text-muted">Item</th>
                 <th className="text-right py-2 text-xs font-medium uppercase tracking-wider text-text-muted">Amount (INR)</th>
                 <th className="text-right py-2 text-xs font-medium uppercase tracking-wider text-text-muted hidden sm:table-cell">% of Revenue</th>
@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
                 { label: "  Other Expenses", value: -313212, highlight: false, color: "text-text-secondary" },
                 { label: "Net Profit", value: NET_PROFIT, highlight: true, color: "text-green-400" },
               ].map((row, idx) => (
-                <tr key={idx} className={cn("border-b border-white/5 last:border-0", row.highlight ? "font-semibold" : "")}>
+                <tr key={idx} className={cn("border-b border-black/[0.05] last:border-0", row.highlight ? "font-semibold" : "")}>
                   <td className={cn("py-2.5 text-sm pl-2", row.highlight ? "text-text-primary" : "text-text-secondary")}>{row.label}</td>
                   <td className={cn("py-2.5 text-sm font-sans text-right", row.color)}>
                     {row.value < 0 ? "-" : ""}Rs.{Math.abs(row.value).toLocaleString("en-IN")}

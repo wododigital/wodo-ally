@@ -21,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${manrope.variable} bg-background antialiased`}>
+    <html lang="en">
+      <body className={`${manrope.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -116,7 +116,7 @@ export default function ClientDetailPage() {
             <StatusBadge status={client.status} />
             <Link
               href={`/clients/${id}/edit`}
-              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-white/5 transition-all duration-150"
+              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all duration-150"
             >
               <Edit className="w-4 h-4" />
               Edit
@@ -142,12 +142,12 @@ export default function ClientDetailPage() {
         <GlassCard padding="md">
           <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Health Score</p>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="flex-1 h-1.5 bg-black/[0.04] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
                 style={{
                   width: `${client.health_score}%`,
-                  backgroundColor: client.health_score >= 80 ? "#22c55e" : client.health_score >= 60 ? "#eab308" : "#ef4444",
+                  backgroundColor: client.health_score >= 80 ? "#16a34a" : client.health_score >= 60 ? "#f59e0b" : "#ef4444",
                 }}
               />
             </div>
@@ -158,7 +158,7 @@ export default function ClientDetailPage() {
 
       {/* Tabs */}
       <div>
-        <div className="flex border-b border-white/5">
+        <div className="flex border-b border-black/[0.05]">
           {TABS.map((tab) => (
             <button
               key={tab}
@@ -205,7 +205,7 @@ export default function ClientDetailPage() {
                     <div key={contact.email} className="flex items-start gap-3">
                       <div
                         className="w-8 h-8 rounded-button flex items-center justify-center text-xs font-bold text-white shrink-0"
-                        style={{ background: "rgba(255,255,255,0.06)" }}
+                        style={{ background: "rgba(253,126,20,0.15)" }}
                       >
                         {contact.name.charAt(0)}
                       </div>
@@ -286,7 +286,7 @@ export default function ClientDetailPage() {
                       href={`/invoices/${invoice.id}`}
                       className={cn(
                         "flex items-center justify-between px-5 py-4 hover:bg-surface-DEFAULT transition-colors",
-                        idx < client.invoices.length - 1 && "border-b border-white/5"
+                        idx < client.invoices.length - 1 && "border-b border-black/[0.05]"
                       )}
                     >
                       <div>
