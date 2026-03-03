@@ -5,6 +5,7 @@ import { Target, Plus, TrendingUp, Users, IndianRupee, TrendingDown, RefreshCw, 
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils/cn";
 import {
   useTargets,
@@ -166,9 +167,18 @@ const INITIAL_FORM: TargetFormState = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+// ─── Form validation errors ────────────────────────────────────────────────────
+
+interface TargetFormErrors {
+  title?: string;
+  target_amount?: string;
+}
+
 export default function TargetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<TargetFormState>(INITIAL_FORM);
+  const [formErrors, setFormErrors] = useState<TargetFormErrors>({});
+  const [confirmTarget, setConfirmTarget] = useState<TargetRow | null>(null);
 
   const { data: targets = [], isLoading } = useTargets(CURRENT_FY);
   const createTarget = useCreateTarget();
@@ -177,13 +187,33 @@ export default function TargetsPage() {
 
   function updateForm(field: keyof TargetFormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    // Clear error on change
+    if (field === "title" || field === "target_amount") {
+      setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  }
+
+  function validateForm(): TargetFormErrors {
+    const errors: TargetFormErrors = {};
+    if (!form.title.trim()) {
+      errors.title = "Title is required";
+    }
+    const amount = parseFloat(form.target_amount);
+    if (!form.target_amount || isNaN(amount) || amount <= 0) {
+      errors.target_amount = "Enter a valid target value greater than 0";
+    }
+    return errors;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const amount = parseFloat(form.target_amount);
-    if (!form.title.trim() || isNaN(amount) || amount <= 0) return;
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
 
+    const amount = parseFloat(form.target_amount);
     createTarget.mutate(
       {
         title: form.title.trim(),
@@ -197,6 +227,7 @@ export default function TargetsPage() {
       {
         onSuccess: () => {
           setForm(INITIAL_FORM);
+          setFormErrors({});
           setShowForm(false);
         },
       }
@@ -204,8 +235,7 @@ export default function TargetsPage() {
   }
 
   function handleDelete(target: TargetRow) {
-    if (!confirm(`Delete target "${target.title}"?`)) return;
-    deleteTarget.mutate({ id: target.id, financial_year: target.financial_year });
+    setConfirmTarget(target);
   }
 
   const isCount = (t: TargetRow) => t.target_type === "new_clients";
@@ -245,13 +275,13 @@ export default function TargetsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowForm(false)}
+            onClick={() => { setShowForm(false); setFormErrors({}); }}
           />
           <div className="relative w-full max-w-lg glass-card rounded-card shadow-2xl animate-fade-in">
             <div className="flex items-center justify-between p-5 border-b border-black/[0.06]">
               <h3 className="text-sm font-semibold text-text-primary">New Target</h3>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); setFormErrors({}); }}
                 className="text-text-muted hover:text-text-primary transition-colors text-lg leading-none"
               >
                 &times;
@@ -263,12 +293,14 @@ export default function TargetsPage() {
                   <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Title</label>
                   <input
                     type="text"
-                    className="glass-input"
+                    className={`glass-input ${formErrors.title ? "border-red-400 focus:border-red-400" : ""}`}
                     placeholder="e.g. Annual Revenue Target FY 2026-27"
                     value={form.title}
                     onChange={(e) => updateForm("title", e.target.value)}
-                    required
                   />
+                  {formErrors.title && (
+                    <p className="text-xs text-red-500 mt-0.5">{formErrors.title}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -310,14 +342,16 @@ export default function TargetsPage() {
                     </label>
                     <input
                       type="number"
-                      className="glass-input font-sans"
+                      className={`glass-input font-sans ${formErrors.target_amount ? "border-red-400 focus:border-red-400" : ""}`}
                       placeholder="0"
                       min="1"
                       step={form.target_type === "new_clients" ? "1" : "0.01"}
                       value={form.target_amount}
                       onChange={(e) => updateForm("target_amount", e.target.value)}
-                      required
                     />
+                    {formErrors.target_amount && (
+                      <p className="text-xs text-red-500 mt-0.5">{formErrors.target_amount}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -334,7 +368,7 @@ export default function TargetsPage() {
               <div className="flex justify-end gap-3 p-5 border-t border-black/[0.06]">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => { setShowForm(false); setFormErrors({}); }}
                   className="px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-black/[0.05]"
                 >
                   Cancel
@@ -391,6 +425,23 @@ export default function TargetsPage() {
           </div>
         </GlassCard>
       )}
+
+      {/* Confirm delete dialog */}
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        onOpenChange={(open) => { if (!open) setConfirmTarget(null); }}
+        title="Delete Target"
+        description={confirmTarget ? `Are you sure you want to delete "${confirmTarget.title}"? This action cannot be undone.` : ""}
+        confirmLabel="Delete"
+        loading={deleteTarget.isPending}
+        onConfirm={() => {
+          if (!confirmTarget) return;
+          deleteTarget.mutate(
+            { id: confirmTarget.id, financial_year: confirmTarget.financial_year },
+            { onSuccess: () => setConfirmTarget(null) }
+          );
+        }}
+      />
 
       {!isLoading && targets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -523,6 +574,7 @@ export default function TargetsPage() {
                       Delete
                     </button>
                   </div>
+
                 </div>
               </GlassCard>
             );

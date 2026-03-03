@@ -114,7 +114,7 @@ export default function PipelinePage() {
       <DarkSection>
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Pipeline Overview</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <Link href="/analytics/invoices"
               className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
               Analytics

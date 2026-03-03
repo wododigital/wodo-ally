@@ -5,3 +5,4 @@ export { CurrencyDisplay } from "./currency-display";
 export { PageHeader } from "./page-header";
 export { EmptyState } from "./empty-state";
 export { Skeleton, StatCardSkeleton, TableSkeleton } from "./loading-skeleton";
+export { ConfirmDialog } from "./confirm-dialog";

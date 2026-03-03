@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, FileText, Search, ChevronDown, Pencil, CheckCircle2, AlertCircle, Clock, RefreshCw } from "lucide-react";
+import { Plus, FileText, Search, ChevronDown, Pencil, CheckCircle2, AlertCircle, Clock, RefreshCw, Download } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -97,6 +97,58 @@ function StatusDropdown({
   );
 }
 
+function downloadCsv(rows: InvoiceListItem[]) {
+  const headers = [
+    "Invoice #",
+    "Client",
+    "Issue Date",
+    "Due Date",
+    "Status",
+    "Subtotal",
+    "Tax",
+    "TDS",
+    "Total",
+    "Paid",
+    "Balance",
+    "Currency",
+  ];
+  const escape = (val: string | number) => {
+    const s = String(val);
+    // Wrap in quotes if value contains comma, quote, or newline
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+  const lines = rows
+    .map((inv) =>
+      [
+        inv.invoice_number ?? "",
+        inv.client_name ?? "",
+        inv.invoice_date ?? "",
+        inv.due_date ?? "",
+        inv.status,
+        inv.subtotal ?? 0,
+        inv.tax_amount ?? 0,
+        inv.total_tds_deducted ?? 0,
+        inv.total_amount ?? 0,
+        (inv.total_amount ?? 0) - (inv.balance_due ?? 0),
+        inv.balance_due ?? 0,
+        inv.currency ?? "INR",
+      ]
+        .map(escape)
+        .join(",")
+    )
+    .join("\n");
+  const csv = [headers.map(escape).join(","), lines].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function InvoicesPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
@@ -156,7 +208,7 @@ export default function InvoicesPage() {
       <DarkSection>
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Overview</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={() => generateRetainer.mutate()}
               disabled={generateRetainer.isPending}
@@ -165,6 +217,14 @@ export default function InvoicesPage() {
             >
               <RefreshCw className={cn("w-3 h-3", generateRetainer.isPending && "animate-spin")} />
               Retainer Invoices
+            </button>
+            <button
+              onClick={() => downloadCsv(invoices)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70"
+              title="Export all invoices as CSV"
+            >
+              <Download className="w-3 h-3" />
+              Export CSV
             </button>
             <Link href="/analytics/invoices"
               className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">

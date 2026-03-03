@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
-import { useProjects } from "@/lib/hooks/use-projects";
+import { useProjects, useUpdateProject } from "@/lib/hooks/use-projects";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -95,6 +95,54 @@ function ProjectRowSkeleton() {
           <Skeleton className="h-6 w-20 rounded" />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Progress Bar with inline edit ──────────────────────────────────────────
+
+function ProgressBar({ projectId, pct, color }: { projectId: string; pct: number; color: string }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(pct);
+  const updateProject = useUpdateProject();
+
+  function save() {
+    if (draft !== pct) {
+      updateProject.mutate({ id: projectId, data: { progress_pct: draft } });
+    }
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-3">
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={draft}
+          onChange={(e) => setDraft(Number(e.target.value))}
+          onBlur={save}
+          onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+          className="flex-1 accent-accent h-1.5 cursor-pointer"
+          autoFocus
+        />
+        <span className="text-[10px] font-sans text-accent font-semibold shrink-0 w-8 text-right">{draft}%</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center gap-3 group cursor-pointer"
+      onClick={() => { setDraft(pct); setEditing(true); }}
+      title="Click to update progress"
+    >
+      <div className="flex-1 h-1.5 bg-black/[0.04] rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+      <span className="text-[10px] font-sans text-text-muted group-hover:text-accent shrink-0 transition-colors">{pct}%</span>
     </div>
   );
 }
@@ -299,18 +347,7 @@ export default function ProjectsPage() {
                   </div>
 
                   {project.status !== "completed" && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-1.5 bg-black/[0.04] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{
-                            width: `${project.progress_pct}%`,
-                            backgroundColor: traj.color,
-                          }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-sans text-text-muted shrink-0">{project.progress_pct}%</span>
-                    </div>
+                    <ProgressBar projectId={project.id} pct={project.progress_pct ?? 0} color={traj.color} />
                   )}
                 </div>
               </GlassCard>

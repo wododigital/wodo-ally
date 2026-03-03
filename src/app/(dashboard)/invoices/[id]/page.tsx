@@ -20,7 +20,7 @@ import {
   useRecordPayment,
   useFinalizeInvoice,
 } from "@/lib/hooks/use-invoices";
-import { generateInvoicePdf, downloadBlob } from "@/lib/pdf";
+// generateInvoicePdf and downloadBlob are loaded dynamically on demand to avoid bundling @react-pdf/renderer upfront
 import type { Database } from "@/types/database";
 
 type PaymentMethod = Database["public"]["Tables"]["invoice_payments"]["Row"]["payment_method"];
@@ -300,6 +300,7 @@ export default function InvoiceDetailPage() {
     if (!invoice) return;
     setIsPdfGenerating(true);
     try {
+      const { generateInvoicePdf } = await import("@/lib/pdf");
       const props = buildPdfProps(invoice);
       const blob = await generateInvoicePdf(props);
       const url = URL.createObjectURL(blob);
@@ -324,6 +325,7 @@ export default function InvoiceDetailPage() {
     if (!invoice) return;
     setIsPdfGenerating(true);
     try {
+      const { generateInvoicePdf, downloadBlob } = await import("@/lib/pdf");
       const props = buildPdfProps(invoice);
       const blob = await generateInvoicePdf(props);
       const ref = invoice.invoice_type === "proforma"

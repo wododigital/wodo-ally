@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils/cn";
@@ -12,32 +14,96 @@ import type { Database } from "@/types/database";
 
 type ClientInsert = Database["public"]["Tables"]["clients"]["Insert"];
 
+// ─── Zod schema ───────────────────────────────────────────────────────────────
+
+const clientSchema = z.object({
+  company_name: z.string().min(1, "Company name is required"),
+  display_name: z.string().optional(),
+  region: z.enum(["india", "usa", "uae", "uk", "other"]),
+  currency: z.enum(["INR", "USD", "AED", "GBP"]),
+  gstin: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional(),
+  signing_authority: z.string().optional(),
+  phone: z.string().optional(),
+  website: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === "") return true;
+        try {
+          const url = val.startsWith("http") ? val : `https://${val}`;
+          new URL(url);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: "Enter a valid website URL" }
+    ),
+  billing_email: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === "") return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      },
+      { message: "Enter a valid email address" }
+    ),
+  client_type: z.enum(["indian_gst", "indian_non_gst", "international"]),
+});
+
+type ClientFormValues = z.infer<typeof clientSchema>;
+
+// ─── Inline error ─────────────────────────────────────────────────────────────
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-red-500 mt-0.5">{message}</p>;
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function NewClientPage() {
   const router = useRouter();
   const createClient = useCreateClient();
 
-  const [clientType, setClientType] = useState<"indian_gst" | "indian_non_gst" | "international">("indian_gst");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ClientFormValues>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      client_type: "indian_gst",
+      region: "india",
+      currency: "INR",
+    },
+  });
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = new FormData(form);
+  const clientType = watch("client_type");
 
+  function onSubmit(values: ClientFormValues) {
     const clientData: ClientInsert = {
-      company_name: (data.get("company_name") as string).trim(),
-      display_name: (data.get("display_name") as string)?.trim() || null,
-      client_type: clientType,
-      region: (data.get("region") as ClientInsert["region"]) ?? "india",
-      currency: (data.get("currency") as ClientInsert["currency"]) ?? "INR",
-      gstin: clientType === "indian_gst" ? ((data.get("gstin") as string)?.trim() || null) : null,
-      address: (data.get("address") as string)?.trim() || null,
-      city: (data.get("city") as string)?.trim() || null,
-      country: (data.get("country") as string)?.trim() || "India",
-      signing_authority: (data.get("signing_authority") as string)?.trim() || null,
-      phone: (data.get("phone") as string)?.trim() || null,
-      website: (data.get("website") as string)?.trim() || null,
+      company_name: values.company_name.trim(),
+      display_name: values.display_name?.trim() || null,
+      client_type: values.client_type,
+      region: values.region,
+      currency: values.currency,
+      gstin: values.client_type === "indian_gst" ? (values.gstin?.trim() || null) : null,
+      address: values.address?.trim() || null,
+      city: values.city?.trim() || null,
+      country: values.country?.trim() || "India",
+      signing_authority: values.signing_authority?.trim() || null,
+      phone: values.phone?.trim() || null,
+      website: values.website?.trim() || null,
       billing_emails: (() => {
-        const email = (data.get("billing_email") as string)?.trim();
+        const email = values.billing_email?.trim();
         return email ? [email] : null;
       })(),
     };
@@ -65,20 +131,20 @@ export default function NewClientPage() {
         <PageHeader title="Add New Client" description="Create a new client account" />
       </div>
 
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         {/* Client type */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { value: "indian_gst", label: "GST Invoices", desc: "G-series, 18% GST - Indian registered" },
-              { value: "indian_non_gst", label: "Non-GST", desc: "NG-series, 0% tax - Unregistered Indian" },
-              { value: "international", label: "International", desc: "G-series, 0% tax - Foreign clients" },
+              { value: "indian_gst",     label: "GST Invoices", desc: "G-series, 18% GST - Indian registered" },
+              { value: "indian_non_gst", label: "Non-GST",      desc: "NG-series, 0% tax - Unregistered Indian" },
+              { value: "international",  label: "International", desc: "G-series, 0% tax - Foreign clients" },
             ].map((type) => (
               <button
                 key={type.value}
                 type="button"
-                onClick={() => setClientType(type.value as typeof clientType)}
+                onClick={() => setValue("client_type", type.value as ClientFormValues["client_type"], { shouldValidate: true })}
                 className={cn(
                   "p-3 rounded-card text-left border transition-all duration-150",
                   clientType === type.value
@@ -101,15 +167,28 @@ export default function NewClientPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Company Name *</label>
-              <input name="company_name" type="text" required className="glass-input" placeholder="Full legal company name" />
+              <input
+                {...register("company_name")}
+                type="text"
+                className={cn("glass-input", errors.company_name && "border-red-400")}
+                placeholder="Full legal company name"
+              />
+              <FieldError message={errors.company_name?.message} />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Display Name</label>
-              <input name="display_name" type="text" className="glass-input" placeholder="Short name for UI" />
+              <input
+                {...register("display_name")}
+                type="text"
+                className="glass-input"
+                placeholder="Short name for UI"
+              />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Region *</label>
-              <select name="region" className="glass-input">
+              <select {...register("region")} className="glass-input">
                 <option value="india">India</option>
                 <option value="usa">USA</option>
                 <option value="uae">UAE</option>
@@ -117,48 +196,89 @@ export default function NewClientPage() {
                 <option value="other">Other</option>
               </select>
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Currency *</label>
-              <select name="currency" className="glass-input">
+              <select {...register("currency")} className="glass-input">
                 <option value="INR">INR - Indian Rupee</option>
                 <option value="USD">USD - US Dollar</option>
                 <option value="AED">AED - UAE Dirham</option>
                 <option value="GBP">GBP - British Pound</option>
               </select>
             </div>
+
             {clientType === "indian_gst" && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-text-muted uppercase tracking-wider">GSTIN</label>
-                <input name="gstin" type="text" className="glass-input font-sans" placeholder="29AADCW8591N1ZA" />
+                <input
+                  {...register("gstin")}
+                  type="text"
+                  className="glass-input font-sans"
+                  placeholder="29AADCW8591N1ZA"
+                />
               </div>
             )}
+
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Address</label>
-              <textarea name="address" rows={2} className="glass-input resize-none" placeholder="Full address" />
+              <textarea
+                {...register("address")}
+                rows={2}
+                className="glass-input resize-none"
+                placeholder="Full address"
+              />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">City</label>
-              <input name="city" type="text" className="glass-input" placeholder="City" />
+              <input {...register("city")} type="text" className="glass-input" placeholder="City" />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Country</label>
-              <input name="country" type="text" className="glass-input" placeholder="Country" />
+              <input {...register("country")} type="text" className="glass-input" placeholder="Country" />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Signing Authority</label>
-              <input name="signing_authority" type="text" className="glass-input" placeholder="Contact person name" />
+              <input
+                {...register("signing_authority")}
+                type="text"
+                className="glass-input"
+                placeholder="Contact person name"
+              />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Phone</label>
-              <input name="phone" type="tel" className="glass-input" placeholder="+91 98765 43210" />
+              <input
+                {...register("phone")}
+                type="tel"
+                className="glass-input"
+                placeholder="+91 98765 43210"
+              />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Website</label>
-              <input name="website" type="url" className="glass-input" placeholder="www.example.com" />
+              <input
+                {...register("website")}
+                type="text"
+                className={cn("glass-input", errors.website && "border-red-400")}
+                placeholder="www.example.com"
+              />
+              <FieldError message={errors.website?.message} />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Email</label>
-              <input name="billing_email" type="email" className="glass-input" placeholder="accounts@company.com" />
+              <input
+                {...register("billing_email")}
+                type="text"
+                className={cn("glass-input", errors.billing_email && "border-red-400")}
+                placeholder="accounts@company.com"
+              />
+              <FieldError message={errors.billing_email?.message} />
             </div>
           </div>
         </GlassCard>
@@ -174,9 +294,10 @@ export default function NewClientPage() {
           <button
             type="submit"
             disabled={createClient.isPending}
-            className="px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200 disabled:opacity-70"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200 disabled:opacity-70"
             style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
           >
+            {createClient.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {createClient.isPending ? "Creating..." : "Create Client"}
           </button>
         </div>

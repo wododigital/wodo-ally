@@ -15,9 +15,17 @@ import {
   Plus,
   Trash2,
   X,
+  Loader2,
 } from "lucide-react";
+import {
+  useAllServices,
+  useCreateService,
+  useUpdateService,
+  useDeleteService,
+} from "@/lib/hooks/use-services";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils/cn";
 
 // ---------------------------------------------------------------------------
@@ -122,27 +130,6 @@ const PRESET_COLORS = [
   "#fd7e14", "#f59e0b", "#22c55e", "#3b82f6",
   "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
   "#f97316", "#6366f1", "#ef4444", "#9ca3af",
-];
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  active: boolean;
-  projects: number;
-  line_items: number;
-}
-
-const INITIAL_SERVICES: Service[] = [
-  { id: "s1", name: "SEO",                description: "Search engine optimisation and organic ranking",    color: "#fd7e14", active: true,  projects: 3, line_items: 12 },
-  { id: "s2", name: "Google My Business", description: "GMB profile setup, posts, and review management",  color: "#f59e0b", active: true,  projects: 1, line_items: 4  },
-  { id: "s3", name: "Web Development",    description: "Website design, development, and deployment",      color: "#3b82f6", active: true,  projects: 2, line_items: 6  },
-  { id: "s4", name: "Branding",           description: "Brand identity, logo design, and brand guidelines",color: "#8b5cf6", active: true,  projects: 1, line_items: 2  },
-  { id: "s5", name: "Google Ads",         description: "Paid search and display advertising management",   color: "#22c55e", active: true,  projects: 1, line_items: 3  },
-  { id: "s6", name: "Social Media",       description: "Social media strategy, content, and management",   color: "#ec4899", active: false, projects: 0, line_items: 0  },
-  { id: "s7", name: "UI/UX Design",       description: "User interface and experience design",             color: "#06b6d4", active: false, projects: 0, line_items: 0  },
-  { id: "s8", name: "Content Marketing",  description: "Content strategy, creation, and distribution",    color: "#84cc16", active: false, projects: 0, line_items: 0  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -390,43 +377,36 @@ function InvoiceTab() {
 // ---------------------------------------------------------------------------
 
 function ServicesTab() {
-  const [services, setServices] = useState<Service[]>(INITIAL_SERVICES);
-  const [adding,   setAdding]   = useState(false);
-  const [newName,  setNewName]  = useState("");
-  const [newDesc,  setNewDesc]  = useState("");
-  const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
+  const { data: services = [], isLoading } = useAllServices();
+  const createService = useCreateService();
+  const updateService = useUpdateService();
+  const deleteService = useDeleteService();
 
-  function addService() {
+  const [adding,        setAdding]        = useState(false);
+  const [newName,       setNewName]       = useState("");
+  const [newDesc,       setNewDesc]       = useState("");
+  const [newColor,      setNewColor]      = useState(PRESET_COLORS[0]);
+  const [confirmSvcId,  setConfirmSvcId]  = useState<string | null>(null);
+  const confirmSvc = services.find((s) => s.id === confirmSvcId) ?? null;
+
+  function handleAdd() {
     if (!newName.trim()) return;
-    setServices((prev) => [
-      ...prev,
+    createService.mutate(
+      { name: newName.trim(), description: newDesc.trim() || null, color: newColor, is_active: true },
       {
-        id: Date.now().toString(),
-        name:        newName.trim(),
-        description: newDesc.trim(),
-        color:       newColor,
-        active:      true,
-        projects:    0,
-        line_items:  0,
-      },
-    ]);
-    setNewName("");
-    setNewDesc("");
-    setNewColor(PRESET_COLORS[0]);
-    setAdding(false);
+        onSuccess: () => {
+          setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); setAdding(false);
+        },
+      }
+    );
   }
 
-  function toggleActive(id: string) {
-    setServices((prev) => prev.map((s) => s.id === id ? { ...s, active: !s.active } : s));
-  }
-
-  function removeService(id: string) {
-    setServices((prev) => prev.filter((s) => s.id !== id));
+  function closeModal() {
+    setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]);
   }
 
   return (
     <div className="space-y-4">
-      {/* List */}
       <GlassCard padding="lg">
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -443,85 +423,93 @@ function ServicesTab() {
           </button>
         </div>
 
-        <div className="divide-y divide-black/[0.05]">
-          {services.map((svc) => (
-            <div key={svc.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-              {/* Colour swatch */}
-              <div
-                className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-[11px] font-bold"
-                style={{ background: svc.color }}
-              >
-                {svc.name.charAt(0)}
-              </div>
+        {isLoading ? (
+          <div className="space-y-3 py-1">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 rounded-lg bg-black/[0.04] animate-pulse" />
+            ))}
+          </div>
+        ) : services.length === 0 ? (
+          <p className="text-sm text-text-muted text-center py-6">No services yet. Add your first service above.</p>
+        ) : (
+          <div className="divide-y divide-black/[0.05]">
+            {services.map((svc) => (
+              <div key={svc.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
+                <div
+                  className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-[11px] font-bold"
+                  style={{ background: svc.color ?? "#fd7e14" }}
+                >
+                  {svc.name.charAt(0)}
+                </div>
 
-              {/* Name + description */}
-              <div className="flex-1 min-w-0">
-                <p className={cn("text-sm font-medium", svc.active ? "text-text-primary" : "text-text-muted line-through")}>
-                  {svc.name}
-                </p>
-                {svc.description && (
-                  <p className="text-xs text-text-muted mt-0.5 truncate">{svc.description}</p>
-                )}
-              </div>
-
-              {/* Usage stats */}
-              <div className="hidden sm:flex items-center gap-4 shrink-0">
-                <span className="text-[11px] text-text-muted whitespace-nowrap">
-                  {svc.projects} project{svc.projects !== 1 ? "s" : ""}
-                </span>
-                <span className="text-[11px] text-text-muted whitespace-nowrap">
-                  {svc.line_items} line item{svc.line_items !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              {/* Active toggle */}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={svc.active}
-                onClick={() => toggleActive(svc.id)}
-                className={cn(
-                  "relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none",
-                  svc.active ? "bg-accent" : "bg-black/[0.10]"
-                )}
-              >
-                <span
-                  className={cn(
-                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200",
-                    svc.active ? "right-0.5" : "left-0.5"
+                <div className="flex-1 min-w-0">
+                  <p className={cn("text-sm font-medium", svc.is_active ? "text-text-primary" : "text-text-muted line-through")}>
+                    {svc.name}
+                  </p>
+                  {svc.description && (
+                    <p className="text-xs text-text-muted mt-0.5 truncate">{svc.description}</p>
                   )}
-                />
-              </button>
+                </div>
 
-              {/* Delete */}
-              <button
-                onClick={() => removeService(svc.id)}
-                disabled={svc.projects > 0 || svc.line_items > 0}
-                title={svc.projects > 0 || svc.line_items > 0 ? "Cannot delete - service is in use" : "Delete service"}
-                className="p-1.5 rounded-button text-text-muted hover:text-red-400 hover:bg-red-400/[0.08] transition-all shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
+                {/* Active toggle */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={svc.is_active}
+                  onClick={() => updateService.mutate({ id: svc.id, data: { is_active: !svc.is_active } })}
+                  disabled={updateService.isPending}
+                  className={cn(
+                    "relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none disabled:opacity-60",
+                    svc.is_active ? "bg-accent" : "bg-black/[0.10]"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200",
+                      svc.is_active ? "right-0.5" : "left-0.5"
+                    )}
+                  />
+                </button>
+
+                {/* Delete */}
+                <button
+                  onClick={() => setConfirmSvcId(svc.id)}
+                  disabled={deleteService.isPending}
+                  title="Delete service"
+                  className="p-1.5 rounded-button text-text-muted hover:text-red-400 hover:bg-red-400/[0.08] transition-all shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </GlassCard>
+
+      {/* Delete service confirm dialog */}
+      <ConfirmDialog
+        open={confirmSvcId !== null}
+        onOpenChange={(open) => { if (!open) setConfirmSvcId(null); }}
+        title="Delete Service"
+        description={confirmSvc ? `Are you sure you want to delete "${confirmSvc.name}"? This cannot be undone.` : ""}
+        confirmLabel="Delete"
+        loading={deleteService.isPending}
+        onConfirm={() => {
+          if (!confirmSvcId) return;
+          deleteService.mutate(confirmSvcId, {
+            onSuccess: () => setConfirmSvcId(null),
+          });
+        }}
+      />
 
       {/* Add service modal */}
       {adding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); }}
-          />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeModal} />
           <div className="relative z-10 w-full max-w-md bg-white rounded-card shadow-xl p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-semibold text-text-primary">New Service</h3>
-              <button
-                type="button"
-                onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); }}
-                className="p-1.5 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT transition-all"
-              >
+              <button type="button" onClick={closeModal} className="p-1.5 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT transition-all">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -533,7 +521,7 @@ function ServicesTab() {
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addService()}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                   placeholder="e.g. Performance Marketing"
                   className="glass-input"
                   autoFocus
@@ -549,7 +537,6 @@ function ServicesTab() {
                   className="glass-input"
                 />
               </div>
-
               <div className="space-y-2">
                 <FieldLabel>Colour</FieldLabel>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -560,31 +547,25 @@ function ServicesTab() {
                       onClick={() => setNewColor(c)}
                       className={cn(
                         "w-7 h-7 rounded-full transition-all duration-150",
-                        newColor === c
-                          ? "ring-2 ring-offset-2 ring-black/20 scale-110"
-                          : "opacity-60 hover:opacity-100 hover:scale-105"
+                        newColor === c ? "ring-2 ring-offset-2 ring-black/20 scale-110" : "opacity-60 hover:opacity-100 hover:scale-105"
                       )}
                       style={{ background: c }}
                     />
                   ))}
                 </div>
               </div>
-
               <div className="flex items-center gap-3 justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); }}
-                  className="px-4 py-2 rounded-button text-sm text-text-secondary hover:text-text-primary border border-black/[0.05] bg-surface-DEFAULT transition-all"
-                >
+                <button type="button" onClick={closeModal} className="px-4 py-2 rounded-button text-sm text-text-secondary hover:text-text-primary border border-black/[0.05] bg-surface-DEFAULT transition-all">
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={addService}
-                  disabled={!newName.trim()}
-                  className="px-5 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={handleAdd}
+                  disabled={!newName.trim() || createService.isPending}
+                  className="flex items-center gap-2 px-5 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
                 >
+                  {createService.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Add Service
                 </button>
               </div>

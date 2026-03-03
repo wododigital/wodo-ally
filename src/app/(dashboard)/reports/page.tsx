@@ -11,13 +11,14 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   useReports,
   useGenerateReport,
   useSendReport,
   useDeleteReport,
 } from "@/lib/hooks/use-reports";
-import { generateReportPdf } from "@/lib/pdf/report-pdf";
+// generateReportPdf is loaded dynamically on demand to avoid bundling @react-pdf/renderer upfront
 import type { Database } from "@/types/database";
 import type { ReportData, InvestorReportWithData } from "@/lib/hooks/use-reports";
 
@@ -280,6 +281,7 @@ export default function ReportsPage() {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [justSentId, setJustSentId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { data: reports = [], isLoading } = useReports();
   const generateReport = useGenerateReport();
@@ -300,6 +302,7 @@ export default function ReportsPage() {
         ...(report as Omit<ReportRow, "report_data">),
         report_data: (report.report_data ?? {}) as unknown as ReportData,
       };
+      const { generateReportPdf } = await import("@/lib/pdf/report-pdf");
       const bytes = await generateReportPdf(typed);
       const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
@@ -330,8 +333,7 @@ export default function ReportsPage() {
   }
 
   function handleDelete(id: string) {
-    if (!confirm("Delete this report?")) return;
-    deleteReport.mutate(id);
+    setConfirmDeleteId(id);
   }
 
   const allTypes: { value: "all" | ReportType; label: string }[] = [
@@ -542,6 +544,22 @@ export default function ReportsPage() {
           isSending={sendReport.isPending}
         />
       )}
+
+      {/* Delete confirm dialog */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}
+        title="Delete Report"
+        description="Are you sure you want to delete this report? This action cannot be undone."
+        confirmLabel="Delete"
+        loading={deleteReport.isPending}
+        onConfirm={() => {
+          if (!confirmDeleteId) return;
+          deleteReport.mutate(confirmDeleteId, {
+            onSuccess: () => setConfirmDeleteId(null),
+          });
+        }}
+      />
     </div>
   );
 }

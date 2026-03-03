@@ -10,6 +10,11 @@ const manrope = Manrope({
   display: "swap",
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "WODO Ally - Internal Management Platform",
   description: "Internal accounting and financial management platform for WODO Digital",

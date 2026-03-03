@@ -31,7 +31,8 @@ import {
   type ContractWithDetails,
   type ContractStatus,
 } from "@/lib/hooks/use-contracts";
-import { generateContractPdf } from "@/lib/pdf/contract-pdf";
+// generateContractPdf is loaded dynamically on demand to avoid bundling @react-pdf/renderer upfront
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import type { Database } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -457,11 +458,13 @@ function ContractCard({
   onEdit: (contract: ContractWithDetails) => void;
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const deleteContract = useDeleteContract();
 
   async function handleDownload() {
     setIsDownloading(true);
     try {
+      const { generateContractPdf } = await import("@/lib/pdf/contract-pdf");
       const bytes = await generateContractPdf(contract);
       // Convert Uint8Array to ArrayBuffer for Blob compatibility
       const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
@@ -572,11 +575,7 @@ function ContractCard({
           {contract.status === "draft" && (
             <button
               title="Delete draft"
-              onClick={() => {
-                if (confirm("Delete this draft contract?")) {
-                  deleteContract.mutate(contract.id);
-                }
-              }}
+              onClick={() => setConfirmOpen(true)}
               className="p-2 rounded-button text-text-muted hover:text-red-400 hover:bg-red-500/5 border border-transparent hover:border-red-500/20 transition-all"
             >
               <Trash2 className="w-4 h-4" />
@@ -584,6 +583,20 @@ function ContractCard({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete Contract"
+        description={`Are you sure you want to delete "${contract.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        loading={deleteContract.isPending}
+        onConfirm={() => {
+          deleteContract.mutate(contract.id, {
+            onSuccess: () => setConfirmOpen(false),
+          });
+        }}
+      />
     </GlassCard>
   );
 }
