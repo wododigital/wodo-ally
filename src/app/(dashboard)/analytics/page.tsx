@@ -161,6 +161,60 @@ export default function AnalyticsPage() {
         )}
       </div>
 
+      {/* Dark Financial Snapshot - KPIs above chart */}
+      <DarkSection>
+        <DarkLabel>Financial Snapshot</DarkLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            {
+              label: "Total Revenue",
+              value: `Rs.${(revenue/100000).toFixed(2)}L`,
+              sub: period === "fy" ? "FY 2025-26" : "Selected period",
+              icon: IndianRupee,
+              color: "#fd7e14",
+            },
+            {
+              label: "Total Expenses",
+              value: `Rs.${(expenses/1000).toFixed(0)}K`,
+              sub: `${Math.round(expenses/revenue*100)}% of revenue`,
+              icon: TrendingDown,
+              color: "#ef4444",
+            },
+            {
+              label: "Net Profit",
+              value: `Rs.${(netProfit/100000).toFixed(2)}L`,
+              sub: period === "fy" ? "After all expenses" : "For period",
+              icon: TrendingUp,
+              color: "#22c55e",
+            },
+            {
+              label: "Profit Margin",
+              value: `${margin}%`,
+              sub: margin >= 70 ? "Healthy margin" : "Watch expenses",
+              icon: TrendingUp,
+              color: margin >= 70 ? "#22c55e" : "#f59e0b",
+            },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center"
+                  style={{ background: `${stat.color}18` }}>
+                  <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
+                </div>
+                <span className="text-[11px] uppercase tracking-wider font-bold"
+                  style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {stat.label}
+                </span>
+              </div>
+              <p className="text-2xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{stat.sub}</p>
+            </DarkCard>
+          ))}
+        </div>
+      </DarkSection>
+
       {/* Main chart */}
       <GlassCard padding="md">
         <div className="flex items-center justify-between mb-4">
@@ -275,59 +329,6 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Dark snapshot section */}
-      <DarkSection>
-        <DarkLabel>Financial Snapshot</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            {
-              label: "Total Revenue",
-              value: `Rs.${(revenue/100000).toFixed(2)}L`,
-              sub: period === "fy" ? "FY 2025-26" : "Selected period",
-              icon: IndianRupee,
-              color: "#fd7e14",
-            },
-            {
-              label: "Total Expenses",
-              value: `Rs.${(expenses/1000).toFixed(0)}K`,
-              sub: `${Math.round(expenses/revenue*100)}% of revenue`,
-              icon: TrendingDown,
-              color: "#ef4444",
-            },
-            {
-              label: "Net Profit",
-              value: `Rs.${(netProfit/100000).toFixed(2)}L`,
-              sub: period === "fy" ? "After all expenses" : "For period",
-              icon: TrendingUp,
-              color: "#22c55e",
-            },
-            {
-              label: "Profit Margin",
-              value: `${margin}%`,
-              sub: margin >= 70 ? "Healthy margin" : "Watch expenses",
-              icon: TrendingUp,
-              color: margin >= 70 ? "#22c55e" : "#f59e0b",
-            },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{ background: `${stat.color}18` }}>
-                  <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
-                </div>
-                <span className="text-[11px] uppercase tracking-wider font-bold"
-                  style={{ color: "rgba(255,255,255,0.3)" }}>
-                  {stat.label}
-                </span>
-              </div>
-              <p className="text-2xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

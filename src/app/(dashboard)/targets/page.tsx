@@ -146,49 +146,82 @@ export default function TargetsPage() {
         }
       />
 
+      {/* New Target Modal */}
       {showForm && (
-        <GlassCard padding="md" variant="accent">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">New Target</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Title</label>
-              <input type="text" className="glass-input" placeholder="e.g. Annual Revenue Target FY 2026-27" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowForm(false)}
+          />
+          {/* Modal */}
+          <div className="relative w-full max-w-lg glass-card rounded-card shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between p-5 border-b border-black/[0.06]">
+              <h3 className="text-sm font-semibold text-text-primary">New Target</h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-text-muted hover:text-text-primary transition-colors text-lg leading-none"
+              >
+                &times;
+              </button>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Type</label>
-              <select className="glass-input">
-                <option value="revenue">Revenue</option>
-                <option value="mrr">MRR</option>
-                <option value="new_clients">New Clients</option>
-                <option value="expense_reduction">Expense Reduction</option>
-                <option value="custom">Custom</option>
-              </select>
+            <div className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Title</label>
+                <input type="text" className="glass-input" placeholder="e.g. Annual Revenue Target FY 2026-27" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Type</label>
+                  <select className="glass-input">
+                    <option value="revenue">Revenue</option>
+                    <option value="mrr">MRR</option>
+                    <option value="new_clients">New Clients</option>
+                    <option value="expense_reduction">Expense Reduction</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Period</label>
+                  <select className="glass-input">
+                    <option value="annual">Annual</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Financial Year</label>
+                  <select className="glass-input">
+                    <option value="2025-26">2025-26</option>
+                    <option value="2026-27">2026-27</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Target Amount</label>
+                  <input type="number" className="glass-input font-sans" placeholder="0" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Notes (optional)</label>
+                <input type="text" className="glass-input" placeholder="e.g. Target set at board meeting" />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Period</label>
-              <select className="glass-input">
-                <option value="annual">Annual</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Financial Year</label>
-              <select className="glass-input">
-                <option value="2025-26">2025-26</option>
-                <option value="2026-27">2026-27</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Target Amount</label>
-              <input type="number" className="glass-input font-sans" placeholder="0" />
+            <div className="flex justify-end gap-3 p-5 border-t border-black/[0.06]">
+              <button
+                onClick={() => setShowForm(false)}
+                className="px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-black/[0.05]"
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-button text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+              >
+                Save Target
+              </button>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-black/[0.05]">Cancel</button>
-            <button className="px-4 py-2 rounded-button text-sm font-semibold text-white" style={{ background: "#fd7e14" }}>Save Target</button>
-          </div>
-        </GlassCard>
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
