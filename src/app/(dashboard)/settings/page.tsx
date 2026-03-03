@@ -14,6 +14,7 @@ import {
   Layers,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
@@ -480,14 +481,14 @@ function ServicesTab() {
                 aria-checked={svc.active}
                 onClick={() => toggleActive(svc.id)}
                 className={cn(
-                  "relative w-8 h-5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none",
+                  "relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none",
                   svc.active ? "bg-accent" : "bg-black/[0.10]"
                 )}
               >
                 <span
                   className={cn(
-                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
-                    svc.active ? "translate-x-3.5" : "translate-x-0.5"
+                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200",
+                    svc.active ? "right-0.5" : "left-0.5"
                   )}
                 />
               </button>
@@ -506,12 +507,26 @@ function ServicesTab() {
         </div>
       </GlassCard>
 
-      {/* Add service form */}
+      {/* Add service modal */}
       {adding && (
-        <GlassCard padding="lg">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">New Service</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); }}
+          />
+          <div className="relative z-10 w-full max-w-md bg-white rounded-card shadow-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-sm font-semibold text-text-primary">New Service</h3>
+              <button
+                type="button"
+                onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); }}
+                className="p-1.5 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
               <div className="space-y-1.5">
                 <FieldLabel>Service Name *</FieldLabel>
                 <input
@@ -534,68 +549,49 @@ function ServicesTab() {
                   className="glass-input"
                 />
               </div>
-            </div>
 
-            {/* Colour picker */}
-            <div className="space-y-2">
-              <FieldLabel>Colour</FieldLabel>
-              <div className="flex items-center gap-2 flex-wrap">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setNewColor(c)}
-                    className={cn(
-                      "w-7 h-7 rounded-full transition-all duration-150",
-                      newColor === c
-                        ? "ring-2 ring-offset-2 ring-black/20 scale-110"
-                        : "opacity-60 hover:opacity-100 hover:scale-105"
-                    )}
-                    style={{ background: c }}
-                  />
-                ))}
+              <div className="space-y-2">
+                <FieldLabel>Colour</FieldLabel>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {PRESET_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewColor(c)}
+                      className={cn(
+                        "w-7 h-7 rounded-full transition-all duration-150",
+                        newColor === c
+                          ? "ring-2 ring-offset-2 ring-black/20 scale-110"
+                          : "opacity-60 hover:opacity-100 hover:scale-105"
+                      )}
+                      style={{ background: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); setNewColor(PRESET_COLORS[0]); }}
+                  className="px-4 py-2 rounded-button text-sm text-text-secondary hover:text-text-primary border border-black/[0.05] bg-surface-DEFAULT transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={addService}
+                  disabled={!newName.trim()}
+                  className="px-5 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+                >
+                  Add Service
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-3 justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); }}
-                className="px-4 py-2 rounded-button text-sm text-text-secondary hover:text-text-primary border border-black/[0.05] bg-surface-DEFAULT transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={addService}
-                disabled={!newName.trim()}
-                className="px-5 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-              >
-                Add Service
-              </button>
-            </div>
-          </div>
-        </GlassCard>
-      )}
-
-      {/* How it works */}
-      <GlassCard padding="md">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-            <Tag className="w-4 h-4 text-accent" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-text-primary">How services appear on invoices</p>
-            <p className="text-xs text-text-muted mt-1 leading-relaxed">
-              When a service is selected on a line item, the PDF invoice will format it as
-              <span className="font-sans font-semibold text-text-primary"> &quot;Service: Your description&quot;</span>.
-              {" "}Example:{" "}
-              <span className="font-sans text-accent font-medium">&quot;SEO: Monthly Management - April 2026&quot;</span>
-            </p>
           </div>
         </div>
-      </GlassCard>
+      )}
     </div>
   );
 }
@@ -726,14 +722,14 @@ function NotificationsTab() {
               aria-checked={enabled[item.id]}
               onClick={() => toggle(item.id)}
               className={cn(
-                "relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-accent/40",
+                "relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none",
                 enabled[item.id] ? "bg-accent" : "bg-black/[0.08]"
               )}
             >
               <span
                 className={cn(
-                  "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
-                  enabled[item.id] ? "translate-x-5" : "translate-x-1"
+                  "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200",
+                  enabled[item.id] ? "right-1" : "left-1"
                 )}
               />
             </button>
