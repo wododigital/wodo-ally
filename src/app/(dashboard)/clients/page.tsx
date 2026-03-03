@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Plus, Search, Users, FileText, TrendingUp, Star, CheckCircle2,
-  BarChart2, X, Loader2,
+  BarChart2, X, Loader2, Send, ClipboardCheck,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
 import { useClients, useCreateClient } from "@/lib/hooks/use-clients";
+import { useClientContractSummaries } from "@/lib/hooks/use-contracts";
 import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -81,6 +82,32 @@ function getOrdinal(n: number) {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+}
+
+type ContractStatus = "draft" | "sent" | "signed" | "active" | "completed" | "terminated";
+
+function ContractStatusPills({ status }: { status: ContractStatus | undefined }) {
+  if (!status || status === "draft" || status === "terminated") return null;
+
+  const isShared = ["sent", "signed", "active", "completed"].includes(status);
+  const isReceived = ["signed", "active", "completed"].includes(status);
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {isShared && (
+        <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border text-blue-500 bg-blue-500/[0.08] border-blue-500/20">
+          <Send className="w-2.5 h-2.5" />
+          Contract Shared
+        </span>
+      )}
+      {isReceived && (
+        <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border text-green-500 bg-green-500/[0.08] border-green-500/20">
+          <ClipboardCheck className="w-2.5 h-2.5" />
+          Contract Signed
+        </span>
+      )}
+    </div>
+  );
 }
 
 // ─── CircularHealth ──────────────────────────────────────────────────────────
@@ -335,6 +362,7 @@ export default function ClientsPage() {
   const [invoiceClientId, setInvoiceClientId] = useState("");
 
   const { data: clients = [], isLoading, isError, error } = useClients();
+  const { data: contractStatusMap = {} } = useClientContractSummaries();
 
   const filtered = clients.filter((c) => {
     const matchSearch =
@@ -563,6 +591,9 @@ export default function ClientsPage() {
                         <span className="font-medium" style={{ color: pb.color }}>{pb.text}</span>
                       )}
                     </div>
+
+                    {/* Contract status */}
+                    <ContractStatusPills status={contractStatusMap[client.id] as ContractStatus | undefined} />
                   </GlassCard>
                 </Link>
 

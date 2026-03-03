@@ -255,6 +255,42 @@ export function useDeleteContract() {
   });
 }
 
+// ─── useClientContractSummaries - lightweight map for client cards ─────────────
+
+export function useClientContractSummaries() {
+  return useQuery({
+    queryKey: ["contracts", "client-summaries"],
+    queryFn: async (): Promise<Record<string, ContractRow["status"]>> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("client_id, status, updated_at")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw new Error(error.message);
+
+      // Build a map of clientId -> "best" status (most advanced in lifecycle)
+      const statusPriority: Record<ContractRow["status"], number> = {
+        terminated: 0,
+        draft: 1,
+        sent: 2,
+        signed: 3,
+        active: 4,
+        completed: 5,
+      };
+
+      const map: Record<string, ContractRow["status"]> = {};
+      for (const row of data ?? []) {
+        const existing = map[row.client_id];
+        if (!existing || statusPriority[row.status as ContractRow["status"]] > statusPriority[existing]) {
+          map[row.client_id] = row.status as ContractRow["status"];
+        }
+      }
+      return map;
+    },
+  });
+}
+
 // ─── useUpdateContractStatus ──────────────────────────────────────────────────
 
 export function useUpdateContractStatus() {

@@ -7,6 +7,7 @@ import {
   Mail, Phone, Globe, MapPin, Building2,
   FileText, FolderKanban, Edit, Plus, Receipt,
   CheckCircle2, XCircle, Calendar, Upload, X as XIcon, Loader2,
+  Send, ClipboardCheck, Clock, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { useClient, useClientStats, useCloseClient, useReactivateClient } from "@/lib/hooks/use-clients";
 import { useProjects } from "@/lib/hooks/use-projects";
+import { useContracts } from "@/lib/hooks/use-contracts";
 import { AddProjectModal } from "@/components/shared/add-project-modal";
 import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 
@@ -348,6 +350,7 @@ export default function ClientDetailPage() {
   const { data: client, isLoading, isError, error } = useClient(id);
   const { data: stats } = useClientStats(id);
   const { data: projects = [] } = useProjects(id);
+  const { data: contracts = [] } = useContracts({ clientId: id });
   const closeClient = useCloseClient(id);
   const reactivateClient = useReactivateClient(id);
 
@@ -692,6 +695,75 @@ export default function ClientDetailPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </GlassCard>
+
+            {/* Contract Status */}
+            <GlassCard padding="md">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-text-primary">Contracts</h3>
+                <Link
+                  href={`/contracts?client=${id}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  View All
+                </Link>
+              </div>
+
+              {contracts.length === 0 ? (
+                <div className="py-6 text-center">
+                  <FileText className="w-7 h-7 text-text-muted mx-auto mb-2" />
+                  <p className="text-sm text-text-muted">No contracts yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {contracts.map((contract) => {
+                    const statusConfig: Record<string, { icon: React.ElementType; label: string; color: string; bg: string }> = {
+                      draft:      { icon: Clock,           label: "Draft",           color: "#9ca3af", bg: "rgba(0,0,0,0.03)" },
+                      sent:       { icon: Send,            label: "Shared",          color: "#3b82f6", bg: "rgba(59,130,246,0.06)" },
+                      signed:     { icon: ClipboardCheck,  label: "Signed",          color: "#22c55e", bg: "rgba(34,197,94,0.06)" },
+                      active:     { icon: CheckCircle2,    label: "Active",          color: "#22c55e", bg: "rgba(34,197,94,0.06)" },
+                      completed:  { icon: CheckCircle2,    label: "Completed",       color: "#16a34a", bg: "rgba(22,163,74,0.06)" },
+                      terminated: { icon: AlertCircle,     label: "Terminated",      color: "#ef4444", bg: "rgba(239,68,68,0.06)" },
+                    };
+                    const cfg = statusConfig[contract.status] ?? statusConfig.draft;
+                    const Icon = cfg.icon;
+                    return (
+                      <div
+                        key={contract.id}
+                        className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                        style={{ background: cfg.bg, border: `1px solid ${cfg.color}20` }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: `${cfg.color}15` }}
+                          >
+                            <Icon className="w-4 h-4" style={{ color: cfg.color }} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-primary truncate">{contract.title}</p>
+                            {contract.contract_date && (
+                              <p className="text-xs text-text-muted">{new Date(contract.contract_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
+                            style={{ color: cfg.color, background: `${cfg.color}12`, borderColor: `${cfg.color}30` }}
+                          >
+                            {cfg.label}
+                          </span>
+                          {contract.signed_date && (
+                            <span className="text-xs text-text-muted">Signed {new Date(contract.signed_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </GlassCard>
