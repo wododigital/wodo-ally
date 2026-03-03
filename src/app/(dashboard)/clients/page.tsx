@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, Search, Users, FileText, TrendingUp, Star, CheckCircle2,
-  BarChart2, X, Loader2,
+  BarChart2, X, Loader2, ChevronDown, Check,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
@@ -133,6 +133,79 @@ type ClientFormValues = z.infer<typeof clientSchema>;
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return <p className="text-xs text-red-500 mt-0.5">{message}</p>;
+}
+
+// ─── Status Dropdown ─────────────────────────────────────────────────────────
+
+function StatusDropdown({
+  value,
+  onChange,
+  options,
+}: {
+  value: StatusFilter;
+  onChange: (v: StatusFilter) => void;
+  options: { value: StatusFilter; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value) ?? options[0];
+  const isFiltered = value !== "all";
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 rounded-button text-xs font-medium transition-all duration-150 whitespace-nowrap",
+          isFiltered
+            ? "bg-accent-muted text-accent border border-accent-light"
+            : "bg-surface-DEFAULT text-text-secondary hover:text-text-primary border border-black/[0.05] hover:border-black/[0.08]"
+        )}
+      >
+        {selected.label}
+        <ChevronDown className={cn("w-3 h-3 transition-transform duration-150", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1.5 z-30 rounded-xl overflow-hidden min-w-[130px]"
+          style={{
+            background: "rgba(255,255,255,0.92)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(0,0,0,0.07)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.6) inset",
+          }}
+        >
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={cn(
+                "w-full flex items-center justify-between gap-3 px-3 py-2 text-xs transition-colors text-left",
+                opt.value === value
+                  ? "text-accent font-semibold bg-accent/[0.06]"
+                  : "text-text-secondary hover:text-text-primary hover:bg-black/[0.03] font-medium"
+              )}
+            >
+              {opt.label}
+              {opt.value === value && <Check className="w-3 h-3 shrink-0 text-accent" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AddClientModal({ onClose }: { onClose: () => void }) {
@@ -432,15 +505,11 @@ export default function ClientsPage() {
           {/* Separator */}
           <div className="w-px bg-black/[0.06] self-stretch mx-0.5" />
           {/* Status dropdown */}
-          <select
+          <StatusDropdown
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="glass-input text-xs py-2 pr-8 min-w-[120px]"
-          >
-            {STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
+            onChange={setStatusFilter}
+            options={STATUS_FILTERS}
+          />
         </div>
       </div>
 
