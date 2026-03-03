@@ -156,6 +156,7 @@ export function HeroProjectsGrowthChart({ data }: Props) {
                 Each cx = its own radius so all left edges land at x=0. */}
             <Pie
               data={PIE_DATA}
+              dataKey="value"
               cx={RADII[0]} cy={CHART_H}
               startAngle={180} endAngle={0}
               innerRadius={0} outerRadius={RADII[0]}
@@ -165,6 +166,7 @@ export function HeroProjectsGrowthChart({ data }: Props) {
             />
             <Pie
               data={PIE_DATA}
+              dataKey="value"
               cx={RADII[1]} cy={CHART_H}
               startAngle={180} endAngle={0}
               innerRadius={0} outerRadius={RADII[1]}
@@ -174,6 +176,7 @@ export function HeroProjectsGrowthChart({ data }: Props) {
             />
             <Pie
               data={PIE_DATA}
+              dataKey="value"
               cx={RADII[2]} cy={CHART_H}
               startAngle={180} endAngle={0}
               innerRadius={0} outerRadius={RADII[2]}
