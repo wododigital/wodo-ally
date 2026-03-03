@@ -31,6 +31,7 @@ import {
 } from "@/lib/hooks/use-services";
 import { GlassCard } from "@/components/shared/glass-card";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 import { cn } from "@/lib/utils/cn";
 
 // ---------------------------------------------------------------------------
@@ -1521,9 +1522,10 @@ function EmailTemplatesTab() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">Body Preview</p>
-                    <pre className="text-xs text-text-secondary bg-surface-DEFAULT px-3 py-2 rounded-button border border-black/[0.05] whitespace-pre-wrap font-sans leading-relaxed">
-                      {tpl.body}
-                    </pre>
+                    <div
+                      className="tiptap text-xs text-text-secondary bg-surface-DEFAULT px-3 py-2 rounded-xl border border-black/[0.05] leading-relaxed max-h-40 overflow-y-auto"
+                      dangerouslySetInnerHTML={{ __html: tpl.body }}
+                    />
                   </div>
                 </div>
               )}
@@ -1559,25 +1561,13 @@ function EmailTemplatesTab() {
               </div>
               <div className="space-y-1.5">
                 <FieldLabel>Body</FieldLabel>
-                <textarea
-                  rows={12}
+                <RichTextEditor
                   value={editBody}
-                  onChange={(e) => setEditBody(e.target.value)}
-                  className="glass-input resize-y font-sans text-sm leading-relaxed"
+                  onChange={setEditBody}
+                  placeholder="Write your email body here..."
+                  variables={VARIABLES}
+                  minHeight={280}
                 />
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] text-text-muted self-center mr-1">Insert variable:</span>
-                {VARIABLES.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setEditBody((prev) => prev + v)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
-                  >
-                    {v}
-                  </button>
-                ))}
               </div>
               <div className="flex items-center gap-3 justify-end pt-1">
                 <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 rounded-button text-sm text-text-secondary hover:text-text-primary border border-black/[0.05] bg-surface-DEFAULT transition-all">
@@ -1767,10 +1757,10 @@ function ContractsTab() {
 
               {expanded === tpl.id && (
                 <div className="mt-3 pl-0">
-                  <pre className="text-xs text-text-secondary bg-surface-DEFAULT px-3 py-3 rounded-xl border border-black/[0.05] whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                    {tpl.body}
-                  </pre>
-                  <p className="text-[10px] text-text-muted mt-1.5">{tpl.body.length.toLocaleString()} characters</p>
+                  <div
+                    className="tiptap text-xs text-text-secondary bg-surface-DEFAULT px-3 py-3 rounded-xl border border-black/[0.05] leading-relaxed max-h-48 overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: tpl.body }}
+                  />
                 </div>
               )}
             </div>
@@ -1821,30 +1811,15 @@ function ContractsTab() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] text-text-muted self-center mr-1">Insert variable:</span>
-                {VARIABLES.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setEditBody((prev) => prev + v)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-
               <div className="space-y-1.5">
                 <FieldLabel>Contract Body</FieldLabel>
-                <textarea
-                  rows={20}
+                <RichTextEditor
                   value={editBody}
-                  onChange={(e) => setEditBody(e.target.value)}
-                  className="glass-input resize-y font-sans text-xs leading-relaxed w-full"
-                  spellCheck={false}
+                  onChange={setEditBody}
+                  placeholder="Write your contract body here..."
+                  variables={VARIABLES}
+                  minHeight={360}
                 />
-                <p className="text-[10px] text-text-muted">{editBody.length.toLocaleString()} characters</p>
               </div>
             </div>
 
