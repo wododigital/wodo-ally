@@ -1,5 +1,17 @@
 # 10 - Analytics Dashboard
 
+> **Implementation status (2026-03-03)**: All 7 analytics sub-pages are built as static UI (mock data).
+> Backend wiring planned for Phase 3/4. SQL views are in `supabase/migrations/004_analytics.sql`.
+>
+> Sub-pages use shared `AnalyticsSubNav` (horizontal pills) injected by `analytics/layout.tsx`.
+> `/payments` and `/expenses` are merged under `/finance` (tabbed). Both old routes still exist.
+
+## Navigation
+
+TopNavV2 nav order: Dashboard | Clients | Invoices | **Finance** | Analytics | Pipeline | Targets | **Reports**
+
+Analytics sub-nav tabs: Overview | Invoices | Expenses | Clients | Projects | P&L | Balance Sheet
+
 ## Analytics Home (`/analytics`)
 
 ### Period Selector (top of page)

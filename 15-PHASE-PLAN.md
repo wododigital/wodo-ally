@@ -68,6 +68,21 @@ The build is organized into 5 phases. Within each phase, multiple agents work in
 - P&L statement view
 - Financial targets page with progress cards
 
+### Track 2E: Analytics Sub-Pages + Finance (added 2026-03-03)
+- Shared `DarkSection`, `DarkLabel`, `DarkCard` components in `src/components/shared/dark-section.tsx`
+- `AnalyticsSubNav` horizontal pill nav: Overview, Invoices, Expenses, Clients, Projects, P&L, Balance Sheet
+- `analytics/layout.tsx` wraps all analytics routes with the sub-nav
+- `/analytics` (overview): period filter (Month/Q3/Q4/YTD/FY/Custom), Revenue vs Expenses area chart, Revenue by Service donut, Revenue by Client bar chart, show/hide projection toggle, dark Financial Snapshot section
+- `/analytics/invoices`: Retainer vs One-Time stacked bar, invoice status donut, avg payment days per client, dark Invoice Health section
+- `/analytics/expenses`: Category stacked bar (5 types), category donut, cost centers table, dark Cost Analysis section
+- `/analytics/clients`: Monthly revenue by client stacked bar, client health scores with progress bars, radar comparison (top 3 clients), payment behaviour matrix table, dark Client Health section
+- `/analytics/projects`: Retainer MRR area trend, revenue by type donut, project status donut, all-projects table with completion bars, dark Project Performance section
+- `/analytics/pl`: Monthly net profit bar chart, full P&L statement table (month-by-month), dark Profit Summary section
+- `/analytics/balance`: Assets / Liabilities / Equity sections, current ratio, dark Financial Position section
+- `/finance`: Tabbed page (Payments + Expenses) merging previous separate pages, monthly cash flow sidebar, dark Cash Flow section
+- `TopNavV2`: removed Payments + Expenses from nav, added Finance + Reports; new order: Dashboard | Clients | Invoices | Finance | Analytics | Pipeline | Targets | Reports
+- `supabase/migrations/004_analytics.sql`: 7 SQL views (monthly_pl_view, revenue_by_client_view, expenses_by_category_view, invoice_status_summary, client_health_scores, project_revenue_by_type, cash_flow_monthly)
+
 ### Track 2D: Pipeline (added during Phase 2 iteration)
 - `/pipeline` page: KPI cards (Apr to invoice, expected in, 2-month forecast)
 - Month tabs (Apr/May/Jun) with retainer + milestone rows and Create CTAs

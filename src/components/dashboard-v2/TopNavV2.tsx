@@ -14,26 +14,27 @@ const NAV_TABS = [
   { href: "/dashboard", label: "Dashboard", exact: true },
   { href: "/clients",   label: "Clients"   },
   { href: "/invoices",  label: "Invoices"  },
-  { href: "/payments",  label: "Payments"  },
-  { href: "/expenses",  label: "Expenses"  },
+  { href: "/finance",   label: "Finance"   },
   { href: "/analytics", label: "Analytics" },
   { href: "/pipeline",  label: "Pipeline"  },
   { href: "/targets",   label: "Targets"   },
+  { href: "/reports",   label: "Reports",  exact: true },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard":  "Dashboard",
   "/clients":    "Clients",
   "/invoices":   "Invoices",
-  "/payments":   "Payments",
-  "/expenses":   "Expenses",
+  "/finance":    "Finance",
   "/analytics":  "Analytics",
   "/pipeline":   "Pipeline",
   "/targets":    "Targets",
-  "/projects":   "Projects",
   "/reports":    "Reports",
+  "/projects":   "Projects",
   "/settings":   "Settings",
   "/contracts":  "Contracts",
+  "/payments":   "Payments",
+  "/expenses":   "Expenses",
 };
 
 // ─── Notifications ────────────────────────────────────────────────────────────
