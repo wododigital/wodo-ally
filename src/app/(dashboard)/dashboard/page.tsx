@@ -1,7 +1,16 @@
-import { IndianRupee, TrendingUp, Users, Clock } from "lucide-react";
+import { IndianRupee, TrendingUp, Users, Clock, FileText, Receipt, FolderKanban } from "lucide-react";
+import Link from "next/link";
 import { KpiCardV2 }       from "@/components/dashboard-v2/KpiCardV2";
 import { DarkSectionTabs } from "@/components/dashboard-v2/DarkSectionTabs";
 import { HeroSectionV2 }   from "@/components/dashboard-v2/HeroSectionV2";
+
+const QUICK_LINKS = [
+  { label: "Revenue",  href: "/analytics/invoices?period=month", Icon: FileText,     color: "#fd7e14" },
+  { label: "P&L",      href: "/analytics/pl?period=month",       Icon: TrendingUp,   color: "#22c55e" },
+  { label: "Expenses", href: "/analytics/expenses?period=month", Icon: Receipt,      color: "#ef4444" },
+  { label: "Clients",  href: "/analytics/clients?period=month",  Icon: Users,        color: "#3b82f6" },
+  { label: "Projects", href: "/analytics/projects?period=month", Icon: FolderKanban, color: "#8b5cf6" },
+];
 
 const STATS = [
   {
@@ -132,6 +141,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-10">
       <HeroSectionV2 />
+
+      {/* Analytics quick access */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted mb-3">Mar 2026 · Analytics</p>
+        <div className="flex gap-2.5 overflow-x-auto pb-1">
+          {QUICK_LINKS.map(({ label, href, Icon, color }) => (
+            <Link
+              key={label}
+              href={href}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-black/[0.06] text-xs font-medium text-text-secondary hover:border-black/[0.12] hover:text-text-primary transition-all shadow-sm whitespace-nowrap shrink-0"
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-7">
         {STATS.map((stat) => (

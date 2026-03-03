@@ -77,22 +77,30 @@ export default function BalancePage() {
         <span className="text-xs font-semibold text-text-primary bg-accent-muted text-accent border border-accent-light px-2 py-0.5 rounded-button">{AS_OF}</span>
       </div>
 
-      {/* Summary bar */}
-      <GlassCard padding="md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
+      {/* Financial Position */}
+      <DarkSection>
+        <DarkLabel>Financial Position</DarkLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { label: "Total Assets",      value: `Rs.${(totalAssets/100000).toFixed(2)}L`,      color: "#22c55e" },
-            { label: "Total Liabilities", value: `Rs.${(totalLiabilities/1000).toFixed(0)}K`,   color: "#ef4444" },
-            { label: "Net Worth",         value: `Rs.${(netWorth/100000).toFixed(2)}L`,          color: "#fd7e14" },
-            { label: "Current Ratio",     value: `${((412000+94200)/(45000+22400+5500)).toFixed(1)}x`, color: "#3b82f6" },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{s.label}</span>
-              <span className="text-lg font-bold font-sans" style={{ color: s.color }}>{s.value}</span>
-            </div>
+            { icon: Landmark,    label: "Bank balance",     value: "Rs.4.12L",  sub: "HDFC Current Account",          color: "#22c55e" },
+            { icon: CreditCard,  label: "Receivables",      value: "Rs.94.2K",  sub: "2 overdue invoices pending",    color: "#f59e0b" },
+            { icon: ShieldCheck, label: "Net worth",        value: `Rs.${(netWorth/100000).toFixed(2)}L`, sub: "Assets minus liabilities",   color: "#fd7e14" },
+            { icon: TrendingUp,  label: "Current ratio",    value: `${((412000+94200)/(45000+22400+5500)).toFixed(1)}x`, sub: "Above 1.5 is healthy",  color: "#3b82f6" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
           ))}
         </div>
-      </GlassCard>
+      </DarkSection>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assets */}
@@ -180,31 +188,6 @@ export default function BalancePage() {
           </GlassCard>
         </div>
       </div>
-
-      {/* Dark section */}
-      <DarkSection>
-        <DarkLabel>Financial Position</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: Landmark,    label: "Bank balance",     value: "Rs.4.12L",  sub: "HDFC Current Account",          color: "#22c55e" },
-            { icon: CreditCard,  label: "Receivables",      value: "Rs.94.2K",  sub: "2 overdue invoices pending",    color: "#f59e0b" },
-            { icon: ShieldCheck, label: "Net worth",        value: `Rs.${(netWorth/100000).toFixed(2)}L`, sub: "Assets minus liabilities",   color: "#fd7e14" },
-            { icon: TrendingUp,  label: "Current ratio",    value: `${((412000+94200)/(45000+22400+5500)).toFixed(1)}x`, sub: "Above 1.5 is healthy",  color: "#3b82f6" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

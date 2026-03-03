@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Users, FileText } from "lucide-react";
+import { Plus, Search, Users, FileText, TrendingUp, Star, CheckCircle2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
+import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils/cn";
@@ -204,7 +204,6 @@ export default function ClientsPage() {
     return matchSearch && matchFilter;
   });
 
-  // counts per filter tab
   const counts = FILTERS.reduce<Record<FilterType, number>>((acc, f) => {
     acc[f.value] = f.value === "all"
       ? CLIENTS.length
@@ -212,22 +211,51 @@ export default function ClientsPage() {
     return acc;
   }, {} as Record<FilterType, number>);
 
+  const totalRevenue   = CLIENTS.reduce((s, c) => s + c.total_invoiced, 0);
+  const avgHealth      = Math.round(CLIENTS.reduce((s, c) => s + c.health_score, 0) / CLIENTS.length);
+  const activeCount    = CLIENTS.filter((c) => c.status === "active").length;
+
   return (
     <div className="space-y-8 animate-fade-in">
-      <PageHeader
-        title="Clients"
-        description={`${CLIENTS.length} total clients`}
-        action={
-          <Link
-            href="/clients/new"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200"
-            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-          >
-            <Plus className="w-4 h-4" />
-            Add Client
-          </Link>
-        }
-      />
+
+      {/* Client KPIs */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Client Overview</p>
+          <div className="flex items-center gap-2">
+            <Link href="/analytics/clients"
+              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+              Analytics
+            </Link>
+            <Link href="/clients/new"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(253,126,20,0.85)" }}>
+              <Plus className="w-3 h-3" />
+              Add Client
+            </Link>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            { icon: Users,        label: "Total clients",   value: `${CLIENTS.length}`,                           sub: "All time",                  color: "#3b82f6" },
+            { icon: CheckCircle2, label: "Active clients",  value: `${activeCount}`,                              sub: "Currently engaged",         color: "#22c55e" },
+            { icon: Star,         label: "Avg health score",value: `${avgHealth}`,                                sub: "Across all clients",        color: "#fd7e14" },
+            { icon: TrendingUp,   label: "Total revenue",   value: `Rs.${(totalRevenue/100000).toFixed(1)}L`,     sub: "Lifetime invoiced",         color: "#8b5cf6" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
+          ))}
+        </div>
+      </DarkSection>
 
       {/* Search + filter tabs */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -241,7 +269,6 @@ export default function ClientsPage() {
             className="glass-input pl-9"
           />
         </div>
-        {/* Tab pills with counts */}
         <div className="flex gap-1.5 overflow-x-auto pb-0.5">
           {FILTERS.map((f) => (
             <button
@@ -289,7 +316,6 @@ export default function ClientsPage() {
                     padding="md"
                     className="hover:border-black/[0.10] transition-all duration-200 h-full flex flex-col gap-4"
                   >
-                    {/* Header: avatar + names */}
                     <div className="flex items-start gap-3">
                       <div
                         className="w-10 h-10 rounded-button flex items-center justify-center text-sm font-bold text-accent shrink-0"
@@ -305,7 +331,6 @@ export default function ClientsPage() {
                       </div>
                     </div>
 
-                    {/* Invoice type + country + status */}
                     <div className="flex items-center justify-between">
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded border font-medium",
@@ -321,7 +346,6 @@ export default function ClientsPage() {
                       </div>
                     </div>
 
-                    {/* Health score + revenue */}
                     <div className="flex items-center gap-4 pt-3 border-t border-black/[0.05]">
                       <CircularHealth score={client.health_score} />
                       <div className="flex-1 min-w-0">
@@ -335,7 +359,6 @@ export default function ClientsPage() {
                       </div>
                     </div>
 
-                    {/* Payment behaviour */}
                     <div
                       className="flex items-center justify-between text-xs px-3 py-2 rounded-card"
                       style={{ background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.04)" }}
@@ -353,7 +376,6 @@ export default function ClientsPage() {
                   </GlassCard>
                 </Link>
 
-                {/* Hover quick action: Create Invoice */}
                 <Link
                   href={`/invoices/new?client=${client.id}`}
                   className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center gap-1.5 px-2.5 py-1.5 rounded-button text-[11px] font-medium text-white z-10"

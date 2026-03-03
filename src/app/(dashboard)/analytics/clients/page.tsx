@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, TrendingUp, Clock, Star } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
@@ -13,72 +13,12 @@ import { cn } from "@/lib/utils/cn";
 // ─── Data ──────────────────────────────────────────────────────────────────
 
 const CLIENTS = [
-  {
-    name: "Nandhini Hotel",
-    revenue: 921900,
-    invoices: 12,
-    avg_payment_days: 7.2,
-    on_time_pct: 100,
-    health: 98,
-    color: "#fd7e14",
-    tier: "Premium",
-    services: ["SEO", "Web Dev"],
-  },
-  {
-    name: "Maximus OIGA",
-    revenue: 590000,
-    invoices: 6,
-    avg_payment_days: 18.5,
-    on_time_pct: 72,
-    health: 74,
-    color: "#3b82f6",
-    tier: "Growth",
-    services: ["SEO", "Google Ads"],
-  },
-  {
-    name: "Sea Wonders",
-    revenue: 357600,
-    invoices: 4,
-    avg_payment_days: 11.3,
-    on_time_pct: 90,
-    health: 85,
-    color: "#8b5cf6",
-    tier: "Growth",
-    services: ["Web Dev", "Branding"],
-  },
-  {
-    name: "Dentique",
-    revenue: 115830,
-    invoices: 3,
-    avg_payment_days: 9.0,
-    on_time_pct: 95,
-    health: 88,
-    color: "#16a34a",
-    tier: "Standard",
-    services: ["Web Dev"],
-  },
-  {
-    name: "Godavari",
-    revenue: 100300,
-    invoices: 2,
-    avg_payment_days: 14.0,
-    on_time_pct: 85,
-    health: 72,
-    color: "#ec4899",
-    tier: "Standard",
-    services: ["SEO"],
-  },
-  {
-    name: "Raj Ent.",
-    revenue: 17500,
-    invoices: 1,
-    avg_payment_days: 31.0,
-    on_time_pct: 50,
-    health: 42,
-    color: "#ef4444",
-    tier: "At Risk",
-    services: ["Branding"],
-  },
+  { name: "Nandhini Hotel", revenue: 921900, invoices: 12, avg_payment_days: 7.2,  on_time_pct: 100, health: 98, color: "#fd7e14", tier: "Premium",  services: ["SEO", "Web Dev"] },
+  { name: "Maximus OIGA",   revenue: 590000, invoices: 6,  avg_payment_days: 18.5, on_time_pct: 72,  health: 74, color: "#3b82f6", tier: "Growth",   services: ["SEO", "Google Ads"] },
+  { name: "Sea Wonders",    revenue: 357600, invoices: 4,  avg_payment_days: 11.3, on_time_pct: 90,  health: 85, color: "#8b5cf6", tier: "Growth",   services: ["Web Dev", "Branding"] },
+  { name: "Dentique",       revenue: 115830, invoices: 3,  avg_payment_days: 9.0,  on_time_pct: 95,  health: 88, color: "#16a34a", tier: "Standard", services: ["Web Dev"] },
+  { name: "Godavari",       revenue: 100300, invoices: 2,  avg_payment_days: 14.0, on_time_pct: 85,  health: 72, color: "#ec4899", tier: "Standard", services: ["SEO"] },
+  { name: "Raj Ent.",       revenue: 17500,  invoices: 1,  avg_payment_days: 31.0, on_time_pct: 50,  health: 42, color: "#ef4444", tier: "At Risk",  services: ["Branding"] },
 ];
 
 const MONTHLY_CLIENT_REVENUE = [
@@ -96,11 +36,11 @@ const MONTHLY_CLIENT_REVENUE = [
 ];
 
 const RADAR_DATA = [
-  { metric: "Revenue",     nandhini: 100, maximus: 64, seawonders: 39 },
-  { metric: "Retention",   nandhini: 98,  maximus: 72, seawonders: 85 },
-  { metric: "Pay Speed",   nandhini: 95,  maximus: 60, seawonders: 80 },
-  { metric: "Growth",      nandhini: 70,  maximus: 85, seawonders: 65 },
-  { metric: "Services",    nandhini: 80,  maximus: 75, seawonders: 70 },
+  { metric: "Revenue",   nandhini: 100, maximus: 64, seawonders: 39 },
+  { metric: "Retention", nandhini: 98,  maximus: 72, seawonders: 85 },
+  { metric: "Pay Speed", nandhini: 95,  maximus: 60, seawonders: 80 },
+  { metric: "Growth",    nandhini: 70,  maximus: 85, seawonders: 65 },
+  { metric: "Services",  nandhini: 80,  maximus: 75, seawonders: 70 },
 ];
 
 const CHART_TOOLTIP = {
@@ -111,21 +51,27 @@ const CHART_TOOLTIP = {
   color: "#111827",
 };
 
-type Period = "ytd" | "q4" | "fy";
-
 const TIER_COLORS: Record<string, string> = {
-  Premium: "#fd7e14",
-  Growth:  "#3b82f6",
-  Standard:"#22c55e",
+  Premium:  "#fd7e14",
+  Growth:   "#3b82f6",
+  Standard: "#22c55e",
   "At Risk":"#ef4444",
 };
+
+type Period = "month" | "ytd" | "q4" | "fy";
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function ClientAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("ytd");
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("period");
+    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
+  }, []);
 
-  const chartData = period === "q4"
+  const chartData = period === "month"
+    ? MONTHLY_CLIENT_REVENUE.slice(-1)
+    : period === "q4"
     ? MONTHLY_CLIENT_REVENUE.slice(9)
     : period === "ytd"
     ? MONTHLY_CLIENT_REVENUE.slice(0, 11)
@@ -134,44 +80,53 @@ export default function ClientAnalyticsPage() {
   const totalRevenue = CLIENTS.reduce((s, c) => s + c.revenue, 0);
 
   const PERIODS: { key: Period; label: string }[] = [
-    { key: "q4",  label: "Q4 (Jan-Mar)" },
-    { key: "ytd", label: "YTD" },
-    { key: "fy",  label: "Full Year" },
+    { key: "month", label: "This Month" },
+    { key: "q4",    label: "Q4 (Jan-Mar)" },
+    { key: "ytd",   label: "YTD" },
+    { key: "fy",    label: "Full Year" },
   ];
 
   return (
     <div className="space-y-6">
 
-      {/* Period filter */}
-      <div className="flex items-center gap-2">
-        {PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
-              period === p.key
-                ? "bg-accent-muted text-accent border-accent-light"
-                : "bg-surface-DEFAULT text-text-muted border-black/[0.05] hover:border-black/[0.08]"
-            )}>{p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Summary bar */}
-      <GlassCard padding="md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
+      {/* Client Health Summary */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Client Health Summary</p>
+          <div className="flex items-center gap-2">
+            {PERIODS.map((p) => (
+              <button key={p.key} onClick={() => setPeriod(p.key)}
+                className={cn(
+                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
+                  period === p.key
+                    ? "bg-white/[0.12] text-white border-white/[0.2]"
+                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
+                )}>{p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { label: "Total Revenue",   value: `Rs.${(totalRevenue/100000).toFixed(2)}L`, color: "#fd7e14" },
-            { label: "Active Clients",  value: "6",               color: "#22c55e" },
-            { label: "Avg Revenue",     value: `Rs.${Math.round(totalRevenue/6/1000)}K`,  color: "#3b82f6" },
-            { label: "At-Risk Clients", value: "1",               color: "#ef4444" },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{s.label}</span>
-              <span className="text-lg font-bold font-sans" style={{ color: s.color }}>{s.value}</span>
-            </div>
+            { icon: Users,      label: "Premium clients", value: "1",        sub: "Nandhini - 45% of revenue",  color: "#fd7e14" },
+            { icon: TrendingUp, label: "Growth clients",  value: "2",        sub: "Maximus + Sea Wonders",       color: "#3b82f6" },
+            { icon: Clock,      label: "Avg collection",  value: "14.2d",    sub: "Weighted across all clients", color: "#22c55e" },
+            { icon: Star,       label: "Best client",     value: "Nandhini", sub: "Score 98 - Prompt payer",     color: "#ec4899" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
           ))}
         </div>
-      </GlassCard>
+      </DarkSection>
 
       {/* Stacked revenue by client */}
       <GlassCard padding="md">
@@ -183,18 +138,18 @@ export default function ClientAnalyticsPage() {
               <XAxis dataKey="month" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
               <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, ""]} />
-              <Bar dataKey="nandhini"   name="Nandhini"   fill="#fd7e14" stackId="a" />
-              <Bar dataKey="maximus"    name="Maximus"    fill="#3b82f6" stackId="a" />
-              <Bar dataKey="seawonders" name="Sea Wonders"fill="#8b5cf6" stackId="a" />
-              <Bar dataKey="dentique"   name="Dentique"   fill="#16a34a" stackId="a" />
-              <Bar dataKey="other"      name="Others"     fill="#9ca3af" stackId="a" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="nandhini"   name="Nandhini"    fill="#fd7e14" stackId="a" />
+              <Bar dataKey="maximus"    name="Maximus"     fill="#3b82f6" stackId="a" />
+              <Bar dataKey="seawonders" name="Sea Wonders" fill="#8b5cf6" stackId="a" />
+              <Bar dataKey="dentique"   name="Dentique"    fill="#16a34a" stackId="a" />
+              <Bar dataKey="other"      name="Others"      fill="#9ca3af" stackId="a" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </GlassCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Client health table */}
+        {/* Client health scores */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Client Health Scores</h3>
           <div className="space-y-3">
@@ -231,9 +186,9 @@ export default function ClientAnalyticsPage() {
               <RadarChart data={RADAR_DATA}>
                 <PolarGrid stroke="rgba(0,0,0,0.07)" />
                 <PolarAngleAxis dataKey="metric" tick={{ fill: "#9ca3af", fontSize: 10 }} />
-                <Radar name="Nandhini"   dataKey="nandhini"   stroke="#fd7e14" fill="#fd7e14" fillOpacity={0.15} />
-                <Radar name="Maximus"    dataKey="maximus"    stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.10} />
-                <Radar name="Sea Wonders"dataKey="seawonders" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.10} />
+                <Radar name="Nandhini"    dataKey="nandhini"   stroke="#fd7e14" fill="#fd7e14" fillOpacity={0.15} />
+                <Radar name="Maximus"     dataKey="maximus"    stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.10} />
+                <Radar name="Sea Wonders" dataKey="seawonders" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.10} />
                 <Tooltip contentStyle={CHART_TOOLTIP} />
               </RadarChart>
             </ResponsiveContainer>
@@ -295,31 +250,6 @@ export default function ClientAnalyticsPage() {
           </table>
         </div>
       </GlassCard>
-
-      {/* Dark section - Client Health */}
-      <DarkSection>
-        <DarkLabel>Client Health Summary</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: Users,      label: "Premium clients",  value: "1",       sub: "Nandhini - 45% of revenue",   color: "#fd7e14" },
-            { icon: TrendingUp, label: "Growth clients",   value: "2",       sub: "Maximus + Sea Wonders",        color: "#3b82f6" },
-            { icon: Clock,      label: "Avg collection",   value: "14.2d",   sub: "Weighted across all clients",  color: "#22c55e" },
-            { icon: Star,       label: "Best client",      value: "Nandhini",sub: "Score 98 - Prompt payer",      color: "#ec4899" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

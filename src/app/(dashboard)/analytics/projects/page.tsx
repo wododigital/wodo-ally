@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Briefcase, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import {
-  BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils/cn";
 
@@ -64,14 +64,20 @@ const STATUS_COLORS: Record<string, string> = {
   overdue:   "#ef4444",
 };
 
-type Period = "ytd" | "q4" | "fy";
+type Period = "month" | "ytd" | "q4" | "fy";
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function ProjectAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("ytd");
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("period");
+    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
+  }, []);
 
-  const mrrData = period === "q4"
+  const mrrData = period === "month"
+    ? MRR_TREND.slice(-1)
+    : period === "q4"
     ? MRR_TREND.slice(9)
     : period === "ytd"
     ? MRR_TREND.slice(0, 11)
@@ -80,7 +86,8 @@ export default function ProjectAnalyticsPage() {
   const totalRevenue = PROJECTS_BY_TYPE.reduce((s, p) => s + p.value, 0);
 
   const PERIODS: { key: Period; label: string }[] = [
-    { key: "q4",  label: "Q4 (Jan-Mar)" },
+    { key: "month", label: "This Month" },
+    { key: "q4",    label: "Q4 (Jan-Mar)" },
     { key: "ytd", label: "YTD" },
     { key: "fy",  label: "Full Year" },
   ];
@@ -88,36 +95,44 @@ export default function ProjectAnalyticsPage() {
   return (
     <div className="space-y-6">
 
-      {/* Period filter */}
-      <div className="flex items-center gap-2">
-        {PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
-              period === p.key
-                ? "bg-accent-muted text-accent border-accent-light"
-                : "bg-surface-DEFAULT text-text-muted border-black/[0.05] hover:border-black/[0.08]"
-            )}>{p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Summary bar */}
-      <GlassCard padding="md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
+      {/* Project Performance */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Project Performance</p>
+          <div className="flex items-center gap-2">
+            {PERIODS.map((p) => (
+              <button key={p.key} onClick={() => setPeriod(p.key)}
+                className={cn(
+                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
+                  period === p.key
+                    ? "bg-white/[0.12] text-white border-white/[0.2]"
+                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
+                )}>{p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { label: "Total Project Revenue", value: `Rs.${(totalRevenue/100000).toFixed(2)}L`, color: "#fd7e14" },
-            { label: "Active Projects",        value: "8",     color: "#22c55e" },
-            { label: "Retainer MRR",           value: "Rs.2.25L", color: "#3b82f6" },
-            { label: "Completion Rate",        value: "73%",   color: "#8b5cf6" },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{s.label}</span>
-              <span className="text-lg font-bold font-sans" style={{ color: s.color }}>{s.value}</span>
-            </div>
+            { icon: Briefcase,    label: "Total projects",   value: "15",       sub: "8 active, 5 completed",       color: "#fd7e14" },
+            { icon: TrendingUp,   label: "Retainer revenue", value: "Rs.18.9L", sub: "SEO retainers - 49% share",   color: "#3b82f6" },
+            { icon: CheckCircle2, label: "Completion rate",  value: "73%",      sub: "8 of 15 in active delivery",  color: "#22c55e" },
+            { icon: Clock,        label: "On-hold projects", value: "1",        sub: "Raj Enterprises branding",    color: "#f59e0b" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
           ))}
         </div>
-      </GlassCard>
+      </DarkSection>
 
       {/* MRR trend */}
       <GlassCard padding="md">
@@ -236,31 +251,6 @@ export default function ProjectAnalyticsPage() {
           ))}
         </div>
       </GlassCard>
-
-      {/* Dark section */}
-      <DarkSection>
-        <DarkLabel>Project Performance</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: Briefcase,    label: "Total projects",   value: "15",       sub: "8 active, 5 completed",       color: "#fd7e14" },
-            { icon: TrendingUp,   label: "Retainer revenue", value: "Rs.18.9L", sub: "SEO retainers - 49% share",   color: "#3b82f6" },
-            { icon: CheckCircle2, label: "Completion rate",  value: "73%",      sub: "8 of 15 in active delivery",  color: "#22c55e" },
-            { icon: Clock,        label: "On-hold projects", value: "1",        sub: "Raj Enterprises branding",    color: "#f59e0b" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

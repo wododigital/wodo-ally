@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, FileText, Search, ChevronDown, Pencil } from "lucide-react";
+import { Plus, FileText, Search, ChevronDown, Pencil, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
+import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -114,7 +114,6 @@ const INVOICES = [
 const STATUS_TABS = ["all", "draft", "sent", "paid", "overdue", "proforma"] as const;
 type StatusTab = typeof STATUS_TABS[number];
 
-// Which statuses a given status can transition to
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ["sent", "cancelled"],
   sent: ["paid", "overdue", "cancelled"],
@@ -138,7 +137,6 @@ const TYPE_COLORS: Record<string, string> = {
   proforma: "text-text-muted bg-surface-DEFAULT border-black/[0.05]",
 };
 
-// Status change dropdown per row
 function StatusDropdown({
   status,
   onChange,
@@ -220,34 +218,45 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Invoices"
-        description={`${INVOICES.length} total invoices`}
-        action={
-          <Link
-            href="/invoices/new"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-          >
-            <Plus className="w-4 h-4" />
-            New Invoice
-          </Link>
-        }
-      />
 
-      {/* Summary row - 2 cards (Outstanding is on Payments page) */}
-      <div className="grid grid-cols-2 gap-4">
-        <GlassCard padding="md">
-          <p className="text-xs text-text-muted uppercase tracking-wider">Paid This Month</p>
-          <p className="text-xl font-bold font-sans mt-1 text-green-400">
-            Rs.{(totals.paid_this_month / 1000).toFixed(0)}K
-          </p>
-        </GlassCard>
-        <GlassCard padding="md">
-          <p className="text-xs text-text-muted uppercase tracking-wider">Overdue</p>
-          <p className="text-xl font-bold font-sans mt-1 text-red-400">{totals.overdue_count} invoice{totals.overdue_count !== 1 ? "s" : ""}</p>
-        </GlassCard>
-      </div>
+      {/* Invoice KPIs */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Overview</p>
+          <div className="flex items-center gap-2">
+            <Link href="/analytics/invoices"
+              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+              Analytics
+            </Link>
+            <Link href="/invoices/new"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(253,126,20,0.85)" }}>
+              <Plus className="w-3 h-3" />
+              New Invoice
+            </Link>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            { icon: FileText,     label: "Total invoices",   value: `${INVOICES.length}`,                                 sub: "All time",                      color: "#3b82f6" },
+            { icon: CheckCircle2, label: "Paid this month",  value: `Rs.${(totals.paid_this_month/1000).toFixed(0)}K`,    sub: "Feb 2026 collections",          color: "#22c55e" },
+            { icon: Clock,        label: "Outstanding",      value: `Rs.${(totals.outstanding/1000).toFixed(0)}K`,        sub: "Sent + awaiting payment",       color: "#f59e0b" },
+            { icon: AlertCircle,  label: "Overdue",          value: `${totals.overdue_count} invoice${totals.overdue_count !== 1 ? "s" : ""}`, sub: "Follow-up needed", color: "#ef4444" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
+          ))}
+        </div>
+      </DarkSection>
 
       {/* Status tabs */}
       <div className="flex border-b border-black/[0.05] gap-1 overflow-x-auto">

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, FolderKanban, Search, TrendingUp } from "lucide-react";
+import { Plus, FolderKanban, Search, TrendingUp, Users, CheckCircle2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
+import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils/cn";
@@ -65,7 +65,7 @@ const PROJECTS = [
     client_id: "55555555-0000-0000-0000-000000000005",
     type: "seo",
     engagement: "retainer",
-    monthly_value: 22000, // AED 4000 ~ INR 22K approx
+    monthly_value: 22000,
     currency: "AED",
     value: "AED 4,000/mo",
     status: "active_execution" as const,
@@ -119,7 +119,6 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-// Active statuses for on-track calculation
 const ACTIVE_STATUSES = ["onboarding","design_phase","development_phase","deployment_qa","setup_strategy","active_execution","maintenance"];
 
 type TrajectoryLabel = "On Track" | "Delayed" | "Completed" | "On Hold";
@@ -129,12 +128,10 @@ function getTrajectory(project: typeof PROJECTS[0]): TrajectoryStyle {
   const s = project.status as string;
   if (s === "completed") return { label: "Completed", color: "#16a34a", bg: "rgba(22,163,74,0.10)" };
   if (s === "on_hold" || s === "cancelled") return { label: "On Hold", color: "#9ca3af", bg: "rgba(156,163,175,0.10)" };
-  // For active: compare progress_pct vs elapsed time
   const start = new Date(project.start);
   const now   = new Date("2026-03-03");
   const endDate = project.end ? new Date(project.end) : null;
   if (!endDate) {
-    // One-time with no deadline - just show progress
     return project.progress_pct >= 50
       ? { label: "On Track", color: "#3b82f6", bg: "rgba(59,130,246,0.10)" }
       : { label: "Delayed",  color: "#ef4444", bg: "rgba(239,68,68,0.10)" };
@@ -168,54 +165,52 @@ export default function ProjectsPage() {
     return matchSearch && matchFilter;
   });
 
-  // Committed MRR summary (retainers in INR approx)
   const activeRetainers = PROJECTS.filter((p) => p.engagement === "retainer" && ACTIVE_STATUSES.includes(p.status));
-  const committedMRR = activeRetainers.reduce((s, p) => s + p.monthly_value, 0);
+  const committedMRR    = activeRetainers.reduce((s, p) => s + p.monthly_value, 0);
+  const activeCount     = PROJECTS.filter((p) => ACTIVE_STATUSES.includes(p.status)).length;
+  const oneTimeActive   = PROJECTS.filter((p) => p.engagement === "one_time" && ACTIVE_STATUSES.includes(p.status)).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Projects"
-        description={`${PROJECTS.filter((p) => ACTIVE_STATUSES.includes(p.status)).length} active, ${PROJECTS.length} total`}
-        action={
-          <Link
-            href="/projects/new"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-          >
-            <Plus className="w-4 h-4" />
-            New Project
-          </Link>
-        }
-      />
 
-      {/* Committed MRR summary */}
-      <GlassCard padding="md">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="p-2.5 rounded-button" style={{ background: "rgba(253,126,20,0.10)", border: "1px solid rgba(253,126,20,0.15)" }}>
-            <TrendingUp className="w-4 h-4 text-accent" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-text-muted uppercase tracking-wider font-medium">Committed MRR</p>
-            <p className="text-xl font-bold font-sans text-text-primary">
-              Rs.{(committedMRR / 1000).toFixed(0)}K
-              <span className="text-sm font-normal text-text-muted ml-2">/ month</span>
-            </p>
-          </div>
-          <div className="flex gap-6 text-right">
-            <div>
-              <p className="text-xs text-text-muted uppercase tracking-wider">Retainers</p>
-              <p className="text-lg font-bold font-sans text-text-primary">{activeRetainers.length}</p>
-            </div>
-            <div>
-              <p className="text-xs text-text-muted uppercase tracking-wider">One-Time</p>
-              <p className="text-lg font-bold font-sans text-text-primary">
-                {PROJECTS.filter((p) => p.engagement === "one_time" && ACTIVE_STATUSES.includes(p.status)).length}
-              </p>
-            </div>
+      {/* Project KPIs */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Project Overview</p>
+          <div className="flex items-center gap-2">
+            <Link href="/analytics/projects"
+              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+              Analytics
+            </Link>
+            <Link href="/projects/new"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(253,126,20,0.85)" }}>
+              <Plus className="w-3 h-3" />
+              New Project
+            </Link>
           </div>
         </div>
-      </GlassCard>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            { icon: TrendingUp,   label: "Committed MRR",    value: `Rs.${(committedMRR/1000).toFixed(0)}K`,  sub: "From active retainers",     color: "#fd7e14" },
+            { icon: FolderKanban, label: "Active projects",  value: `${activeCount}`,                          sub: `${PROJECTS.length} total`,  color: "#22c55e" },
+            { icon: Users,        label: "Retainers",        value: `${activeRetainers.length}`,               sub: "Recurring monthly work",    color: "#3b82f6" },
+            { icon: CheckCircle2, label: "One-time active",  value: `${oneTimeActive}`,                        sub: "In delivery",               color: "#8b5cf6" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
+          ))}
+        </div>
+      </DarkSection>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -262,7 +257,6 @@ export default function ProjectsPage() {
             return (
               <GlassCard key={project.id} padding="none">
                 <div className="px-5 py-4 space-y-3">
-                  {/* Top row */}
                   <div className="flex items-start gap-4">
                     <div
                       className="w-9 h-9 rounded-button flex items-center justify-center shrink-0 mt-0.5"
@@ -279,14 +273,12 @@ export default function ProjectsPage() {
                         <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-black/[0.05]">
                           {project.engagement === "retainer" ? "Retainer" : "One-Time"}
                         </span>
-                        {/* Trajectory badge */}
                         <span
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
                           style={{ background: traj.bg, color: traj.color }}
                         >
                           {traj.label}
                         </span>
-                        {/* Days remaining pill for one-time projects */}
                         {showDaysLeft && (
                           <span
                             className="text-[10px] font-medium px-2 py-0.5 rounded-full"
@@ -316,7 +308,6 @@ export default function ProjectsPage() {
                     </div>
                   </div>
 
-                  {/* Progress bar */}
                   {project.status !== "completed" && (
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-1.5 bg-black/[0.04] rounded-full overflow-hidden">

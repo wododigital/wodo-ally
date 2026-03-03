@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, IndianRupee, Percent } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
@@ -39,20 +39,28 @@ const CHART_TOOLTIP = {
   color: "#111827",
 };
 
-type Period = "ytd" | "q4" | "fy";
+type Period = "month" | "ytd" | "q4" | "fy";
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function PLPage() {
   const [period, setPeriod] = useState<Period>("ytd");
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("period");
+    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
+  }, []);
 
-  const tableData = period === "q4"
+  const tableData = period === "month"
+    ? PL_MONTHLY.slice(-1)
+    : period === "q4"
     ? PL_MONTHLY.slice(9)
     : period === "ytd"
     ? PL_MONTHLY.slice(0, 11)
     : PL_MONTHLY;
 
-  const chartSlice = period === "q4"
+  const chartSlice = period === "month"
+    ? CHART_DATA.slice(-1)
+    : period === "q4"
     ? CHART_DATA.slice(9)
     : period === "ytd"
     ? CHART_DATA.slice(0, 11)
@@ -64,44 +72,53 @@ export default function PLPage() {
   const avgMargin   = Math.round((totProfit / totRevenue) * 100);
 
   const PERIODS: { key: Period; label: string }[] = [
-    { key: "q4",  label: "Q4 (Jan-Mar)" },
-    { key: "ytd", label: "YTD" },
-    { key: "fy",  label: "Full Year" },
+    { key: "month", label: "This Month" },
+    { key: "q4",    label: "Q4 (Jan-Mar)" },
+    { key: "ytd",   label: "YTD" },
+    { key: "fy",    label: "Full Year" },
   ];
 
   return (
     <div className="space-y-6">
 
-      {/* Period filter */}
-      <div className="flex items-center gap-2">
-        {PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
-              period === p.key
-                ? "bg-accent-muted text-accent border-accent-light"
-                : "bg-surface-DEFAULT text-text-muted border-black/[0.05] hover:border-black/[0.08]"
-            )}>{p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Summary bar */}
-      <GlassCard padding="md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
+      {/* Profit Summary */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Profit Summary</p>
+          <div className="flex items-center gap-2">
+            {PERIODS.map((p) => (
+              <button key={p.key} onClick={() => setPeriod(p.key)}
+                className={cn(
+                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
+                  period === p.key
+                    ? "bg-white/[0.12] text-white border-white/[0.2]"
+                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
+                )}>{p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { label: "Total Revenue",   value: `Rs.${(totRevenue/100000).toFixed(2)}L`,  color: "#fd7e14" },
-            { label: "Total Expenses",  value: `Rs.${(totExpenses/1000).toFixed(0)}K`,   color: "#ef4444" },
-            { label: "Net Profit",      value: `Rs.${(totProfit/100000).toFixed(2)}L`,   color: "#22c55e" },
-            { label: "Net Margin",      value: `${avgMargin}%`,                           color: avgMargin >= 60 ? "#22c55e" : "#f59e0b" },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{s.label}</span>
-              <span className="text-lg font-bold font-sans" style={{ color: s.color }}>{s.value}</span>
-            </div>
+            { icon: IndianRupee, label: "Total revenue",    value: `Rs.${(totRevenue/100000).toFixed(2)}L`, sub: "FY 2025-26",              color: "#fd7e14" },
+            { icon: TrendingDown,label: "Total expenses",   value: `Rs.${(totExpenses/1000).toFixed(0)}K`,  sub: `${Math.round(totExpenses/totRevenue*100)}% of revenue`,  color: "#ef4444" },
+            { icon: TrendingUp,  label: "Net profit",       value: `Rs.${(totProfit/100000).toFixed(2)}L`,  sub: "After all deductions",    color: "#22c55e" },
+            { icon: Percent,     label: "Avg net margin",   value: `${avgMargin}%`,                          sub: avgMargin >= 60 ? "Healthy margin" : "Watch expenses", color: avgMargin >= 60 ? "#22c55e" : "#f59e0b" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
           ))}
         </div>
-      </GlassCard>
+      </DarkSection>
 
       {/* Net profit chart */}
       <GlassCard padding="md">
@@ -169,31 +186,6 @@ export default function PLPage() {
           </table>
         </div>
       </GlassCard>
-
-      {/* Dark section */}
-      <DarkSection>
-        <DarkLabel>Profit Summary</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: IndianRupee, label: "Total revenue",    value: `Rs.${(totRevenue/100000).toFixed(2)}L`, sub: "FY 2025-26",              color: "#fd7e14" },
-            { icon: TrendingDown,label: "Total expenses",   value: `Rs.${(totExpenses/1000).toFixed(0)}K`,  sub: `${Math.round(totExpenses/totRevenue*100)}% of revenue`,  color: "#ef4444" },
-            { icon: TrendingUp,  label: "Net profit",       value: `Rs.${(totProfit/100000).toFixed(2)}L`,  sub: "After all deductions",    color: "#22c55e" },
-            { icon: Percent,     label: "Avg net margin",   value: `${avgMargin}%`,                          sub: avgMargin >= 60 ? "Healthy margin" : "Watch expenses", color: avgMargin >= 60 ? "#22c55e" : "#f59e0b" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

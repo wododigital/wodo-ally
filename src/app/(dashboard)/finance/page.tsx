@@ -71,11 +71,8 @@ export default function FinancePage() {
 
   const totalReceived    = PAYMENTS.reduce((s, p) => s + p.amount_received, 0);
   const totalTds         = PAYMENTS.reduce((s, p) => s + p.tds_amount, 0);
-  const totalSkydo       = PAYMENTS.reduce((s, p) => s + p.skydo_margin, 0);
-  const totalOutstanding = 94200;
-
   const totalExpenses    = EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const netCashFlow      = totalReceived - totalExpenses;
+  const totalOutstanding = 94200;
 
   const filteredPayments = PAYMENTS.filter((p) =>
     p.client.toLowerCase().includes(search.toLowerCase()) ||
@@ -122,27 +119,30 @@ export default function FinancePage() {
         )}
       </div>
 
-      {/* Summary bar - changes based on tab */}
-      <GlassCard padding="md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
-          {(tab === "payments" ? [
-            { label: "Total Received",  value: `Rs.${(totalReceived/100000).toFixed(1)}L`,              color: "#16a34a" },
-            { label: "Outstanding",     value: `Rs.${(totalOutstanding/1000).toFixed(0)}K`,              color: "#f59e0b" },
-            { label: "TDS Deducted",    value: `Rs.${totalTds.toLocaleString("en-IN")}`,                 color: "#6b7280" },
-            { label: "Skydo Fees",      value: `Rs.${totalSkydo.toLocaleString("en-IN")}`,               color: "#6b7280" },
-          ] : [
-            { label: "Total Expenses",  value: `Rs.${(totalExpenses/1000).toFixed(1)}K`,                 color: "#ef4444" },
-            { label: "Net Cash Flow",   value: `Rs.${(netCashFlow/100000).toFixed(2)}L`,                  color: "#22c55e" },
-            { label: "Biggest Item",    value: "Freelancers",                                             color: "#ec4899" },
-            { label: "Avg Monthly",     value: `Rs.${Math.round(totalExpenses/2/1000)}K`,                 color: "#9ca3af" },
-          ]).map((item) => (
-            <div key={item.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{item.label}</span>
-              <span className="text-lg font-bold font-sans" style={{ color: item.color }}>{item.value}</span>
-            </div>
+      {/* Cash Flow Overview */}
+      <DarkSection>
+        <DarkLabel>Cash Flow Overview</DarkLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            { icon: CheckCircle2,  label: "Total received",  value: `Rs.${(totalReceived/100000).toFixed(1)}L`,  sub: "Last 5 payments tracked",    color: "#22c55e" },
+            { icon: TrendingDown,  label: "Total expenses",  value: `Rs.${(totalExpenses/1000).toFixed(1)}K`,    sub: "Feb + Jan 2026",              color: "#ef4444" },
+            { icon: AlertCircle,   label: "Outstanding",     value: "Rs.94.2K",                                  sub: "2 invoices - follow-up needed",color: "#f59e0b" },
+            { icon: TrendingDown,  label: "Net TDS loss",    value: `Rs.${totalTds.toLocaleString("en-IN")}`,    sub: "194J - Maximus OIGA",         color: "#9ca3af" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
           ))}
         </div>
-      </GlassCard>
+      </DarkSection>
 
       {/* Search */}
       <div className="relative">
@@ -308,31 +308,6 @@ export default function FinancePage() {
           )}
         </div>
       </div>
-
-      {/* Dark section */}
-      <DarkSection>
-        <DarkLabel>Cash Flow Overview</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: CheckCircle2,  label: "Total received",  value: `Rs.${(totalReceived/100000).toFixed(1)}L`,  sub: "Last 5 payments tracked",    color: "#22c55e" },
-            { icon: TrendingDown,  label: "Total expenses",  value: `Rs.${(totalExpenses/1000).toFixed(1)}K`,    sub: "Feb + Jan 2026",              color: "#ef4444" },
-            { icon: AlertCircle,   label: "Outstanding",     value: "Rs.94.2K",                                  sub: "2 invoices - follow-up needed",color: "#f59e0b" },
-            { icon: TrendingDown,  label: "Net TDS loss",    value: `Rs.${totalTds.toLocaleString("en-IN")}`,    sub: "194J - Maximus OIGA",         color: "#9ca3af" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, Clock, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
@@ -51,14 +51,20 @@ const CHART_TOOLTIP = {
   color: "#111827",
 };
 
-type Period = "ytd" | "q4" | "fy";
+type Period = "month" | "ytd" | "q4" | "fy";
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function InvoiceAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("ytd");
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("period");
+    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
+  }, []);
 
-  const chartData = period === "q4"
+  const chartData = period === "month"
+    ? MONTHLY_INVOICED.slice(-1)
+    : period === "q4"
     ? MONTHLY_INVOICED.slice(9)
     : period === "ytd"
     ? MONTHLY_INVOICED.slice(0, 11)
@@ -69,44 +75,53 @@ export default function InvoiceAnalyticsPage() {
   const retainerPct   = Math.round((retainerTotal / totalInvoiced) * 100);
 
   const PERIODS: { key: Period; label: string }[] = [
-    { key: "q4",  label: "Q4 (Jan-Mar)" },
-    { key: "ytd", label: "YTD" },
-    { key: "fy",  label: "Full Year" },
+    { key: "month", label: "This Month" },
+    { key: "q4",    label: "Q4 (Jan-Mar)" },
+    { key: "ytd",   label: "YTD" },
+    { key: "fy",    label: "Full Year" },
   ];
 
   return (
     <div className="space-y-6">
 
-      {/* Period filter */}
-      <div className="flex items-center gap-2">
-        {PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
-              period === p.key
-                ? "bg-accent-muted text-accent border-accent-light"
-                : "bg-surface-DEFAULT text-text-muted border-black/[0.05] hover:border-black/[0.08]"
-            )}>{p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Summary bar */}
-      <GlassCard padding="md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.05]">
+      {/* Invoice Health */}
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Health</p>
+          <div className="flex items-center gap-2">
+            {PERIODS.map((p) => (
+              <button key={p.key} onClick={() => setPeriod(p.key)}
+                className={cn(
+                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
+                  period === p.key
+                    ? "bg-white/[0.12] text-white border-white/[0.2]"
+                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
+                )}>{p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { label: "Invoiced",     value: `Rs.${(totalInvoiced/100000).toFixed(2)}L`, color: "#fd7e14" },
-            { label: "Retainer %",  value: `${retainerPct}%`,   color: "#22c55e" },
-            { label: "Overdue",     value: "2 invoices",          color: "#ef4444" },
-            { label: "Avg pay time",value: "14.2 days",           color: "#3b82f6" },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col gap-0.5 px-4 first:pl-0 last:pr-0 py-1 sm:py-0">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{s.label}</span>
-              <span className="text-lg font-bold font-sans" style={{ color: s.color }}>{s.value}</span>
-            </div>
+            { icon: CheckCircle2, label: "Collection rate",  value: "94%",      sub: "18 of 27 invoices paid",    color: "#22c55e" },
+            { icon: Clock,        label: "Avg settlement",   value: "14.2d",    sub: "Across all clients",         color: "#3b82f6" },
+            { icon: AlertCircle,  label: "Overdue amount",   value: "Rs.94,200",sub: "2 invoices need follow-up",  color: "#ef4444" },
+            { icon: TrendingUp,   label: "Retainer MRR",     value: "Rs.3.10L", sub: "3 retainer clients",         color: "#fd7e14" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
           ))}
         </div>
-      </GlassCard>
+      </DarkSection>
 
       {/* Revenue mix chart */}
       <GlassCard padding="md">
@@ -176,31 +191,6 @@ export default function InvoiceAnalyticsPage() {
           </div>
         </GlassCard>
       </div>
-
-      {/* Dark section - Invoice Health */}
-      <DarkSection>
-        <DarkLabel>Invoice Health</DarkLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: CheckCircle2, label: "Collection rate",    value: "94%",      sub: "18 of 27 invoices paid",    color: "#22c55e" },
-            { icon: Clock,        label: "Avg settlement",     value: "14.2d",     sub: "Across all clients",         color: "#3b82f6" },
-            { icon: AlertCircle,  label: "Overdue amount",     value: "Rs.94,200", sub: "2 invoices need follow-up",  color: "#ef4444" },
-            { icon: TrendingUp,   label: "Retainer MRR",       value: "Rs.3.10L",  sub: "3 retainer clients",         color: "#fd7e14" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
-        </div>
-      </DarkSection>
     </div>
   );
 }

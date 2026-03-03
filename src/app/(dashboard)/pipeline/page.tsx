@@ -7,7 +7,7 @@ import {
   TrendingUp, ArrowRight, Plus,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
+import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import { cn } from "@/lib/utils/cn";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -16,7 +16,6 @@ import {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-// Retainer billing schedule - what needs to be invoiced each month
 const TO_INVOICE: {
   id: string;
   client: string;
@@ -47,7 +46,6 @@ const TO_INVOICE: {
   { id: "si-10", client: "Sea Wonders",     client_id: "55555555-0000-0000-0000-000000000005", project: "SEO & Digital Marketing",  type: "retainer",  billing_month: "2026-06", scheduled_date: "2026-06-01", amount: 89600, currency: "INR", display_amount: "AED 4,000",  status: "pending",   payment_terms_days: 10, expected_payment_date: "2026-06-11" },
 ];
 
-// Outstanding invoices + predicted collection dates
 const EXPECTED_COLLECTIONS: {
   id: string;
   invoice: string;
@@ -69,7 +67,6 @@ const EXPECTED_COLLECTIONS: {
   { id: "ec-6", invoice: "Apr inv", client: "Maximus OIGA",       client_id: "22222222-0000-0000-0000-000000000002", amount: 53500,  display_amount: "Rs.53,500",   due_date: "2026-04-16", expected_date: "2026-04-16", urgency: "upcoming", days_label: "Expected Apr 16", href: "/pipeline" },
 ];
 
-// 6-month income forecast
 const FORECAST: { month: string; retainer: number; one_time: number; current?: boolean }[] = [
   { month: "Mar",  retainer: 76700,  one_time: 100300, current: true },
   { month: "Apr",  retainer: 225300, one_time: 85000  },
@@ -111,9 +108,10 @@ export default function PipelinePage() {
   const monthItems = TO_INVOICE.filter((i) => i.billing_month === activeMonth);
   const monthTotal = monthItems.reduce((s, i) => s + i.amount, 0);
 
-  const aprTotal     = TO_INVOICE.filter((i) => i.billing_month === "2026-04").reduce((s, i) => s + i.amount, 0);
-  const aprExpected  = EXPECTED_COLLECTIONS.filter((e) => e.expected_date.startsWith("2026-04")).reduce((s, e) => s + e.amount, 0);
+  const aprTotal      = TO_INVOICE.filter((i) => i.billing_month === "2026-04").reduce((s, i) => s + i.amount, 0);
+  const aprExpected   = EXPECTED_COLLECTIONS.filter((e) => e.expected_date.startsWith("2026-04")).reduce((s, e) => s + e.amount, 0);
   const totalPipeline = TO_INVOICE.filter((i) => ["2026-04","2026-05"].includes(i.billing_month)).reduce((s, i) => s + i.amount, 0);
+  const overdueAmount = EXPECTED_COLLECTIONS.filter((e) => e.urgency === "overdue").reduce((s, e) => s + e.amount, 0);
 
   function markGenerated(id: string) {
     setStatuses((prev) => ({ ...prev, [id]: "generated" }));
@@ -121,51 +119,45 @@ export default function PipelinePage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <PageHeader
-        title="Pipeline"
-        description="Upcoming billing schedule and expected collections"
-      />
 
       {/* ── KPI summary ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          {
-            label: "Apr - To Invoice",
-            value: `Rs.${(aprTotal / 1000).toFixed(0)}K`,
-            sub: `${TO_INVOICE.filter((i) => i.billing_month === "2026-04").length} invoices to raise`,
-            color: "#fd7e14",
-            icon: FileText,
-          },
-          {
-            label: "Apr - Expected In",
-            value: `Rs.${(aprExpected / 1000).toFixed(0)}K`,
-            sub: "Based on payment terms",
-            color: "#16a34a",
-            icon: TrendingUp,
-          },
-          {
-            label: "Apr + May Pipeline",
-            value: `Rs.${(totalPipeline / 100000).toFixed(2)}L`,
-            sub: "Retainer + milestone invoices",
-            color: "#3b82f6",
-            icon: Calendar,
-          },
-        ].map(({ label, value, sub, color, icon: Icon }) => (
-          <GlassCard key={label} padding="md" className="flex items-center gap-4">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: `${color}15`, border: `1px solid ${color}25` }}
-            >
-              <Icon className="w-4 h-4" style={{ color }} />
-            </div>
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{label}</p>
-              <p className="text-xl font-bold font-sans mt-0.5" style={{ color }}>{value}</p>
-              <p className="text-xs text-text-muted mt-0.5">{sub}</p>
-            </div>
-          </GlassCard>
-        ))}
-      </div>
+      <DarkSection>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Pipeline Overview</p>
+          <div className="flex items-center gap-2">
+            <Link href="/analytics/invoices"
+              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+              Analytics
+            </Link>
+            <Link href="/invoices/new"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(253,126,20,0.85)" }}>
+              <Plus className="w-3 h-3" />
+              New Invoice
+            </Link>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            { icon: FileText,    label: "Apr - To Invoice",     value: `Rs.${(aprTotal/1000).toFixed(0)}K`,         sub: `${TO_INVOICE.filter(i => i.billing_month === "2026-04").length} invoices to raise`, color: "#fd7e14" },
+            { icon: TrendingUp,  label: "Apr - Expected In",    value: `Rs.${(aprExpected/1000).toFixed(0)}K`,      sub: "Based on payment terms",                                                            color: "#22c55e" },
+            { icon: Calendar,    label: "Apr + May Pipeline",   value: `Rs.${(totalPipeline/100000).toFixed(2)}L`,  sub: "Retainer + milestone invoices",                                                     color: "#3b82f6" },
+            { icon: AlertCircle, label: "Overdue to Collect",   value: `Rs.${(overdueAmount/1000).toFixed(0)}K`,    sub: "Needs immediate follow-up",                                                         color: "#ef4444" },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                style={{ background: `${stat.color}18` }}>
+                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+              </div>
+              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                {stat.value}
+              </p>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+            </DarkCard>
+          ))}
+        </div>
+      </DarkSection>
 
       {/* ── Main two-column layout ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
@@ -226,7 +218,6 @@ export default function PipelinePage() {
                     isGenerated && "opacity-60"
                   )}
                 >
-                  {/* Client avatar */}
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-accent shrink-0"
                     style={{ background: "rgba(253,126,20,0.10)", border: "1px solid rgba(253,126,20,0.15)" }}
@@ -234,7 +225,6 @@ export default function PipelinePage() {
                     {item.client.charAt(0)}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link
@@ -267,13 +257,11 @@ export default function PipelinePage() {
                     </p>
                   </div>
 
-                  {/* Amount */}
                   <div className="text-right shrink-0 mr-2">
                     <p className="text-sm font-bold font-sans text-text-primary">{item.display_amount}</p>
                     <p className="text-[10px] text-text-muted">{item.currency}</p>
                   </div>
 
-                  {/* CTA */}
                   {isGenerated ? (
                     <span className="flex items-center gap-1 text-xs text-green-500 font-medium shrink-0">
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -294,7 +282,6 @@ export default function PipelinePage() {
               );
             })}
 
-            {/* Month total footer */}
             <div
               className="flex items-center justify-between px-5 py-3"
               style={{ background: "rgba(0,0,0,0.02)", borderTop: "1px solid rgba(0,0,0,0.05)" }}
@@ -319,7 +306,6 @@ export default function PipelinePage() {
               const Icon = cfg.icon;
               return (
                 <div key={urgency}>
-                  {/* Section header */}
                   <div
                     className="flex items-center gap-2 px-5 py-2.5"
                     style={{ background: cfg.bg, borderBottom: `1px solid ${cfg.border}` }}
@@ -332,7 +318,6 @@ export default function PipelinePage() {
                       Rs.{(items.reduce((s, e) => s + e.amount, 0) / 1000).toFixed(0)}K
                     </span>
                   </div>
-                  {/* Items */}
                   {items.map((e, idx) => (
                     <Link
                       key={e.id}
@@ -361,7 +346,6 @@ export default function PipelinePage() {
               );
             })}
 
-            {/* Total footer */}
             <div
               className="flex items-center justify-between px-5 py-3"
               style={{ background: "rgba(0,0,0,0.02)", borderTop: "1px solid rgba(0,0,0,0.05)" }}
@@ -373,7 +357,6 @@ export default function PipelinePage() {
             </div>
           </GlassCard>
 
-          {/* Quick nav */}
           <Link
             href="/payments"
             className="flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
@@ -432,7 +415,6 @@ export default function PipelinePage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Monthly totals below chart */}
         <div className="grid grid-cols-6 gap-2 mt-4 pt-4 border-t border-black/[0.05]">
           {FORECAST.map((f) => (
             <div key={f.month} className="text-center">
