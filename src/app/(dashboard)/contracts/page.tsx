@@ -244,7 +244,7 @@ function ContractCard({ contract }: { contract: Contract }) {
               <Calendar className="w-3.5 h-3.5" />
               {contract.startDate} - {contract.endDate}
             </span>
-            <span className={cn("flex items-center gap-1.5 font-mono tabular-nums font-semibold", CURRENCY_COLOR[contract.currency])}>
+            <span className={cn("flex items-center gap-1.5 font-sans tabular-nums font-semibold", CURRENCY_COLOR[contract.currency])}>
               <DollarSign className="w-3.5 h-3.5" />
               {contract.valueDisplay}
             </span>

@@ -187,7 +187,7 @@ export default function NewInvoicePage() {
                     value={item.amount}
                     onChange={(e) => updateLineItem(item.id, "amount", e.target.value)}
                     placeholder="Amount"
-                    className="glass-input font-mono"
+                    className="glass-input font-sans"
                     required
                   />
                 </div>
@@ -209,21 +209,21 @@ export default function NewInvoicePage() {
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center justify-between w-56">
                 <span className="text-sm text-text-muted">Subtotal</span>
-                <span className="text-sm font-mono font-semibold text-text-primary">
+                <span className="text-sm font-sans font-semibold text-text-primary">
                   {client?.currency === "USD" ? "$" : client?.currency === "AED" ? "AED " : "Rs."}{subtotal.toLocaleString("en-IN")}
                 </span>
               </div>
               {taxRate > 0 && (
                 <div className="flex items-center justify-between w-56">
                   <span className="text-sm text-text-muted">GST ({taxRate}%)</span>
-                  <span className="text-sm font-mono text-text-secondary">
+                  <span className="text-sm font-sans text-text-secondary">
                     {client?.currency === "USD" ? "$" : "Rs."}{tax.toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between w-56 pt-2 border-t border-white/5">
                 <span className="text-sm font-semibold text-text-primary">Total</span>
-                <span className="text-lg font-mono font-bold text-accent">
+                <span className="text-lg font-sans font-bold text-accent">
                   {client?.currency === "USD" ? "$" : client?.currency === "AED" ? "AED " : "Rs."}{total.toLocaleString("en-IN")}
                 </span>
               </div>

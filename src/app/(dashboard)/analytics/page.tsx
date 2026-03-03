@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
                       <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: item.color }} />
                       {item.name}
                     </span>
-                    <span className="font-mono text-text-primary">Rs.{(item.value/100000).toFixed(1)}L</span>
+                    <span className="font-sans text-text-primary">Rs.{(item.value/100000).toFixed(1)}L</span>
                   </div>
                   <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${(item.value / TOTAL_REVENUE * 100).toFixed(0)}%`, backgroundColor: item.color }} />
@@ -196,10 +196,10 @@ export default function AnalyticsPage() {
               ].map((row, idx) => (
                 <tr key={idx} className={cn("border-b border-white/5 last:border-0", row.highlight ? "font-semibold" : "")}>
                   <td className={cn("py-2.5 text-sm pl-2", row.highlight ? "text-text-primary" : "text-text-secondary")}>{row.label}</td>
-                  <td className={cn("py-2.5 text-sm font-mono text-right", row.color)}>
+                  <td className={cn("py-2.5 text-sm font-sans text-right", row.color)}>
                     {row.value < 0 ? "-" : ""}Rs.{Math.abs(row.value).toLocaleString("en-IN")}
                   </td>
-                  <td className="py-2.5 text-sm font-mono text-right text-text-muted hidden sm:table-cell">
+                  <td className="py-2.5 text-sm font-sans text-right text-text-muted hidden sm:table-cell">
                     {Math.abs(Math.round(row.value / TOTAL_REVENUE * 100))}%
                   </td>
                 </tr>

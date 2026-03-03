@@ -212,7 +212,7 @@ function MetricPill({ icon: Icon, label, value, color }: MetricPillProps) {
     <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium", color)}>
       <Icon className="w-3.5 h-3.5" />
       <span className="text-text-muted">{label}:</span>
-      <span className="font-mono tabular-nums font-semibold">{value}</span>
+      <span className="font-sans tabular-nums font-semibold">{value}</span>
     </div>
   );
 }

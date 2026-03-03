@@ -113,7 +113,7 @@ export default function TargetsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Target Amount</label>
-              <input type="number" className="glass-input font-mono" placeholder="0" />
+              <input type="number" className="glass-input font-sans" placeholder="0" />
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
@@ -144,7 +144,7 @@ export default function TargetsPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-2">
-                  <span className="text-lg font-bold font-mono" style={{ color: pct >= 80 ? "#22c55e" : pct >= 50 ? color : "#3b82f6" }}>
+                  <span className="text-lg font-bold font-sans" style={{ color: pct >= 80 ? "#22c55e" : pct >= 50 ? color : "#3b82f6" }}>
                     {pct}%
                   </span>
                 </div>
@@ -161,13 +161,13 @@ export default function TargetsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-card" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                     <p className="text-xs text-text-muted">Current</p>
-                    <p className="text-base font-bold font-mono text-text-primary mt-0.5">
+                    <p className="text-base font-bold font-sans text-text-primary mt-0.5">
                       {isCount ? target.current_amount : `Rs.${(target.current_amount / 100000).toFixed(1)}L`}
                     </p>
                   </div>
                   <div className="p-3 rounded-card" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                     <p className="text-xs text-text-muted">Target</p>
-                    <p className="text-base font-bold font-mono text-text-primary mt-0.5">
+                    <p className="text-base font-bold font-sans text-text-primary mt-0.5">
                       {isCount ? target.target_amount : `Rs.${(target.target_amount / 100000).toFixed(1)}L`}
                     </p>
                   </div>

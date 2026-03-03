@@ -78,7 +78,7 @@ export default function ExpensesPage() {
               <div key={cat.name}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-text-secondary">{cat.name}</span>
-                  <span className="text-xs font-mono text-text-primary">Rs.{cat.amount.toLocaleString("en-IN")}</span>
+                  <span className="text-xs font-sans text-text-primary">Rs.{cat.amount.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                   <div
@@ -91,7 +91,7 @@ export default function ExpensesPage() {
           </div>
           <div className="mt-4 pt-4 border-t border-white/5 flex justify-between">
             <span className="text-sm font-semibold text-text-primary">Total</span>
-            <span className="text-sm font-mono font-bold text-text-primary">Rs.{totalExpenses.toLocaleString("en-IN")}</span>
+            <span className="text-sm font-sans font-bold text-text-primary">Rs.{totalExpenses.toLocaleString("en-IN")}</span>
           </div>
         </GlassCard>
 
@@ -153,12 +153,12 @@ export default function ExpensesPage() {
                   </div>
                   <div className="text-right shrink-0">
                     {txn.debit != null && (
-                      <p className="text-sm font-mono font-semibold text-red-400">
+                      <p className="text-sm font-sans font-semibold text-red-400">
                         -Rs.{txn.debit.toLocaleString("en-IN")}
                       </p>
                     )}
                     {txn.credit != null && (
-                      <p className="text-sm font-mono font-semibold text-green-400">
+                      <p className="text-sm font-sans font-semibold text-green-400">
                         +Rs.{txn.credit.toLocaleString("en-IN")}
                       </p>
                     )}

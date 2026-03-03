@@ -160,12 +160,12 @@ function CompanyTab() {
           {/* PAN */}
           <div className="space-y-1.5">
             <FieldLabel>PAN</FieldLabel>
-            <input type="text" defaultValue={COMPANY_DEFAULTS.pan} className="glass-input font-mono tracking-widest" />
+            <input type="text" defaultValue={COMPANY_DEFAULTS.pan} className="glass-input font-sans tracking-widest" />
           </div>
           {/* GSTIN */}
           <div className="space-y-1.5">
             <FieldLabel>GSTIN</FieldLabel>
-            <input type="text" defaultValue={COMPANY_DEFAULTS.gstin} className="glass-input font-mono tracking-widest" />
+            <input type="text" defaultValue={COMPANY_DEFAULTS.gstin} className="glass-input font-sans tracking-widest" />
           </div>
 
           {/* Address Line 1 */}
@@ -193,7 +193,7 @@ function CompanyTab() {
           {/* Pincode */}
           <div className="space-y-1.5">
             <FieldLabel>Pincode</FieldLabel>
-            <input type="text" defaultValue={COMPANY_DEFAULTS.pincode} className="glass-input font-mono" />
+            <input type="text" defaultValue={COMPANY_DEFAULTS.pincode} className="glass-input font-sans" />
           </div>
           {/* Country */}
           <div className="space-y-1.5">
@@ -204,7 +204,7 @@ function CompanyTab() {
           {/* Phone */}
           <div className="space-y-1.5">
             <FieldLabel>Phone</FieldLabel>
-            <input type="tel" defaultValue={COMPANY_DEFAULTS.phone} className="glass-input font-mono" />
+            <input type="tel" defaultValue={COMPANY_DEFAULTS.phone} className="glass-input font-sans" />
           </div>
           {/* Email */}
           <div className="space-y-1.5">
@@ -289,10 +289,10 @@ function BankTab() {
                     <input
                       type="text"
                       defaultValue={field.value}
-                      className={cn("glass-input text-sm", field.mono && "font-mono tracking-wide")}
+                      className={cn("glass-input text-sm", field.mono && "font-sans tracking-wide")}
                     />
                   ) : (
-                    <p className={cn("text-sm text-text-primary py-2 px-3 rounded-button bg-surface-DEFAULT border border-white/5 break-all", field.mono && "font-mono tracking-wide")}>
+                    <p className={cn("text-sm text-text-primary py-2 px-3 rounded-button bg-surface-DEFAULT border border-white/5 break-all", field.mono && "font-sans tracking-wide")}>
                       {field.value}
                     </p>
                   )}
@@ -326,12 +326,12 @@ function InvoiceTab() {
           {/* GST Prefix */}
           <div className="space-y-1.5">
             <FieldLabel>Invoice Prefix - GST</FieldLabel>
-            <input type="text" defaultValue="G" className="glass-input font-mono w-24" />
+            <input type="text" defaultValue="G" className="glass-input font-sans w-24" />
           </div>
           {/* Non-GST Prefix */}
           <div className="space-y-1.5">
             <FieldLabel>Invoice Prefix - Non-GST</FieldLabel>
-            <input type="text" defaultValue="NG" className="glass-input font-mono w-24" />
+            <input type="text" defaultValue="NG" className="glass-input font-sans w-24" />
           </div>
 
           {/* GST Sequence */}
@@ -341,7 +341,7 @@ function InvoiceTab() {
               type="text"
               value="G00113"
               readOnly
-              className="glass-input font-mono tabular-nums opacity-60 cursor-not-allowed"
+              className="glass-input font-sans tabular-nums opacity-60 cursor-not-allowed"
             />
             <p className="text-xs text-text-muted">Read-only - auto-incremented</p>
           </div>
@@ -352,7 +352,7 @@ function InvoiceTab() {
               type="text"
               value="NG00202"
               readOnly
-              className="glass-input font-mono tabular-nums opacity-60 cursor-not-allowed"
+              className="glass-input font-sans tabular-nums opacity-60 cursor-not-allowed"
             />
             <p className="text-xs text-text-muted">Read-only - auto-incremented</p>
           </div>
@@ -360,12 +360,12 @@ function InvoiceTab() {
           {/* Default due days */}
           <div className="space-y-1.5">
             <FieldLabel>Default Due Days</FieldLabel>
-            <input type="number" defaultValue={30} className="glass-input font-mono tabular-nums" />
+            <input type="number" defaultValue={30} className="glass-input font-sans tabular-nums" />
           </div>
           {/* Default GST rate */}
           <div className="space-y-1.5">
             <FieldLabel>Default GST Rate (%)</FieldLabel>
-            <input type="number" defaultValue={18} className="glass-input font-mono tabular-nums" />
+            <input type="number" defaultValue={18} className="glass-input font-sans tabular-nums" />
           </div>
         </div>
 

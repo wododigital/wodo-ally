@@ -168,19 +168,19 @@ export default function InvoicesPage() {
       <div className="grid grid-cols-3 gap-4">
         <GlassCard padding="md">
           <p className="text-xs text-text-muted uppercase tracking-wider">Outstanding</p>
-          <p className="text-xl font-bold font-mono mt-1 text-yellow-400">
+          <p className="text-xl font-bold font-sans mt-1 text-yellow-400">
             Rs.{(totals.outstanding / 1000).toFixed(0)}K
           </p>
         </GlassCard>
         <GlassCard padding="md">
           <p className="text-xs text-text-muted uppercase tracking-wider">Paid This Month</p>
-          <p className="text-xl font-bold font-mono mt-1 text-green-400">
+          <p className="text-xl font-bold font-sans mt-1 text-green-400">
             Rs.{(totals.paid_this_month / 1000).toFixed(0)}K
           </p>
         </GlassCard>
         <GlassCard padding="md">
           <p className="text-xs text-text-muted uppercase tracking-wider">Overdue</p>
-          <p className="text-xl font-bold font-mono mt-1 text-red-400">{totals.overdue_count} invoice{totals.overdue_count !== 1 ? "s" : ""}</p>
+          <p className="text-xl font-bold font-sans mt-1 text-red-400">{totals.overdue_count} invoice{totals.overdue_count !== 1 ? "s" : ""}</p>
         </GlassCard>
       </div>
 
@@ -205,7 +205,7 @@ export default function InvoicesPage() {
             >
               {tab}
               <span className={cn(
-                "text-xs px-1.5 py-0.5 rounded-full font-mono",
+                "text-xs px-1.5 py-0.5 rounded-full font-sans",
                 activeTab === tab ? "bg-accent-muted text-accent" : "bg-surface-DEFAULT text-text-muted"
               )}>
                 {count}
@@ -256,7 +256,7 @@ export default function InvoicesPage() {
                   >
                     <td className="px-5 py-4">
                       <Link href={`/invoices/${invoice.id}`} className="group-hover:text-accent transition-colors">
-                        <p className="text-sm font-mono font-semibold text-text-primary">
+                        <p className="text-sm font-sans font-semibold text-text-primary">
                           {invoice.invoice_number ?? "PF-2026"}
                         </p>
                       </Link>
@@ -273,7 +273,7 @@ export default function InvoicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 hidden md:table-cell">
-                      <p className="text-sm text-text-muted font-mono">{formatDate(invoice.invoice_date)}</p>
+                      <p className="text-sm text-text-muted font-sans">{formatDate(invoice.invoice_date)}</p>
                     </td>
                     <td className="px-4 py-4 text-right">
                       <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency} size="sm" />

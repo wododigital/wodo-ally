@@ -132,7 +132,7 @@ function HealthBar({ score }: { score: number }) {
           style={{ width: `${score}%`, backgroundColor: color }}
         />
       </div>
-      <span className="text-xs font-mono text-text-muted w-6 text-right">{score}</span>
+      <span className="text-xs font-sans text-text-muted w-6 text-right">{score}</span>
     </div>
   );
 }
@@ -232,7 +232,7 @@ export default function ClientsPage() {
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <MapPin className="w-3 h-3 text-text-muted shrink-0" />
                     {client.city}, {client.country}
-                    <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-surface-DEFAULT text-text-muted font-mono">
+                    <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-surface-DEFAULT text-text-muted font-sans">
                       {REGION_FLAGS[client.region]}
                     </span>
                   </div>
@@ -240,7 +240,7 @@ export default function ClientsPage() {
                     <Building2 className="w-3 h-3 text-text-muted shrink-0" />
                     {CLIENT_TYPE_LABELS[client.client_type]}
                     <span className="text-text-muted">-</span>
-                    <span className="font-mono">{client.currency}</span>
+                    <span className="font-sans">{client.currency}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <Globe className="w-3 h-3 text-text-muted shrink-0" />

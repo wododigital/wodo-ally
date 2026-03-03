@@ -51,8 +51,8 @@ const config: Config = {
         "glow-strong": "0 0 30px rgba(253,126,20,0.25)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["var(--font-manrope)", "system-ui", "sans-serif"],
+        mono: ["var(--font-manrope)", "system-ui", "sans-serif"],
       },
       fontSize: {
         display: ["2.5rem", { lineHeight: "1.1", fontWeight: "700" }],

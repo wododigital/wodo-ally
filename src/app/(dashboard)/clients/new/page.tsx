@@ -89,7 +89,7 @@ export default function NewClientPage() {
             {clientType === "indian_gst" && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-text-muted uppercase tracking-wider">GSTIN</label>
-                <input type="text" className="glass-input font-mono" placeholder="29AADCW8591N1ZA" />
+                <input type="text" className="glass-input font-sans" placeholder="29AADCW8591N1ZA" />
               </div>
             )}
             <div className="space-y-1.5 sm:col-span-2">

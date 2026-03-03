@@ -103,7 +103,7 @@ export default function InvoiceDetailPage() {
         </Link>
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary font-mono">
+            <h1 className="text-2xl font-bold text-text-primary font-sans">
               {invoice.invoice_number ?? "Pro Forma"}
             </h1>
             <p className="text-sm text-text-muted mt-1">{invoice.client}</p>
@@ -144,7 +144,7 @@ export default function InvoiceDetailPage() {
                 <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
                   <Hash className="w-3 h-3" /> Invoice
                 </div>
-                <p className="text-sm font-mono font-semibold text-text-primary">
+                <p className="text-sm font-sans font-semibold text-text-primary">
                   {invoice.invoice_number ?? "PF-20260115-001"}
                 </p>
               </div>
@@ -152,14 +152,14 @@ export default function InvoiceDetailPage() {
                 <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
                   <Calendar className="w-3 h-3" /> Invoice Date
                 </div>
-                <p className="text-sm font-mono text-text-primary">{formatDate(invoice.invoice_date)}</p>
+                <p className="text-sm font-sans text-text-primary">{formatDate(invoice.invoice_date)}</p>
               </div>
               {invoice.due_date && (
                 <div>
                   <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
                     <Calendar className="w-3 h-3" /> Due Date
                   </div>
-                  <p className="text-sm font-mono text-text-primary">{formatDate(invoice.due_date)}</p>
+                  <p className="text-sm font-sans text-text-primary">{formatDate(invoice.due_date)}</p>
                 </div>
               )}
               <div>
@@ -173,7 +173,7 @@ export default function InvoiceDetailPage() {
                   <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
                     <Calendar className="w-3 h-3" /> Billing Period
                   </div>
-                  <p className="text-sm font-mono text-text-primary">
+                  <p className="text-sm font-sans text-text-primary">
                     {formatDate(invoice.billing_period_start)} - {formatDate(invoice.billing_period_end!)}
                   </p>
                 </div>
@@ -196,7 +196,7 @@ export default function InvoiceDetailPage() {
                       <p className="text-sm text-text-secondary">{item.description}</p>
                     </td>
                     <td className="py-3 text-center">
-                      <p className="text-sm text-text-muted font-mono">{item.quantity}</p>
+                      <p className="text-sm text-text-muted font-sans">{item.quantity}</p>
                     </td>
                     <td className="py-3 text-right">
                       <CurrencyDisplay amount={item.amount * item.quantity} currency={invoice.currency} size="sm" />
@@ -275,7 +275,7 @@ export default function InvoiceDetailPage() {
                     <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-mono font-semibold text-green-400">
+                        <p className="text-sm font-sans font-semibold text-green-400">
                           +Rs.{payment.amount.toLocaleString("en-IN")}
                         </p>
                         <p className="text-xs text-text-muted">{formatDate(payment.date)}</p>

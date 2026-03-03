@@ -27,7 +27,7 @@ export function CurrencyDisplay({
   return (
     <span
       className={cn(
-        "font-mono tabular-nums font-semibold",
+        "font-sans tabular-nums font-semibold",
         sizeClasses[size],
         className
       )}

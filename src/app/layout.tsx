@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "WODO Ally - Internal Management Platform",
@@ -14,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="bg-background antialiased">
+      <body className={`${manrope.variable} bg-background antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -211,12 +211,12 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-text-muted font-mono">
+                      <span className="text-text-muted font-sans">
                         {target.unit === "INR"
                           ? `Rs.${(target.current / 100000).toFixed(1)}L`
                           : target.current}
                       </span>
-                      <span className="text-text-muted font-mono">
+                      <span className="text-text-muted font-sans">
                         {target.unit === "INR"
                           ? `Rs.${(target.target / 100000).toFixed(1)}L`
                           : target.target}

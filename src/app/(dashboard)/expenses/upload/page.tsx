@@ -107,7 +107,7 @@ export default function UploadStatementPage() {
                 { label: "Need review", value: "8" },
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
-                  <p className="text-2xl font-bold font-mono text-text-primary">{stat.value}</p>
+                  <p className="text-2xl font-bold font-sans text-text-primary">{stat.value}</p>
                   <p className="text-xs text-text-muted mt-0.5">{stat.label}</p>
                 </div>
               ))}

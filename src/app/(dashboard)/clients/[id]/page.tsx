@@ -151,7 +151,7 @@ export default function ClientDetailPage() {
                 }}
               />
             </div>
-            <span className="text-sm font-bold font-mono text-text-primary">{client.health_score}</span>
+            <span className="text-sm font-bold font-sans text-text-primary">{client.health_score}</span>
           </div>
         </GlassCard>
       </div>
@@ -191,7 +191,7 @@ export default function ClientDetailPage() {
                     <div key={label} className="flex items-center gap-3">
                       <Icon className="w-4 h-4 text-text-muted shrink-0" />
                       <span className="text-xs text-text-muted w-20 shrink-0">{label}</span>
-                      <span className="text-sm text-text-secondary font-mono">{value}</span>
+                      <span className="text-sm text-text-secondary font-sans">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -290,7 +290,7 @@ export default function ClientDetailPage() {
                       )}
                     >
                       <div>
-                        <p className="text-sm font-medium text-text-primary font-mono">{invoice.number}</p>
+                        <p className="text-sm font-medium text-text-primary font-sans">{invoice.number}</p>
                         <p className="text-xs text-text-muted">{formatDate(invoice.date)}</p>
                       </div>
                       <div className="flex items-center gap-3">

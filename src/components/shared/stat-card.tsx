@@ -42,7 +42,7 @@ export function StatCard({
         )}
       </div>
       <div className="space-y-1">
-        <p className="text-2xl font-bold font-mono tabular-nums text-text-primary leading-none">
+        <p className="text-2xl font-bold font-sans tabular-nums text-text-primary leading-none">
           {value}
         </p>
         {subtitle && (

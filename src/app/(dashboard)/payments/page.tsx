@@ -180,7 +180,7 @@ export default function PaymentsPage() {
                         {payment.invoice_number} - {METHOD_LABELS[payment.payment_method]}
                       </p>
                       {payment.reference && (
-                        <p className="text-xs text-text-muted font-mono mt-0.5">{payment.reference}</p>
+                        <p className="text-xs text-text-muted font-sans mt-0.5">{payment.reference}</p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
@@ -223,7 +223,7 @@ export default function PaymentsPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-text-primary">{item.client}</p>
                     <p className="text-xs text-text-muted">{item.invoice}</p>
-                    <p className="text-xs font-mono font-semibold text-red-400 mt-1">
+                    <p className="text-xs font-sans font-semibold text-red-400 mt-1">
                       Rs.{item.amount.toLocaleString("en-IN")}
                     </p>
                     {"days_overdue" in item && (
@@ -250,7 +250,7 @@ export default function PaymentsPage() {
                 <div key={item.month} className="flex items-center justify-between py-1.5">
                   <span className="text-sm text-text-secondary">{item.month}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono text-text-primary">
+                    <span className="text-sm font-sans text-text-primary">
                       Rs.{(item.amount / 1000).toFixed(0)}K
                     </span>
                     <div

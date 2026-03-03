@@ -194,7 +194,7 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
-                  <span className="text-sm font-mono font-semibold text-text-primary">{project.value}</span>
+                  <span className="text-sm font-sans font-semibold text-text-primary">{project.value}</span>
                   <StatusBadge status={project.status} />
                 </div>
               </div>
