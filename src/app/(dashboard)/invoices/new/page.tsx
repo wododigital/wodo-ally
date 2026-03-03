@@ -3,10 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils/cn";
+import { useClients } from "@/lib/hooks/use-clients";
+import { useCreateInvoice } from "@/lib/hooks/use-invoices";
+import type { Database } from "@/types/database";
+
+type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 
 interface LineItem {
   id: string;
@@ -15,39 +20,6 @@ interface LineItem {
   amount: string;
   quantity: number;
 }
-
-const CLIENTS = [
-  { id: "11111111-0000-0000-0000-000000000001", name: "Nandhini Deluxe Hotel",   type: "indian_gst",     currency: "INR" },
-  { id: "22222222-0000-0000-0000-000000000002", name: "Maximus OIGA",            type: "indian_gst",     currency: "INR" },
-  { id: "33333333-0000-0000-0000-000000000003", name: "Godavari Heritage Hotels",type: "indian_gst",     currency: "INR" },
-  { id: "44444444-0000-0000-0000-000000000004", name: "Dentique Dental Care",    type: "international",  currency: "USD" },
-  { id: "55555555-0000-0000-0000-000000000005", name: "Sea Wonders Tourism",     type: "international",  currency: "AED" },
-  { id: "66666666-0000-0000-0000-000000000006", name: "Raj Enterprises",         type: "indian_non_gst", currency: "INR" },
-];
-
-const PROJECTS_BY_CLIENT: Record<string, Array<{ id: string; name: string }>> = {
-  "11111111-0000-0000-0000-000000000001": [
-    { id: "proj-1a", name: "SEO Management" },
-    { id: "proj-1b", name: "Google My Business" },
-  ],
-  "22222222-0000-0000-0000-000000000002": [
-    { id: "proj-2a", name: "Performance Marketing" },
-    { id: "proj-2b", name: "Social Media Management" },
-  ],
-  "33333333-0000-0000-0000-000000000003": [
-    { id: "proj-3a", name: "Digital PR" },
-  ],
-  "44444444-0000-0000-0000-000000000004": [
-    { id: "proj-4a", name: "Website Redesign" },
-    { id: "proj-4b", name: "SEO Consulting" },
-  ],
-  "55555555-0000-0000-0000-000000000005": [
-    { id: "proj-5a", name: "Content Strategy" },
-  ],
-  "66666666-0000-0000-0000-000000000006": [
-    { id: "proj-6a", name: "Local SEO" },
-  ],
-};
 
 // Matches the services catalogue in Settings
 const SERVICES = [
@@ -61,31 +33,52 @@ const SERVICES = [
   { id: "s8", name: "Content Marketing",  color: "#84cc16" },
 ];
 
+function getInvoiceTypeFromClient(
+  client: ClientRow
+): "gst" | "non_gst" | "international" {
+  if (client.client_type === "indian_gst") return "gst";
+  if (client.client_type === "indian_non_gst") return "non_gst";
+  return "international";
+}
+
 export default function NewInvoicePage() {
   const router = useRouter();
+  const { data: clients = [], isLoading: clientsLoading } = useClients();
+  const createInvoice = useCreateInvoice();
+
   const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">("gst");
-  const [selectedClient,  setSelectedClient]  = useState("");
-  const [selectedProject, setSelectedProject] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
+  const [dueDate, setDueDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [billingPeriodStart, setBillingPeriodStart] = useState("");
+  const [billingPeriodEnd, setBillingPeriodEnd] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: "1", service_id: "", description: "", amount: "", quantity: 1 },
   ]);
 
-  const client    = CLIENTS.find((c) => c.id === selectedClient);
-  const subtotal  = lineItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0) * item.quantity, 0);
-  const taxRate   = invoiceType === "gst" ? 18 : 0;
-  const tax       = subtotal * (taxRate / 100);
-  const total     = subtotal + tax;
+  const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;
 
-  const invoiceNumber =
-    invoiceType === "proforma"
-      ? `PF-${new Date().toISOString().split("T")[0].replace(/-/g, "")}`
-      : invoiceType === "non_gst"
-      ? "NG00202"
-      : "G00114";
+  // Auto-determine type when client changes
+  function handleClientChange(clientId: string) {
+    setSelectedClientId(clientId);
+    const client = clients.find((c) => c.id === clientId);
+    if (client && invoiceType !== "proforma") {
+      setInvoiceType(getInvoiceTypeFromClient(client));
+    }
+  }
 
-  const clientProjects = selectedClient ? (PROJECTS_BY_CLIENT[selectedClient] ?? []) : [];
+  const effectiveCurrency = selectedClient?.currency ?? "INR";
+  const taxRate = invoiceType === "gst" ? 18 : 0;
+  const subtotal = lineItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0) * item.quantity, 0);
+  const tax = subtotal * (taxRate / 100);
+  const total = subtotal + tax;
 
-  const currencyPrefix = client?.currency === "USD" ? "$" : client?.currency === "AED" ? "AED " : "Rs.";
+  const currencyPrefix =
+    effectiveCurrency === "USD" ? "$" :
+    effectiveCurrency === "AED" ? "AED " :
+    effectiveCurrency === "GBP" ? "GBP " :
+    "Rs.";
 
   function addLineItem() {
     setLineItems((prev) => [
@@ -110,6 +103,48 @@ export default function NewInvoicePage() {
     return item.description.trim();
   }
 
+  function handleSubmit(e: React.FormEvent, asDraft: boolean) {
+    e.preventDefault();
+    if (!selectedClientId) return;
+
+    const finalLineItems = lineItems
+      .filter((item) => item.description.trim() && parseFloat(item.amount) > 0)
+      .map((item) => ({
+        description: getFormattedDescription(item),
+        amount: parseFloat(item.amount) || 0,
+        quantity: item.quantity,
+      }));
+
+    if (finalLineItems.length === 0) return;
+
+    createInvoice.mutate(
+      {
+        invoice: {
+          invoice_type: invoiceType,
+          client_id: selectedClientId,
+          currency: effectiveCurrency,
+          subtotal,
+          tax_rate: taxRate,
+          tax_amount: tax,
+          total_amount: total,
+          balance_due: total,
+          invoice_date: invoiceDate,
+          due_date: dueDate || null,
+          notes: notes || null,
+          billing_period_start: billingPeriodStart || null,
+          billing_period_end: billingPeriodEnd || null,
+          status: asDraft ? "draft" : "draft",
+        },
+        lineItems: finalLineItems,
+      },
+      {
+        onSuccess: (newInvoice) => {
+          router.push(`/invoices/${newInvoice.id}`);
+        },
+      }
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <div>
@@ -123,7 +158,7 @@ export default function NewInvoicePage() {
         <PageHeader title="New Invoice" description="Create a new invoice" />
       </div>
 
-      <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); router.push("/invoices"); }}>
+      <form className="space-y-6" onSubmit={(e) => handleSubmit(e, false)}>
 
         {/* Invoice type */}
         <GlassCard padding="md">
@@ -159,13 +194,14 @@ export default function NewInvoicePage() {
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Invoice Number</label>
               <input
                 type="text"
                 readOnly
-                value={invoiceNumber}
-                className="glass-input font-sans opacity-60 cursor-default"
+                value="Assigned on finalization"
+                className="glass-input font-sans opacity-50 cursor-default text-text-muted text-xs"
               />
             </div>
 
@@ -173,44 +209,82 @@ export default function NewInvoicePage() {
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Client *</label>
               <select
                 className="glass-input"
-                value={selectedClient}
-                onChange={(e) => { setSelectedClient(e.target.value); setSelectedProject(""); }}
+                value={selectedClientId}
+                onChange={(e) => handleClientChange(e.target.value)}
                 required
+                disabled={clientsLoading}
               >
-                <option value="">Select client...</option>
-                {CLIENTS.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                <option value="">
+                  {clientsLoading ? "Loading clients..." : "Select client..."}
+                </option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.company_name}</option>
                 ))}
               </select>
             </div>
 
-            {clientProjects.length > 0 && (
+            {selectedClient && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Project</label>
-                <select
-                  className="glass-input"
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                >
-                  <option value="">Select project (optional)...</option>
-                  {clientProjects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Currency</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={`${effectiveCurrency} (from client)`}
+                  className="glass-input font-sans opacity-60 cursor-default"
+                />
               </div>
             )}
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Invoice Date *</label>
-              <input type="date" required className="glass-input" defaultValue={new Date().toISOString().split("T")[0]} />
+              <input
+                type="date"
+                required
+                className="glass-input"
+                value={invoiceDate}
+                onChange={(e) => setInvoiceDate(e.target.value)}
+              />
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Due Date</label>
-              <input type="date" className="glass-input" />
+              <input
+                type="date"
+                className="glass-input"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Period Start</label>
+              <input
+                type="date"
+                className="glass-input"
+                value={billingPeriodStart}
+                onChange={(e) => setBillingPeriodStart(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Period End</label>
+              <input
+                type="date"
+                className="glass-input"
+                value={billingPeriodEnd}
+                onChange={(e) => setBillingPeriodEnd(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Notes (shown on invoice)</label>
-              <textarea rows={2} className="glass-input resize-none" placeholder="Payment terms, bank details will be added automatically..." />
+              <textarea
+                rows={2}
+                className="glass-input resize-none"
+                placeholder="Payment terms, bank details will be added automatically..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
             </div>
           </div>
         </GlassCard>
@@ -240,7 +314,7 @@ export default function NewInvoicePage() {
 
           <div className="space-y-3">
             {lineItems.map((item) => {
-              const svc        = SERVICES.find((s) => s.id === item.service_id);
+              const svc = SERVICES.find((s) => s.id === item.service_id);
               const previewText = getFormattedDescription(item);
               const showPreview = !!svc && !!item.description.trim();
 
@@ -360,18 +434,21 @@ export default function NewInvoicePage() {
             Cancel
           </Link>
           <button
-            type="submit"
-            name="action"
-            value="draft"
-            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all"
+            type="button"
+            onClick={(e) => handleSubmit(e as unknown as React.FormEvent, true)}
+            disabled={createInvoice.isPending || !selectedClientId}
+            className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all disabled:opacity-50 flex items-center gap-2"
           >
+            {createInvoice.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Save as Draft
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200"
+            disabled={createInvoice.isPending || !selectedClientId}
+            className="px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
             style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
           >
+            {createInvoice.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Create Invoice
           </button>
         </div>

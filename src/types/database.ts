@@ -58,7 +58,11 @@ export type Database = {
           website: string | null;
           notes: string | null;
           health_score: number;
-          status: "active" | "inactive" | "churned";
+          status: "active" | "inactive" | "churned" | "closed";
+          billing_day: number | null;
+          avg_days_to_pay: number | null;
+          on_time_payment_pct: number | null;
+          payment_terms_days: number;
           created_at: string;
           updated_at: string;
           created_by: string | null;
@@ -84,7 +88,11 @@ export type Database = {
           website?: string | null;
           notes?: string | null;
           health_score?: number;
-          status?: "active" | "inactive" | "churned";
+          status?: "active" | "inactive" | "churned" | "closed";
+          billing_day?: number | null;
+          avg_days_to_pay?: number | null;
+          on_time_payment_pct?: number | null;
+          payment_terms_days?: number;
           created_by?: string | null;
         };
         Relationships: never[];
@@ -109,7 +117,11 @@ export type Database = {
           website?: string | null;
           notes?: string | null;
           health_score?: number;
-          status?: "active" | "inactive" | "churned";
+          status?: "active" | "inactive" | "churned" | "closed";
+          billing_day?: number | null;
+          avg_days_to_pay?: number | null;
+          on_time_payment_pct?: number | null;
+          payment_terms_days?: number;
           created_by?: string | null;
         };
       };
@@ -165,6 +177,7 @@ export type Database = {
           projected_completion_date: string | null;
           actual_completion_date: string | null;
           timeline_days: number | null;
+          progress_pct: number;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -188,6 +201,7 @@ export type Database = {
           projected_completion_date?: string | null;
           actual_completion_date?: string | null;
           timeline_days?: number | null;
+          progress_pct?: number;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -211,7 +225,50 @@ export type Database = {
           actual_completion_date?: string | null;
           timeline_days?: number | null;
           notes?: string | null;
+          progress_pct?: number;
           created_by?: string | null;
+        };
+      };
+      scheduled_invoices: {
+        Row: {
+          id: string;
+          client_id: string;
+          project_id: string | null;
+          billing_month: string;
+          scheduled_date: string;
+          invoice_type: "gst" | "international" | "non_gst";
+          amount: number;
+          currency: string;
+          description: string;
+          status: "pending" | "generated" | "skipped" | "cancelled";
+          generated_invoice_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id: string;
+          project_id?: string | null;
+          billing_month: string;
+          scheduled_date: string;
+          invoice_type: "gst" | "international" | "non_gst";
+          amount: number;
+          currency?: string;
+          description: string;
+          status?: "pending" | "generated" | "skipped" | "cancelled";
+          generated_invoice_id?: string | null;
+        };
+        Relationships: never[];
+        Update: {
+          client_id?: string;
+          project_id?: string | null;
+          billing_month?: string;
+          scheduled_date?: string;
+          invoice_type?: "gst" | "international" | "non_gst";
+          amount?: number;
+          currency?: string;
+          description?: string;
+          status?: "pending" | "generated" | "skipped" | "cancelled";
+          generated_invoice_id?: string | null;
         };
       };
       invoices: {

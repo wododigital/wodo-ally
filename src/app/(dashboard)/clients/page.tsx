@@ -4,102 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Plus, Search, Users, FileText, TrendingUp, Star, CheckCircle2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
-
-// ─── Mock data ─────────────────────────────────────────────────────────────
-
-const CLIENTS = [
-  {
-    id: "11111111-0000-0000-0000-000000000001",
-    company_name: "Nandhini Deluxe Hotel",
-    display_name: "Nandhini Hotel",
-    invoice_type: "indian_gst" as const,
-    region: "india" as const,
-    currency: "INR" as const,
-    health_score: 82,
-    status: "active" as const,
-    total_invoiced: 921900,
-    first_invoice: "Apr 2025",
-    avg_days_to_pay: 7.2,
-    on_time_pct: 100,
-    billing_day: 1,
-  },
-  {
-    id: "22222222-0000-0000-0000-000000000002",
-    company_name: "Maximus OIGA",
-    display_name: "Maximus",
-    invoice_type: "indian_gst" as const,
-    region: "india" as const,
-    currency: "INR" as const,
-    health_score: 75,
-    status: "active" as const,
-    total_invoiced: 590000,
-    first_invoice: "Jun 2025",
-    avg_days_to_pay: 18.5,
-    on_time_pct: 72,
-    billing_day: 1,
-  },
-  {
-    id: "33333333-0000-0000-0000-000000000003",
-    company_name: "Godavari Heritage Hotels",
-    display_name: "Godavari Heritage",
-    invoice_type: "indian_gst" as const,
-    region: "india" as const,
-    currency: "INR" as const,
-    health_score: 68,
-    status: "active" as const,
-    total_invoiced: 100300,
-    first_invoice: "Jan 2026",
-    avg_days_to_pay: 14.0,
-    on_time_pct: 85,
-  },
-  {
-    id: "44444444-0000-0000-0000-000000000004",
-    company_name: "Dentique Dental Care",
-    display_name: "Dentique",
-    invoice_type: "international" as const,
-    region: "usa" as const,
-    currency: "USD" as const,
-    health_score: 91,
-    status: "active" as const,
-    total_invoiced: 115830,
-    first_invoice: "Dec 2025",
-    avg_days_to_pay: 9.0,
-    on_time_pct: 95,
-  },
-  {
-    id: "55555555-0000-0000-0000-000000000005",
-    company_name: "Sea Wonders Tourism",
-    display_name: "Sea Wonders",
-    invoice_type: "international" as const,
-    region: "uae" as const,
-    currency: "AED" as const,
-    health_score: 88,
-    status: "active" as const,
-    total_invoiced: 89600,
-    first_invoice: "Aug 2025",
-    avg_days_to_pay: 11.3,
-    on_time_pct: 90,
-    billing_day: 1,
-  },
-  {
-    id: "66666666-0000-0000-0000-000000000006",
-    company_name: "Raj Enterprises",
-    display_name: "Raj Enterprises",
-    invoice_type: "indian_non_gst" as const,
-    region: "india" as const,
-    currency: "INR" as const,
-    health_score: 55,
-    status: "active" as const,
-    total_invoiced: 17500,
-    first_invoice: "Feb 2026",
-    avg_days_to_pay: 31.0,
-    on_time_pct: 50,
-  },
-];
+import { useClients } from "@/lib/hooks/use-clients";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -190,30 +100,65 @@ function CircularHealth({ score }: { score: number }) {
   );
 }
 
+// ─── Loading skeleton for client grid ────────────────────────────────────────
+
+function ClientCardSkeleton() {
+  return (
+    <div className="glass-card p-5 space-y-4">
+      <div className="flex items-start gap-3">
+        <Skeleton className="w-10 h-10 rounded-button shrink-0" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-24 rounded" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-8 rounded" />
+          <Skeleton className="h-5 w-14 rounded" />
+        </div>
+      </div>
+      <div className="flex items-center gap-4 pt-3 border-t border-black/[0.05]">
+        <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+      <Skeleton className="h-8 w-full rounded-card" />
+    </div>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ClientsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
-  const filtered = CLIENTS.filter((c) => {
+  const { data: clients = [], isLoading, isError, error } = useClients();
+
+  const filtered = clients.filter((c) => {
     const matchSearch =
       c.company_name.toLowerCase().includes(search.toLowerCase()) ||
-      c.display_name.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || c.invoice_type === filter;
+      (c.display_name ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "all" || c.client_type === filter;
     return matchSearch && matchFilter;
   });
 
   const counts = FILTERS.reduce<Record<FilterType, number>>((acc, f) => {
     acc[f.value] = f.value === "all"
-      ? CLIENTS.length
-      : CLIENTS.filter((c) => c.invoice_type === f.value).length;
+      ? clients.length
+      : clients.filter((c) => c.client_type === f.value).length;
     return acc;
   }, {} as Record<FilterType, number>);
 
-  const totalRevenue   = CLIENTS.reduce((s, c) => s + c.total_invoiced, 0);
-  const avgHealth      = Math.round(CLIENTS.reduce((s, c) => s + c.health_score, 0) / CLIENTS.length);
-  const activeCount    = CLIENTS.filter((c) => c.status === "active").length;
+  const activeCount = clients.filter((c) => c.status === "active").length;
+  const avgHealth = clients.length > 0
+    ? Math.round(clients.reduce((s, c) => s + c.health_score, 0) / clients.length)
+    : 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -237,10 +182,10 @@ export default function ClientsPage() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: Users,        label: "Total clients",   value: `${CLIENTS.length}`,                           sub: "All time",                  color: "#3b82f6" },
-            { icon: CheckCircle2, label: "Active clients",  value: `${activeCount}`,                              sub: "Currently engaged",         color: "#22c55e" },
-            { icon: Star,         label: "Avg health score",value: `${avgHealth}`,                                sub: "Across all clients",        color: "#fd7e14" },
-            { icon: TrendingUp,   label: "Total revenue",   value: `Rs.${(totalRevenue/100000).toFixed(1)}L`,     sub: "Lifetime invoiced",         color: "#8b5cf6" },
+            { icon: Users,        label: "Total clients",    value: isLoading ? "-" : `${clients.length}`,   sub: "All time",              color: "#3b82f6" },
+            { icon: CheckCircle2, label: "Active clients",   value: isLoading ? "-" : `${activeCount}`,      sub: "Currently engaged",     color: "#22c55e" },
+            { icon: Star,         label: "Avg health score", value: isLoading ? "-" : `${avgHealth}`,        sub: "Across all clients",    color: "#fd7e14" },
+            { icon: TrendingUp,   label: "Total revenue",    value: isLoading ? "-" : "See invoices",        sub: "Lifetime invoiced",     color: "#8b5cf6" },
           ].map((stat) => (
             <DarkCard key={stat.label} className="p-5">
               <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
@@ -288,15 +233,28 @@ export default function ClientsPage() {
                   filter === f.value ? "bg-accent/20 text-accent" : "bg-black/[0.04] text-text-muted"
                 )}
               >
-                {counts[f.value]}
+                {counts[f.value] ?? 0}
               </span>
             </button>
           ))}
         </div>
       </div>
 
+      {/* Error state */}
+      {isError && (
+        <div className="rounded-xl px-4 py-3 text-sm text-red-500 border border-red-500/20 bg-red-500/[0.06]">
+          Failed to load clients: {(error as Error)?.message ?? "Unknown error"}
+        </div>
+      )}
+
       {/* Client grid */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ClientCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No clients found"
@@ -307,7 +265,9 @@ export default function ClientsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((client) => {
             const hl = healthLabel(client.health_score);
-            const pb = payBehaviorLabel(client.avg_days_to_pay, client.on_time_pct);
+            const avgDays = client.avg_days_to_pay ?? 0;
+            const onTimePct = client.on_time_payment_pct ?? 0;
+            const pb = payBehaviorLabel(avgDays, onTimePct);
 
             return (
               <div key={client.id} className="relative group">
@@ -325,7 +285,7 @@ export default function ClientsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-text-primary truncate group-hover:text-accent transition-colors">
-                          {client.display_name}
+                          {client.display_name ?? client.company_name}
                         </p>
                         <p className="text-xs text-text-muted truncate mt-0.5">{client.company_name}</p>
                       </div>
@@ -334,13 +294,13 @@ export default function ClientsPage() {
                     <div className="flex items-center justify-between">
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded border font-medium",
-                        INVOICE_TYPE_COLORS[client.invoice_type]
+                        INVOICE_TYPE_COLORS[client.client_type]
                       )}>
-                        {INVOICE_TYPE_LABELS[client.invoice_type]}
+                        {INVOICE_TYPE_LABELS[client.client_type]}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-sans font-medium text-text-muted px-1.5 py-0.5 rounded bg-surface-DEFAULT border border-black/[0.05]">
-                          {REGION_FLAGS[client.region]}
+                          {REGION_FLAGS[client.region] ?? "--"}
                         </span>
                         <StatusBadge status={client.status} />
                       </div>
@@ -353,9 +313,11 @@ export default function ClientsPage() {
                           <span className="text-xs font-semibold" style={{ color: hl.color }}>{hl.label}</span>
                         </div>
                         <p className="text-sm font-bold font-sans text-text-primary">
-                          {formatRevenue(client.total_invoiced, client.currency)}
+                          {formatRevenue(0, client.currency)}
                         </p>
-                        <p className="text-xs text-text-muted mt-0.5">since {client.first_invoice}</p>
+                        <p className="text-xs text-text-muted mt-0.5">
+                          since {new Date(client.created_at).toLocaleString("en-US", { month: "short", year: "numeric" })}
+                        </p>
                       </div>
                     </div>
 
@@ -363,14 +325,18 @@ export default function ClientsPage() {
                       className="flex items-center justify-between text-xs px-3 py-2 rounded-card"
                       style={{ background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.04)" }}
                     >
-                      <span className="text-text-muted">Pays in ~{client.avg_days_to_pay}d</span>
+                      <span className="text-text-muted">
+                        {avgDays > 0 ? `Pays in ~${avgDays}d` : "No payment data"}
+                      </span>
                       <div className="flex items-center gap-2">
-                        {(client as typeof client & { billing_day?: number }).billing_day && (
+                        {client.billing_day !== null && client.billing_day !== undefined && (
                           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-blue-500 bg-blue-500/10">
-                            Bills {getOrdinal((client as typeof client & { billing_day?: number }).billing_day!)}
+                            Bills {getOrdinal(client.billing_day)}
                           </span>
                         )}
-                        <span className="font-medium" style={{ color: pb.color }}>{pb.text}</span>
+                        {avgDays > 0 && (
+                          <span className="font-medium" style={{ color: pb.color }}>{pb.text}</span>
+                        )}
                       </div>
                     </div>
                   </GlassCard>

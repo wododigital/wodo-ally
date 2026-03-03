@@ -5,67 +5,24 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Download, Plus, CheckCircle2,
-  Calendar, Building2, Hash, X, Pencil
+  Calendar, Building2, Hash, X, Pencil, Eye, Loader2
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { PdfPreviewModal } from "@/components/shared/pdf-preview-modal";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
+import {
+  useInvoice,
+  useInvoicePayments,
+  useRecordPayment,
+  useFinalizeInvoice,
+} from "@/lib/hooks/use-invoices";
+import { generateInvoicePdf, downloadBlob } from "@/lib/pdf";
+import type { Database } from "@/types/database";
 
-const INVOICE_DATA: Record<string, {
-  id: string;
-  invoice_number: string | null;
-  invoice_type: "gst" | "international" | "non_gst" | "proforma";
-  client: string;
-  client_type: string;
-  currency: "INR" | "USD" | "AED";
-  line_items: Array<{ description: string; amount: number; quantity: number }>;
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total_amount: number;
-  invoice_date: string;
-  due_date: string | null;
-  billing_period_start: string | null;
-  billing_period_end: string | null;
-  status: "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled";
-  notes: string | null;
-  payments: Array<{
-    date: string;
-    amount: number;
-    method: string;
-    reference: string;
-    tds: number;
-    notes: string;
-  }>;
-}> = {
-  "bbbbbbbb-0000-0000-0000-000000000001": {
-    id: "bbbbbbbb-0000-0000-0000-000000000001",
-    invoice_number: "G00110",
-    invoice_type: "gst",
-    client: "Nandhini Deluxe Hotel",
-    client_type: "indian_gst",
-    currency: "INR",
-    line_items: [
-      { description: "SEO Management - Feb 2026 (Keyword research, on-page optimization, link building)", amount: 55000, quantity: 1 },
-      { description: "Google My Business Management - Feb 2026", amount: 10000, quantity: 1 },
-    ],
-    subtotal: 65000,
-    tax_rate: 18,
-    tax_amount: 11700,
-    total_amount: 76700,
-    invoice_date: "2026-02-01",
-    due_date: "2026-02-08",
-    billing_period_start: "2026-02-01",
-    billing_period_end: "2026-02-28",
-    status: "paid",
-    notes: null,
-    payments: [
-      { date: "2026-02-10", amount: 76700, method: "Bank Transfer (NEFT)", reference: "NEFT2026021001234", tds: 0, notes: "Full payment received" },
-    ],
-  },
-};
+type PaymentMethod = Database["public"]["Tables"]["invoice_payments"]["Row"]["payment_method"];
 
 interface RecordPaymentForm {
   payment_date: string;
@@ -76,19 +33,29 @@ interface RecordPaymentForm {
   notes: string;
 }
 
+const METHOD_LABELS: Record<string, string> = {
+  bank_transfer: "Bank Transfer (NEFT)",
+  upi: "UPI",
+  skydo_usd: "Skydo (USD)",
+  skydo_aed: "Skydo (AED)",
+  skydo_gbp: "Skydo (GBP)",
+  other: "Other",
+};
+
 function RecordPaymentModal({
+  invoiceId,
   invoiceTotal,
   balanceDue,
   currency,
   onClose,
-  onSave,
 }: {
+  invoiceId: string;
   invoiceTotal: number;
   balanceDue: number;
-  currency: "INR" | "USD" | "AED";
+  currency: string;
   onClose: () => void;
-  onSave: (form: RecordPaymentForm) => void;
 }) {
+  const recordPayment = useRecordPayment();
   const today = new Date().toISOString().split("T")[0];
   const [form, setForm] = useState<RecordPaymentForm>({
     payment_date: today,
@@ -105,21 +72,34 @@ function RecordPaymentModal({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSave(form);
+    recordPayment.mutate(
+      {
+        payment: {
+          invoice_id: invoiceId,
+          payment_date: form.payment_date,
+          amount_received: parseFloat(form.amount_received) || 0,
+          currency,
+          tds_amount: parseFloat(form.tds_amount) || 0,
+          payment_method: form.payment_method as PaymentMethod,
+          reference_number: form.reference || null,
+          notes: form.notes || null,
+        },
+      },
+      {
+        onSuccess: () => onClose(),
+      }
+    );
   }
 
   const currencySymbol = currency === "USD" ? "$" : currency === "AED" ? "AED " : "Rs.";
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0"
         style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(4px)" }}
         onClick={onClose}
       />
-
-      {/* Modal */}
       <div
         className="relative w-full max-w-lg rounded-2xl p-6 space-y-5"
         style={{
@@ -140,7 +120,6 @@ function RecordPaymentModal({
           </button>
         </div>
 
-        {/* Balance info */}
         <div
           className="flex items-center justify-between px-4 py-3 rounded-xl"
           style={{ background: "rgba(253,126,20,0.06)", border: "1px solid rgba(253,126,20,0.15)" }}
@@ -241,9 +220,11 @@ function RecordPaymentModal({
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200"
+              disabled={recordPayment.isPending}
+              className="px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200 disabled:opacity-70 flex items-center gap-2"
               style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
             >
+              {recordPayment.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Record Payment
             </button>
           </div>
@@ -253,72 +234,142 @@ function RecordPaymentModal({
   );
 }
 
+// ─── Build PDF props helper ───────────────────────────────────────────────────
+
+function buildPdfProps(
+  invoice: NonNullable<ReturnType<typeof useInvoice>["data"]>
+) {
+  const client = invoice.client;
+  return {
+    invoice: {
+      invoice_number: invoice.invoice_number,
+      proforma_ref: invoice.proforma_ref,
+      invoice_type: invoice.invoice_type,
+      invoice_date: invoice.invoice_date,
+      due_date: invoice.due_date,
+      currency: invoice.currency,
+      subtotal: invoice.subtotal,
+      tax_rate: invoice.tax_rate,
+      tax_amount: invoice.tax_amount,
+      total_amount: invoice.total_amount,
+      notes: invoice.notes,
+      billing_period_start: invoice.billing_period_start,
+      billing_period_end: invoice.billing_period_end,
+    },
+    client: {
+      company_name: client?.company_name ?? "Unknown Client",
+      address: client?.address ?? null,
+      city: client?.city ?? null,
+      state: client?.state ?? null,
+      pincode: client?.pincode ?? null,
+      country: client?.country ?? "India",
+      gstin: client?.gstin ?? null,
+      tax_number: client?.tax_number ?? null,
+      tax_number_label: client?.tax_number_label ?? null,
+    },
+    lineItems: invoice.line_items.map((li) => ({
+      description: li.description,
+      amount: li.amount,
+      quantity: li.quantity,
+    })),
+  };
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function InvoiceDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [localPayments, setLocalPayments] = useState<Array<{
-    date: string; amount: number; method: string; reference: string; tds: number; notes: string;
-  }>>([]);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
-  const invoice = INVOICE_DATA[id] ?? {
-    id,
-    invoice_number: "G00111",
-    invoice_type: "gst" as const,
-    client: "Client",
-    client_type: "indian_gst",
-    currency: "INR" as const,
-    line_items: [{ description: "Service", amount: 50000, quantity: 1 }],
-    subtotal: 50000,
-    tax_rate: 18,
-    tax_amount: 9000,
-    total_amount: 59000,
-    invoice_date: "2026-03-01",
-    due_date: "2026-03-08",
-    billing_period_start: "2026-03-01",
-    billing_period_end: "2026-03-31",
-    status: "sent" as const,
-    notes: null,
-    payments: [],
-  };
+  const { data: invoice, isLoading } = useInvoice(id);
+  const { data: payments = [] } = useInvoicePayments(id);
+  const finalizeInvoice = useFinalizeInvoice();
 
-  const allPayments = [...invoice.payments, ...localPayments];
-  const balance = invoice.total_amount - allPayments.reduce((s, p) => s + p.amount, 0);
+  const balance = invoice
+    ? Math.max(0, invoice.total_amount - (invoice.total_received ?? 0))
+    : 0;
 
-  function handleSavePayment(form: RecordPaymentForm) {
-    const METHOD_LABELS: Record<string, string> = {
-      bank_transfer: "Bank Transfer (NEFT)",
-      upi: "UPI",
-      skydo_usd: "Skydo (USD)",
-      skydo_aed: "Skydo (AED)",
-      skydo_gbp: "Skydo (GBP)",
-      other: "Other",
-    };
-    setLocalPayments((prev) => [
-      ...prev,
-      {
-        date: form.payment_date,
-        amount: parseFloat(form.amount_received) || 0,
-        method: METHOD_LABELS[form.payment_method] ?? form.payment_method,
-        reference: form.reference,
-        tds: parseFloat(form.tds_amount) || 0,
-        notes: form.notes,
-      },
-    ]);
-    setShowPaymentModal(false);
+  async function handlePreviewPdf() {
+    if (!invoice) return;
+    setIsPdfGenerating(true);
+    try {
+      const props = buildPdfProps(invoice);
+      const blob = await generateInvoicePdf(props);
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setShowPdfModal(true);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setIsPdfGenerating(false);
+    }
   }
+
+  function handleClosePdfModal() {
+    setShowPdfModal(false);
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(undefined);
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (!invoice) return;
+    setIsPdfGenerating(true);
+    try {
+      const props = buildPdfProps(invoice);
+      const blob = await generateInvoicePdf(props);
+      const ref = invoice.invoice_type === "proforma"
+        ? (invoice.proforma_ref ?? "proforma")
+        : (invoice.invoice_number ?? "invoice");
+      downloadBlob(blob, `WODO-${ref}.pdf`);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  }
+
+  if (isLoading || !invoice) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  const displayRef =
+    invoice.invoice_type === "proforma"
+      ? (invoice.proforma_ref ?? "Pro Forma")
+      : (invoice.invoice_number ?? "DRAFT");
+
+  const clientName = invoice.client?.company_name ?? "Unknown Client";
+  const pdfTitle = `Invoice ${displayRef} - ${clientName}`;
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
-      {showPaymentModal && (
+      <PdfPreviewModal
+        isOpen={showPdfModal}
+        onClose={handleClosePdfModal}
+        title={pdfTitle}
+        pdfUrl={pdfUrl}
+        onDownload={handleDownloadPdf}
+      />
+
+      {showPaymentModal && invoice && (
         <RecordPaymentModal
+          invoiceId={id}
           invoiceTotal={invoice.total_amount}
-          balanceDue={Math.max(0, balance)}
+          balanceDue={balance}
           currency={invoice.currency}
           onClose={() => setShowPaymentModal(false)}
-          onSave={handleSavePayment}
         />
       )}
+
       <div>
         <Link
           href="/invoices"
@@ -330,11 +381,11 @@ export default function InvoiceDetailPage() {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-text-primary font-sans">
-              {invoice.invoice_number ?? "Pro Forma"}
+              {displayRef}
             </h1>
-            <p className="text-sm text-text-muted mt-1">{invoice.client}</p>
+            <p className="text-sm text-text-muted mt-1">{clientName}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <StatusBadge status={invoice.status} />
             <Link
               href={`/invoices/${id}/edit`}
@@ -343,24 +394,43 @@ export default function InvoiceDetailPage() {
               <Pencil className="w-4 h-4" />
               Edit
             </Link>
-            {invoice.status === "draft" || invoice.status === "sent" ? (
-              <>
-                <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all">
-                  <Download className="w-4 h-4" />
-                  PDF
-                </button>
-                <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-                >
-                  <Send className="w-4 h-4" />
-                  Send
-                </button>
-              </>
-            ) : (
-              <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all">
-                <Download className="w-4 h-4" />
-                Download PDF
+            <button
+              onClick={handlePreviewPdf}
+              disabled={isPdfGenerating}
+              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] hover:text-accent transition-all disabled:opacity-60"
+            >
+              {isPdfGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+              Preview PDF
+            </button>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isPdfGenerating}
+              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all disabled:opacity-60"
+            >
+              <Download className="w-4 h-4" />
+              Download
+            </button>
+            {invoice.status === "draft" && (
+              <button
+                onClick={() => finalizeInvoice.mutate({ id })}
+                disabled={finalizeInvoice.isPending}
+                className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white disabled:opacity-70"
+                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+              >
+                {finalizeInvoice.isPending
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Send className="w-4 h-4" />
+                }
+                Finalize
+              </button>
+            )}
+            {invoice.status === "sent" && (
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+              >
+                <Send className="w-4 h-4" />
+                Resend
               </button>
             )}
           </div>
@@ -378,7 +448,7 @@ export default function InvoiceDetailPage() {
                   <Hash className="w-3 h-3" /> Invoice
                 </div>
                 <p className="text-sm font-sans font-semibold text-text-primary">
-                  {invoice.invoice_number ?? "PF-20260115-001"}
+                  {displayRef}
                 </p>
               </div>
               <div>
@@ -399,7 +469,7 @@ export default function InvoiceDetailPage() {
                 <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
                   <Building2 className="w-3 h-3" /> Bill To
                 </div>
-                <p className="text-sm text-text-primary">{invoice.client}</p>
+                <p className="text-sm text-text-primary">{clientName}</p>
               </div>
               {invoice.billing_period_start && (
                 <div>
@@ -432,7 +502,11 @@ export default function InvoiceDetailPage() {
                       <p className="text-sm text-text-muted font-sans">{item.quantity}</p>
                     </td>
                     <td className="py-3 text-right">
-                      <CurrencyDisplay amount={item.amount * item.quantity} currency={invoice.currency} size="sm" />
+                      <CurrencyDisplay
+                        amount={item.amount * item.quantity}
+                        currency={invoice.currency as "INR" | "USD" | "AED"}
+                        size="sm"
+                      />
                     </td>
                   </tr>
                 ))}
@@ -443,17 +517,17 @@ export default function InvoiceDetailPage() {
             <div className="flex flex-col items-end gap-2 pt-4 border-t border-black/[0.05]">
               <div className="flex justify-between w-48">
                 <span className="text-sm text-text-muted">Subtotal</span>
-                <CurrencyDisplay amount={invoice.subtotal} currency={invoice.currency} size="sm" />
+                <CurrencyDisplay amount={invoice.subtotal} currency={invoice.currency as "INR" | "USD" | "AED"} size="sm" />
               </div>
               {invoice.tax_rate > 0 && (
                 <div className="flex justify-between w-48">
                   <span className="text-sm text-text-muted">GST ({invoice.tax_rate}%)</span>
-                  <CurrencyDisplay amount={invoice.tax_amount} currency={invoice.currency} size="sm" className="text-text-secondary" />
+                  <CurrencyDisplay amount={invoice.tax_amount} currency={invoice.currency as "INR" | "USD" | "AED"} size="sm" className="text-text-secondary" />
                 </div>
               )}
               <div className="flex justify-between w-48 pt-2 border-t border-black/[0.05]">
                 <span className="text-sm font-bold text-text-primary">Total</span>
-                <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency} size="md" className="text-accent" />
+                <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency as "INR" | "USD" | "AED"} size="md" className="text-accent" />
               </div>
             </div>
           </GlassCard>
@@ -466,13 +540,13 @@ export default function InvoiceDetailPage() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-text-muted">Invoice Total</span>
-                <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency} size="sm" />
+                <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency as "INR" | "USD" | "AED"} size="sm" />
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-text-muted">Received</span>
                 <CurrencyDisplay
-                  amount={allPayments.reduce((s, p) => s + p.amount, 0)}
-                  currency={invoice.currency}
+                  amount={invoice.total_received ?? 0}
+                  currency={invoice.currency as "INR" | "USD" | "AED"}
                   size="sm"
                   className="text-green-400"
                 />
@@ -481,7 +555,7 @@ export default function InvoiceDetailPage() {
                 <span className="text-sm font-semibold text-text-primary">Balance Due</span>
                 <CurrencyDisplay
                   amount={balance}
-                  currency={invoice.currency}
+                  currency={invoice.currency as "INR" | "USD" | "AED"}
                   size="sm"
                   className={balance > 0 ? "text-yellow-400" : "text-green-400"}
                 />
@@ -500,23 +574,28 @@ export default function InvoiceDetailPage() {
           </GlassCard>
 
           {/* Payment history */}
-          {allPayments.length > 0 && (
+          {payments.length > 0 && (
             <GlassCard padding="md">
               <h3 className="text-sm font-semibold text-text-primary mb-4">Payment History</h3>
               <div className="space-y-3">
-                {allPayments.map((payment, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="flex items-start gap-3">
                     <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-sans font-semibold text-green-400">
-                          +Rs.{payment.amount.toLocaleString("en-IN")}
+                          +{payment.currency === "USD" ? "$" : payment.currency === "AED" ? "AED " : "Rs."}
+                          {(payment.amount_received ?? 0).toLocaleString("en-IN")}
                         </p>
-                        <p className="text-xs text-text-muted">{formatDate(payment.date)}</p>
+                        <p className="text-xs text-text-muted">{formatDate(payment.payment_date)}</p>
                       </div>
-                      <p className="text-xs text-text-muted mt-0.5">{payment.method}</p>
-                      {payment.tds > 0 && (
-                        <p className="text-xs text-yellow-400/80">TDS deducted: Rs.{payment.tds.toLocaleString("en-IN")}</p>
+                      <p className="text-xs text-text-muted mt-0.5">
+                        {payment.payment_method ? METHOD_LABELS[payment.payment_method] ?? payment.payment_method : ""}
+                      </p>
+                      {(payment.tds_amount ?? 0) > 0 && (
+                        <p className="text-xs text-yellow-400/80">
+                          TDS deducted: Rs.{(payment.tds_amount ?? 0).toLocaleString("en-IN")}
+                        </p>
                       )}
                       {payment.notes && (
                         <p className="text-xs text-text-muted mt-0.5">{payment.notes}</p>

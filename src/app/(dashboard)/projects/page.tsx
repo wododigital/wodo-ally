@@ -4,106 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { Plus, FolderKanban, Search, TrendingUp, Users, CheckCircle2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
-
-// ─── Mock data ─────────────────────────────────────────────────────────────
-
-const PROJECTS = [
-  {
-    id: "aaaaaaaa-0000-0000-0000-000000000001",
-    name: "SEO & Google My Business",
-    client: "Nandhini Hotel",
-    client_id: "11111111-0000-0000-0000-000000000001",
-    type: "seo",
-    engagement: "retainer",
-    monthly_value: 65000,
-    currency: "INR",
-    value: "Rs.65,000/mo",
-    status: "active_execution" as const,
-    start: "2025-04-01",
-    end: "2026-03-31",
-    progress_pct: 88,
-  },
-  {
-    id: "aaaaaaaa-0000-0000-0000-000000000002",
-    name: "SEO Retainer - Maximus",
-    client: "Maximus OIGA",
-    client_id: "22222222-0000-0000-0000-000000000002",
-    type: "seo",
-    engagement: "retainer",
-    monthly_value: 50000,
-    currency: "INR",
-    value: "Rs.50,000/mo",
-    status: "active_execution" as const,
-    start: "2025-06-01",
-    end: "2026-05-31",
-    progress_pct: 75,
-  },
-  {
-    id: "aaaaaaaa-0000-0000-0000-000000000003",
-    name: "Website Development - Dentique",
-    client: "Dentique Dental Care",
-    client_id: "44444444-0000-0000-0000-000000000004",
-    type: "web_development",
-    engagement: "one_time",
-    monthly_value: 0,
-    currency: "USD",
-    value: "$1,350",
-    status: "completed" as const,
-    start: "2025-11-01",
-    end: "2025-12-15",
-    progress_pct: 100,
-  },
-  {
-    id: "aaaaaaaa-0000-0000-0000-000000000004",
-    name: "SEO & Digital Marketing",
-    client: "Sea Wonders",
-    client_id: "55555555-0000-0000-0000-000000000005",
-    type: "seo",
-    engagement: "retainer",
-    monthly_value: 22000,
-    currency: "AED",
-    value: "AED 4,000/mo",
-    status: "active_execution" as const,
-    start: "2025-08-01",
-    end: "2026-07-31",
-    progress_pct: 65,
-  },
-  {
-    id: "aaaaaaaa-0000-0000-0000-000000000005",
-    name: "Brand Identity - Godavari",
-    client: "Godavari Heritage",
-    client_id: "33333333-0000-0000-0000-000000000003",
-    type: "branding",
-    engagement: "one_time",
-    monthly_value: 0,
-    currency: "INR",
-    value: "Rs.85,000",
-    status: "design_phase" as const,
-    start: "2026-01-15",
-    end: null,
-    progress_pct: 40,
-  },
-  {
-    id: "aaaaaaaa-0000-0000-0000-000000000006",
-    name: "Website - Raj Enterprises",
-    client: "Raj Enterprises",
-    client_id: "66666666-0000-0000-0000-000000000006",
-    type: "web_development",
-    engagement: "one_time",
-    monthly_value: 0,
-    currency: "INR",
-    value: "Rs.35,000",
-    status: "development_phase" as const,
-    start: "2026-02-01",
-    end: null,
-    progress_pct: 30,
-  },
-];
+import { useProjects } from "@/lib/hooks/use-projects";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -115,44 +22,48 @@ const TYPE_LABELS: Record<string, string> = {
   google_ads: "Google Ads",
   social_media: "Social Media",
   gmb: "GMB",
+  content_marketing: "Content",
   full_service: "Full Service",
   other: "Other",
 };
 
-const SERVICE_COLORS: Record<string, string> = {
-  seo:             "#fd7e14",
-  gmb:             "#f59e0b",
-  web_development: "#3b82f6",
-  branding:        "#8b5cf6",
-  google_ads:      "#22c55e",
-  social_media:    "#ec4899",
-  ui_ux_design:    "#06b6d4",
-  content_marketing:"#84cc16",
-  full_service:    "#6366f1",
-  other:           "#9ca3af",
-};
-
-const ACTIVE_STATUSES = ["onboarding","design_phase","development_phase","deployment_qa","setup_strategy","active_execution","maintenance"];
+const ACTIVE_STATUSES = [
+  "onboarding",
+  "design_phase",
+  "development_phase",
+  "deployment_qa",
+  "setup_strategy",
+  "active_execution",
+  "maintenance",
+];
 
 type TrajectoryLabel = "On Track" | "Delayed" | "Completed" | "On Hold";
 type TrajectoryStyle = { label: TrajectoryLabel; color: string; bg: string };
 
-function getTrajectory(project: typeof PROJECTS[0]): TrajectoryStyle {
-  const s = project.status as string;
-  if (s === "completed") return { label: "Completed", color: "#16a34a", bg: "rgba(22,163,74,0.10)" };
-  if (s === "on_hold" || s === "cancelled") return { label: "On Hold", color: "#9ca3af", bg: "rgba(156,163,175,0.10)" };
-  const start = new Date(project.start);
-  const now   = new Date("2026-03-03");
-  const endDate = project.end ? new Date(project.end) : null;
-  if (!endDate) {
-    return project.progress_pct >= 50
+function getTrajectory(
+  status: string,
+  progressPct: number,
+  startDate: string | null,
+  endDate: string | null
+): TrajectoryStyle {
+  if (status === "completed") return { label: "Completed", color: "#16a34a", bg: "rgba(22,163,74,0.10)" };
+  if (status === "on_hold" || status === "cancelled") return { label: "On Hold", color: "#9ca3af", bg: "rgba(156,163,175,0.10)" };
+
+  const now = new Date("2026-03-03");
+
+  if (!startDate || !endDate) {
+    return progressPct >= 50
       ? { label: "On Track", color: "#3b82f6", bg: "rgba(59,130,246,0.10)" }
-      : { label: "Delayed",  color: "#ef4444", bg: "rgba(239,68,68,0.10)" };
+      : { label: "Delayed", color: "#ef4444", bg: "rgba(239,68,68,0.10)" };
   }
-  const totalMs   = endDate.getTime() - start.getTime();
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const totalMs = end.getTime() - start.getTime();
   const elapsedMs = now.getTime() - start.getTime();
   const elapsedPct = Math.min(elapsedMs / totalMs, 1) * 100;
-  const delta = project.progress_pct - elapsedPct;
+  const delta = progressPct - elapsedPct;
+
   if (delta >= 5)  return { label: "On Track", color: "#16a34a", bg: "rgba(22,163,74,0.10)" };
   if (delta >= -8) return { label: "On Track", color: "#3b82f6", bg: "rgba(59,130,246,0.10)" };
   return { label: "Delayed", color: "#ef4444", bg: "rgba(239,68,68,0.10)" };
@@ -164,24 +75,55 @@ function getDaysRemaining(endDate: string | null): number | null {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+// ─── Loading skeleton ────────────────────────────────────────────────────────
+
+function ProjectRowSkeleton() {
+  return (
+    <div className="glass-card px-5 py-4">
+      <div className="flex items-start gap-4">
+        <Skeleton className="w-9 h-9 rounded-button shrink-0 mt-0.5" />
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-5 w-16 rounded" />
+            <Skeleton className="h-5 w-16 rounded" />
+          </div>
+          <Skeleton className="h-3 w-56" />
+        </div>
+        <div className="flex items-center gap-4 shrink-0">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-6 w-20 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "retainer" | "one_time">("all");
 
-  const filtered = PROJECTS.filter((p) => {
+  const { data: projects = [], isLoading, isError, error } = useProjects();
+
+  const filtered = projects.filter((p) => {
+    const clientName = p.clients?.company_name ?? "";
     const matchSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.client.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || p.engagement === filter;
+      clientName.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "all" || p.engagement_type === filter;
     return matchSearch && matchFilter;
   });
 
-  const activeRetainers = PROJECTS.filter((p) => p.engagement === "retainer" && ACTIVE_STATUSES.includes(p.status));
-  const committedMRR    = activeRetainers.reduce((s, p) => s + p.monthly_value, 0);
-  const activeCount     = PROJECTS.filter((p) => ACTIVE_STATUSES.includes(p.status)).length;
-  const oneTimeActive   = PROJECTS.filter((p) => p.engagement === "one_time" && ACTIVE_STATUSES.includes(p.status)).length;
+  const activeRetainers = projects.filter(
+    (p) => p.engagement_type === "retainer" && ACTIVE_STATUSES.includes(p.status)
+  );
+  const committedMRR = activeRetainers.reduce((s, p) => s + (p.retainer_amount ?? 0), 0);
+  const activeCount = projects.filter((p) => ACTIVE_STATUSES.includes(p.status)).length;
+  const oneTimeActive = projects.filter(
+    (p) => p.engagement_type === "one_time" && ACTIVE_STATUSES.includes(p.status)
+  ).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -205,10 +147,10 @@ export default function ProjectsPage() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: TrendingUp,   label: "Committed MRR",    value: `Rs.${(committedMRR/1000).toFixed(0)}K`,  sub: "From active retainers",     color: "#fd7e14" },
-            { icon: FolderKanban, label: "Active projects",  value: `${activeCount}`,                          sub: `${PROJECTS.length} total`,  color: "#22c55e" },
-            { icon: Users,        label: "Retainers",        value: `${activeRetainers.length}`,               sub: "Recurring monthly work",    color: "#3b82f6" },
-            { icon: CheckCircle2, label: "One-time active",  value: `${oneTimeActive}`,                        sub: "In delivery",               color: "#8b5cf6" },
+            { icon: TrendingUp,   label: "Committed MRR",    value: isLoading ? "-" : `Rs.${(committedMRR / 1000).toFixed(0)}K`,  sub: "From active retainers",           color: "#fd7e14" },
+            { icon: FolderKanban, label: "Active projects",  value: isLoading ? "-" : `${activeCount}`,                            sub: `${projects.length} total`,        color: "#22c55e" },
+            { icon: Users,        label: "Retainers",        value: isLoading ? "-" : `${activeRetainers.length}`,                 sub: "Recurring monthly work",          color: "#3b82f6" },
+            { icon: CheckCircle2, label: "One-time active",  value: isLoading ? "-" : `${oneTimeActive}`,                          sub: "In delivery",                     color: "#8b5cf6" },
           ].map((stat) => (
             <DarkCard key={stat.label} className="p-5">
               <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
@@ -254,7 +196,20 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {/* Error state */}
+      {isError && (
+        <div className="rounded-xl px-4 py-3 text-sm text-red-500 border border-red-500/20 bg-red-500/[0.06]">
+          Failed to load projects: {(error as Error)?.message ?? "Unknown error"}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <ProjectRowSkeleton key={i} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={FolderKanban}
           title="No projects found"
@@ -263,9 +218,19 @@ export default function ProjectsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((project) => {
-            const traj = getTrajectory(project);
-            const daysLeft = getDaysRemaining(project.end);
-            const showDaysLeft = project.engagement === "one_time" && project.status !== "completed" && daysLeft !== null;
+            const traj = getTrajectory(
+              project.status,
+              project.progress_pct,
+              project.contract_start_date,
+              project.contract_end_date
+            );
+            const daysLeft = getDaysRemaining(project.contract_end_date);
+            const showDaysLeft =
+              project.engagement_type === "one_time" &&
+              project.status !== "completed" &&
+              daysLeft !== null;
+
+            const clientName = project.clients?.company_name ?? "Unknown Client";
 
             return (
               <GlassCard key={project.id} padding="none">
@@ -281,10 +246,10 @@ export default function ProjectsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-text-primary">{project.name}</p>
                         <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-black/[0.05]">
-                          {TYPE_LABELS[project.type] ?? project.type}
+                          {TYPE_LABELS[project.project_type] ?? project.project_type}
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded bg-surface-DEFAULT text-text-muted border border-black/[0.05]">
-                          {project.engagement === "retainer" ? "Retainer" : "One-Time"}
+                          {project.engagement_type === "retainer" ? "Retainer" : "One-Time"}
                         </span>
                         <span
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
@@ -309,14 +274,26 @@ export default function ProjectsPage() {
                           href={`/clients/${project.client_id}`}
                           className="text-xs text-text-muted hover:text-accent transition-colors"
                         >
-                          {project.client}
+                          {clientName}
                         </Link>
-                        <span className="text-text-muted text-xs">-</span>
-                        <span className="text-xs text-text-muted">Started {formatDate(project.start)}</span>
+                        {project.contract_start_date && (
+                          <>
+                            <span className="text-text-muted text-xs">-</span>
+                            <span className="text-xs text-text-muted">Started {formatDate(project.contract_start_date)}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-sm font-sans font-semibold text-text-primary">{project.value}</span>
+                      {project.retainer_amount !== null ? (
+                        <span className="text-sm font-sans font-semibold text-text-primary">
+                          {project.retainer_currency ?? "INR"} {(project.retainer_amount ?? 0).toLocaleString()}/mo
+                        </span>
+                      ) : project.total_value !== null ? (
+                        <span className="text-sm font-sans font-semibold text-text-primary">
+                          {(project.total_value ?? 0).toLocaleString()}
+                        </span>
+                      ) : null}
                       <StatusBadge status={project.status} />
                     </div>
                   </div>

@@ -10,11 +10,13 @@ import {
   FileText,
   Calendar,
   DollarSign,
+  Eye,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PdfPreviewModal } from "@/components/shared/pdf-preview-modal";
 import { cn } from "@/lib/utils/cn";
 
 // ---------------------------------------------------------------------------
@@ -218,55 +220,72 @@ export default function ContractsPage() {
 // ---------------------------------------------------------------------------
 
 function ContractCard({ contract }: { contract: Contract }) {
+  const [showPdf, setShowPdf] = useState(false);
+
   return (
-    <GlassCard padding="md" className="group hover:border-black/[0.08] transition-all">
-      <div className="flex items-start gap-4">
-        {/* Icon */}
-        <div className="w-10 h-10 rounded-xl bg-surface-DEFAULT border border-black/[0.05] flex items-center justify-center shrink-0 group-hover:border-black/[0.08] transition-all">
-          <FileText className="w-5 h-5 text-text-muted" />
-        </div>
+    <>
+      <PdfPreviewModal
+        isOpen={showPdf}
+        onClose={() => setShowPdf(false)}
+        title={`${contract.serviceLabel} - ${contract.client}`}
+        onDownload={() => setShowPdf(false)}
+      />
 
-        {/* Main info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <p className="font-semibold text-text-primary leading-tight">{contract.client}</p>
-            <span className={cn("text-xs px-2 py-0.5 rounded border font-medium", TYPE_BADGE[contract.contractType])}>
-              {contract.contractType === "retainer" ? "Retainer" : "Project"}
-            </span>
-            <StatusBadge status={contract.status} />
+      <GlassCard padding="md" className="group hover:border-black/[0.08] transition-all">
+        <div className="flex items-start gap-4">
+          {/* Icon */}
+          <div className="w-10 h-10 rounded-xl bg-surface-DEFAULT border border-black/[0.05] flex items-center justify-center shrink-0 group-hover:border-black/[0.08] transition-all">
+            <FileText className="w-5 h-5 text-text-muted" />
           </div>
 
-          <p className="text-sm text-text-secondary mb-3">{contract.serviceLabel}</p>
+          {/* Main info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <p className="font-semibold text-text-primary leading-tight">{contract.client}</p>
+              <span className={cn("text-xs px-2 py-0.5 rounded border font-medium", TYPE_BADGE[contract.contractType])}>
+                {contract.contractType === "retainer" ? "Retainer" : "Project"}
+              </span>
+              <StatusBadge status={contract.status} />
+            </div>
 
-          {/* Meta row */}
-          <div className="flex flex-wrap gap-4 text-xs text-text-muted">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              {contract.startDate} - {contract.endDate}
-            </span>
-            <span className={cn("flex items-center gap-1.5 font-sans tabular-nums font-semibold", CURRENCY_COLOR[contract.currency])}>
-              <DollarSign className="w-3.5 h-3.5" />
-              {contract.valueDisplay}
-            </span>
+            <p className="text-sm text-text-secondary mb-3">{contract.serviceLabel}</p>
+
+            <div className="flex flex-wrap gap-4 text-xs text-text-muted">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                {contract.startDate} - {contract.endDate}
+              </span>
+              <span className={cn("flex items-center gap-1.5 font-sans tabular-nums font-semibold", CURRENCY_COLOR[contract.currency])}>
+                <DollarSign className="w-3.5 h-3.5" />
+                {contract.valueDisplay}
+              </span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            <button
+              title="Preview PDF"
+              onClick={() => setShowPdf(true)}
+              className="p-2 rounded-button text-text-muted hover:text-accent hover:bg-accent/5 border border-transparent hover:border-accent/20 transition-all"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            <button
+              title="Download PDF"
+              className="p-2 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT border border-transparent hover:border-black/[0.05] transition-all"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+            <button
+              title="Edit contract"
+              className="p-2 rounded-button text-text-muted hover:text-accent hover:bg-accent/5 border border-transparent hover:border-accent/20 transition-all"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0 ml-2">
-          <button
-            title="Download PDF"
-            className="p-2 rounded-button text-text-muted hover:text-text-primary hover:bg-surface-DEFAULT border border-transparent hover:border-black/[0.05] transition-all"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-          <button
-            title="Edit contract"
-            className="p-2 rounded-button text-text-muted hover:text-accent hover:bg-accent/5 border border-transparent hover:border-accent/20 transition-all"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </GlassCard>
+      </GlassCard>
+    </>
   );
 }

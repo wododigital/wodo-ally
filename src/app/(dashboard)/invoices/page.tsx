@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, FileText, Search, ChevronDown, Pencil, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { Plus, FileText, Search, ChevronDown, Pencil, CheckCircle2, AlertCircle, Clock, RefreshCw } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -11,105 +11,11 @@ import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
+import { useInvoices, useUpdateInvoice, useGenerateRetainerInvoices } from "@/lib/hooks/use-invoices";
+import type { InvoiceListItem } from "@/lib/hooks/use-invoices";
 
-const INVOICES = [
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000002",
-    invoice_number: "G00111",
-    invoice_type: "gst",
-    client: "Nandhini Deluxe Hotel",
-    currency: "INR" as const,
-    total_amount: 76700,
-    balance_due: 76700,
-    invoice_date: "2026-03-01",
-    due_date: "2026-03-08",
-    status: "sent" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000004",
-    invoice_number: "G00113",
-    invoice_type: "gst",
-    client: "Maximus OIGA",
-    currency: "INR" as const,
-    total_amount: 59000,
-    balance_due: 59000,
-    invoice_date: "2026-03-01",
-    due_date: "2026-03-08",
-    status: "draft" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000001",
-    invoice_number: "G00110",
-    invoice_type: "gst",
-    client: "Nandhini Deluxe Hotel",
-    currency: "INR" as const,
-    total_amount: 76700,
-    balance_due: 0,
-    invoice_date: "2026-02-01",
-    due_date: "2026-02-08",
-    status: "paid" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000003",
-    invoice_number: "G00112",
-    invoice_type: "gst",
-    client: "Maximus OIGA",
-    currency: "INR" as const,
-    total_amount: 59000,
-    balance_due: 0,
-    invoice_date: "2026-02-01",
-    due_date: "2026-02-08",
-    status: "paid" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000007",
-    invoice_number: "NG00201",
-    invoice_type: "non_gst",
-    client: "Raj Enterprises",
-    currency: "INR" as const,
-    total_amount: 17500,
-    balance_due: 17500,
-    invoice_date: "2026-02-15",
-    due_date: "2026-02-22",
-    status: "overdue" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000006",
-    invoice_number: "G00109",
-    invoice_type: "international",
-    client: "Sea Wonders Tourism",
-    currency: "INR" as const,
-    total_amount: 89600,
-    balance_due: 0,
-    invoice_date: "2026-02-01",
-    due_date: "2026-02-15",
-    status: "paid" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000005",
-    invoice_number: "G00108",
-    invoice_type: "international",
-    client: "Dentique Dental Care",
-    currency: "INR" as const,
-    total_amount: 115830,
-    balance_due: 0,
-    invoice_date: "2025-12-01",
-    due_date: "2025-12-15",
-    status: "paid" as const,
-  },
-  {
-    id: "bbbbbbbb-0000-0000-0000-000000000008",
-    invoice_number: null,
-    invoice_type: "proforma",
-    client: "Godavari Heritage Hotels",
-    currency: "INR" as const,
-    total_amount: 100300,
-    balance_due: 100300,
-    invoice_date: "2026-01-15",
-    due_date: "2026-01-22",
-    status: "sent" as const,
-  },
-];
+// Suppress unused import warning - DarkLabel is imported from dark-section
+void DarkLabel;
 
 const STATUS_TABS = ["all", "draft", "sent", "paid", "overdue", "proforma"] as const;
 type StatusTab = typeof STATUS_TABS[number];
@@ -136,6 +42,8 @@ const TYPE_COLORS: Record<string, string> = {
   non_gst: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
   proforma: "text-text-muted bg-surface-DEFAULT border-black/[0.05]",
 };
+
+type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled";
 
 function StatusDropdown({
   status,
@@ -193,28 +101,53 @@ export default function InvoicesPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
   const [search, setSearch] = useState("");
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
 
-  function getStatus(invoice: typeof INVOICES[0]) {
-    return statusOverrides[invoice.id] ?? invoice.status;
+  const { data: invoices = [], isLoading } = useInvoices();
+  const updateInvoice = useUpdateInvoice();
+  const generateRetainer = useGenerateRetainerInvoices();
+
+  function getDisplayNumber(inv: InvoiceListItem): string {
+    if (inv.invoice_type === "proforma") return inv.proforma_ref ?? "PF-DRAFT";
+    return inv.invoice_number ?? "DRAFT";
   }
 
-  const filtered = INVOICES.filter((inv) => {
-    const currentStatus = getStatus(inv);
+  const filtered = invoices.filter((inv) => {
     const matchTab =
       activeTab === "all" ||
-      (activeTab === "proforma" ? inv.invoice_type === "proforma" : currentStatus === activeTab);
+      (activeTab === "proforma" ? inv.invoice_type === "proforma" : inv.status === activeTab);
+    const displayNum = getDisplayNumber(inv);
     const matchSearch =
-      (inv.invoice_number ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      inv.client.toLowerCase().includes(search.toLowerCase());
+      displayNum.toLowerCase().includes(search.toLowerCase()) ||
+      inv.client_name.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
 
   const totals = {
-    outstanding: INVOICES.filter((i) => ["sent", "overdue"].includes(getStatus(i))).reduce((s, i) => s + i.balance_due, 0),
-    paid_this_month: INVOICES.filter((i) => getStatus(i) === "paid" && i.invoice_date >= "2026-02-01").reduce((s, i) => s + i.total_amount, 0),
-    overdue_count: INVOICES.filter((i) => getStatus(i) === "overdue").length,
+    outstanding: invoices
+      .filter((i) => ["sent", "overdue"].includes(i.status))
+      .reduce((s, i) => s + (i.balance_due ?? 0), 0),
+    paid_this_month: invoices
+      .filter((i) => i.status === "paid" && i.invoice_date >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10))
+      .reduce((s, i) => s + (i.total_amount ?? 0), 0),
+    overdue_count: invoices.filter((i) => i.status === "overdue").length,
   };
+
+  function handleStatusChange(invoiceId: string, newStatus: string) {
+    updateInvoice.mutate({
+      id: invoiceId,
+      data: {
+        status: newStatus as InvoiceStatus,
+        ...(newStatus === "paid" ? { paid_at: new Date().toISOString() } : {}),
+        ...(newStatus === "sent" ? { sent_at: new Date().toISOString() } : {}),
+      },
+    });
+  }
+
+  function getTabCount(tab: StatusTab): number {
+    if (tab === "all") return invoices.length;
+    if (tab === "proforma") return invoices.filter((i) => i.invoice_type === "proforma").length;
+    return invoices.filter((i) => i.status === tab).length;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -224,6 +157,15 @@ export default function InvoicesPage() {
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Overview</p>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => generateRetainer.mutate()}
+              disabled={generateRetainer.isPending}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70 disabled:opacity-50"
+              title="Generate retainer invoices for this month"
+            >
+              <RefreshCw className={cn("w-3 h-3", generateRetainer.isPending && "animate-spin")} />
+              Retainer Invoices
+            </button>
             <Link href="/analytics/invoices"
               className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
               Analytics
@@ -238,9 +180,9 @@ export default function InvoicesPage() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: FileText,     label: "Total invoices",   value: `${INVOICES.length}`,                                 sub: "All time",                      color: "#3b82f6" },
-            { icon: CheckCircle2, label: "Paid this month",  value: `Rs.${(totals.paid_this_month/1000).toFixed(0)}K`,    sub: "Feb 2026 collections",          color: "#22c55e" },
-            { icon: Clock,        label: "Outstanding",      value: `Rs.${(totals.outstanding/1000).toFixed(0)}K`,        sub: "Sent + awaiting payment",       color: "#f59e0b" },
+            { icon: FileText,     label: "Total invoices",   value: `${invoices.length}`,                                  sub: "All time",                      color: "#3b82f6" },
+            { icon: CheckCircle2, label: "Paid this month",  value: `Rs.${(totals.paid_this_month / 1000).toFixed(0)}K`,   sub: "Current month collections",     color: "#22c55e" },
+            { icon: Clock,        label: "Outstanding",      value: `Rs.${(totals.outstanding / 1000).toFixed(0)}K`,       sub: "Sent + awaiting payment",       color: "#f59e0b" },
             { icon: AlertCircle,  label: "Overdue",          value: `${totals.overdue_count} invoice${totals.overdue_count !== 1 ? "s" : ""}`, sub: "Follow-up needed", color: "#ef4444" },
           ].map((stat) => (
             <DarkCard key={stat.label} className="p-5">
@@ -249,7 +191,7 @@ export default function InvoicesPage() {
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
               </div>
               <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
+                {isLoading ? "-" : stat.value}
               </p>
               <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
               <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
@@ -261,11 +203,7 @@ export default function InvoicesPage() {
       {/* Status tabs */}
       <div className="flex border-b border-black/[0.05] gap-1 overflow-x-auto">
         {STATUS_TABS.map((tab) => {
-          const count = tab === "all"
-            ? INVOICES.length
-            : tab === "proforma"
-            ? INVOICES.filter((i) => i.invoice_type === "proforma").length
-            : INVOICES.filter((i) => getStatus(i) === tab).length;
+          const count = getTabCount(tab);
           return (
             <button
               key={tab}
@@ -301,8 +239,14 @@ export default function InvoicesPage() {
         />
       </div>
 
-      {/* Invoice table */}
-      {filtered.length === 0 ? (
+      {/* Loading state */}
+      {isLoading ? (
+        <GlassCard padding="md">
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-text-muted">Loading invoices...</p>
+          </div>
+        </GlassCard>
+      ) : filtered.length === 0 ? (
         <EmptyState icon={FileText} title="No invoices found" description="Create your first invoice." />
       ) : (
         <GlassCard padding="none">
@@ -320,57 +264,58 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((invoice, idx) => {
-                  const currentStatus = getStatus(invoice);
-                  return (
-                    <tr
-                      key={invoice.id}
-                      onClick={() => router.push(`/invoices/${invoice.id}`)}
-                      className={cn(
-                        "hover:bg-surface-DEFAULT transition-colors cursor-pointer group",
-                        idx < filtered.length - 1 && "border-b border-black/[0.05]"
-                      )}
-                    >
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-sans font-semibold text-text-primary group-hover:text-accent transition-colors">
-                          {invoice.invoice_number ?? "PF-2026"}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-text-secondary">{invoice.client}</p>
-                      </td>
-                      <td className="px-4 py-4 hidden sm:table-cell">
-                        <span className={cn(
-                          "text-xs px-2 py-0.5 rounded border font-medium",
-                          TYPE_COLORS[invoice.invoice_type]
-                        )}>
-                          {TYPE_LABELS[invoice.invoice_type]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 hidden md:table-cell">
-                        <p className="text-sm text-text-muted font-sans">{formatDate(invoice.invoice_date)}</p>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <CurrencyDisplay amount={invoice.total_amount} currency={invoice.currency} size="sm" />
-                      </td>
-                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                        <StatusDropdown
-                          status={currentStatus}
-                          onChange={(s) => setStatusOverrides((prev) => ({ ...prev, [invoice.id]: s }))}
-                        />
-                      </td>
-                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          href={`/invoices/${invoice.id}/edit`}
-                          className="p-1.5 rounded-button text-text-muted hover:text-accent hover:bg-accent-muted transition-all opacity-0 group-hover:opacity-100 inline-flex"
-                          title="Edit invoice"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filtered.map((invoice, idx) => (
+                  <tr
+                    key={invoice.id}
+                    onClick={() => router.push(`/invoices/${invoice.id}`)}
+                    className={cn(
+                      "hover:bg-surface-DEFAULT transition-colors cursor-pointer group",
+                      idx < filtered.length - 1 && "border-b border-black/[0.05]"
+                    )}
+                  >
+                    <td className="px-5 py-4">
+                      <p className="text-sm font-sans font-semibold text-text-primary group-hover:text-accent transition-colors">
+                        {getDisplayNumber(invoice)}
+                      </p>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="text-sm text-text-secondary">{invoice.client_name}</p>
+                    </td>
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded border font-medium",
+                        TYPE_COLORS[invoice.invoice_type]
+                      )}>
+                        {TYPE_LABELS[invoice.invoice_type]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 hidden md:table-cell">
+                      <p className="text-sm text-text-muted font-sans">{formatDate(invoice.invoice_date)}</p>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <CurrencyDisplay
+                        amount={invoice.total_amount}
+                        currency={invoice.currency as "INR" | "USD" | "AED"}
+                        size="sm"
+                      />
+                    </td>
+                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                      <StatusDropdown
+                        status={invoice.status}
+                        onChange={(s) => handleStatusChange(invoice.id, s)}
+                      />
+                    </td>
+                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        href={`/invoices/${invoice.id}/edit`}
+                        className="p-1.5 rounded-button text-text-muted hover:text-accent hover:bg-accent-muted transition-all opacity-0 group-hover:opacity-100 inline-flex"
+                        title="Edit invoice"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
