@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
@@ -22,40 +22,50 @@ interface LineItem {
   quantity: number;
 }
 
-function getInvoiceTypeFromClient(
-  client: ClientRow
-): "gst" | "non_gst" | "international" {
+function getInvoiceTypeFromClient(client: ClientRow): "gst" | "non_gst" | "international" {
   if (client.client_type === "indian_gst") return "gst";
   if (client.client_type === "indian_non_gst") return "non_gst";
   return "international";
 }
 
-export default function NewInvoicePage() {
+function NewInvoiceForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedClientId = searchParams.get("client") ?? "";
+  const preselectedType = searchParams.get("type");
+
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const createInvoice = useCreateInvoice();
   const { data: servicesData = [] } = useServices();
   const services = servicesData.map((s) => ({ id: s.id, name: s.name, color: s.color ?? "#888888" }));
 
-  const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">("gst");
-  const [selectedClientId, setSelectedClientId] = useState("");
+  const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">(
+    preselectedType === "proforma" ? "proforma" : "gst"
+  );
+  const [selectedClientId, setSelectedClientId] = useState(preselectedClientId);
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
-  const [billingPeriodStart, setBillingPeriodStart] = useState("");
-  const [billingPeriodEnd, setBillingPeriodEnd] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: "1", service_id: "", description: "", amount: "", quantity: 1 },
   ]);
 
+  // When clients load and we have a preselected client, auto-set invoice type (unless proforma)
+  useEffect(() => {
+    if (preselectedClientId && clients.length > 0 && preselectedType !== "proforma") {
+      const client = clients.find((c) => c.id === preselectedClientId);
+      if (client) setInvoiceType(getInvoiceTypeFromClient(client));
+    }
+  }, [clients, preselectedClientId, preselectedType]);
+
   const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;
 
-  // Auto-determine type when client changes
   function handleClientChange(clientId: string) {
     setSelectedClientId(clientId);
-    const client = clients.find((c) => c.id === clientId);
-    if (client && invoiceType !== "proforma") {
-      setInvoiceType(getInvoiceTypeFromClient(client));
+    // Only auto-switch type if not in proforma mode
+    if (invoiceType !== "proforma") {
+      const client = clients.find((c) => c.id === clientId);
+      if (client) setInvoiceType(getInvoiceTypeFromClient(client));
     }
   }
 
@@ -83,9 +93,7 @@ export default function NewInvoicePage() {
   }
 
   function updateLineItem(id: string, field: keyof LineItem, value: string | number) {
-    setLineItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
+    setLineItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   }
 
   function getFormattedDescription(item: LineItem): string {
@@ -122,44 +130,58 @@ export default function NewInvoicePage() {
           invoice_date: invoiceDate,
           due_date: dueDate || null,
           notes: notes || null,
-          billing_period_start: billingPeriodStart || null,
-          billing_period_end: billingPeriodEnd || null,
-          status: asDraft ? "draft" : "draft",
+          billing_period_start: null,
+          billing_period_end: null,
+          status: "draft",
         },
         lineItems: finalLineItems,
       },
-      {
-        onSuccess: (newInvoice) => {
-          router.push(`/invoices/${newInvoice.id}`);
-        },
-      }
+      { onSuccess: (newInvoice) => router.push(`/invoices/${newInvoice.id}`) }
     );
   }
+
+  const isFromClient = !!preselectedClientId;
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <div>
-        <Link
-          href="/invoices"
+        <Link href={isFromClient ? `/clients/${preselectedClientId}` : "/invoices"}
           className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Invoices
+          {isFromClient ? "Back to Client" : "Back to Invoices"}
         </Link>
-        <PageHeader title="New Invoice" description="Create a new invoice" />
+        <PageHeader
+          title="New Invoice"
+          description={invoiceType === "proforma" ? "Creating Pro Forma invoice - you can change the type below" : "Create a new invoice"}
+        />
       </div>
 
       <form className="space-y-6" onSubmit={(e) => handleSubmit(e, false)}>
 
         {/* Invoice type */}
         <GlassCard padding="md">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-text-primary">Invoice Type</h3>
+            {isFromClient && invoiceType === "proforma" && (
+              <button
+                type="button"
+                onClick={() => {
+                  const client = clients.find((c) => c.id === selectedClientId);
+                  setInvoiceType(client ? getInvoiceTypeFromClient(client) : "gst");
+                }}
+                className="text-xs text-text-muted hover:text-accent transition-colors underline underline-offset-2"
+              >
+                Switch to direct invoice
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { value: "gst",           label: "GST Invoice",   desc: "G-series, 18% GST"      },
-              { value: "international", label: "International", desc: "G-series, 0% tax"        },
-              { value: "non_gst",       label: "Non-GST",       desc: "NG-series, 0% tax"       },
-              { value: "proforma",      label: "Pro Forma",     desc: "PF-YYYYMMDD, no serial"  },
+              { value: "gst",           label: "GST Invoice",   desc: "G-series, 18% GST"     },
+              { value: "international", label: "International", desc: "G-series, 0% tax"       },
+              { value: "non_gst",       label: "Non-GST",       desc: "NG-series, 0% tax"      },
+              { value: "proforma",      label: "Pro Forma",     desc: "PF-YYYYMMDD, no serial" },
             ].map((type) => (
               <button
                 key={type.value}
@@ -172,9 +194,7 @@ export default function NewInvoicePage() {
                     : "border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08]"
                 )}
               >
-                <p className={cn("text-sm font-medium", invoiceType === type.value ? "text-accent" : "text-text-primary")}>
-                  {type.label}
-                </p>
+                <p className={cn("text-sm font-medium", invoiceType === type.value ? "text-accent" : "text-text-primary")}>{type.label}</p>
                 <p className="text-xs text-text-muted mt-0.5">{type.desc}</p>
               </button>
             ))}
@@ -205,9 +225,7 @@ export default function NewInvoicePage() {
                 required
                 disabled={clientsLoading}
               >
-                <option value="">
-                  {clientsLoading ? "Loading clients..." : "Select client..."}
-                </option>
+                <option value="">{clientsLoading ? "Loading clients..." : "Select client..."}</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.company_name}</option>
                 ))}
@@ -228,43 +246,12 @@ export default function NewInvoicePage() {
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Invoice Date *</label>
-              <input
-                type="date"
-                required
-                className="glass-input"
-                value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
-              />
+              <input type="date" required className="glass-input" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Due Date</label>
-              <input
-                type="date"
-                className="glass-input"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Period Start</label>
-              <input
-                type="date"
-                className="glass-input"
-                value={billingPeriodStart}
-                onChange={(e) => setBillingPeriodStart(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Period End</label>
-              <input
-                type="date"
-                className="glass-input"
-                value={billingPeriodEnd}
-                onChange={(e) => setBillingPeriodEnd(e.target.value)}
-              />
+              <input type="date" className="glass-input" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
@@ -294,7 +281,6 @@ export default function NewInvoicePage() {
             </button>
           </div>
 
-          {/* Column headers */}
           <div className="hidden sm:flex items-center gap-2 mb-2 px-0.5">
             <div className="w-36 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-text-muted">Service</div>
             <div className="flex-1        text-[10px] font-semibold uppercase tracking-wider text-text-muted">Description</div>
@@ -312,7 +298,6 @@ export default function NewInvoicePage() {
               return (
                 <div key={item.id} className="space-y-1">
                   <div className="flex items-start gap-2">
-                    {/* Service dropdown */}
                     <div className="w-36 shrink-0">
                       <select
                         value={item.service_id}
@@ -326,8 +311,6 @@ export default function NewInvoicePage() {
                         ))}
                       </select>
                     </div>
-
-                    {/* Description */}
                     <div className="flex-1">
                       <input
                         type="text"
@@ -338,8 +321,6 @@ export default function NewInvoicePage() {
                         required
                       />
                     </div>
-
-                    {/* Quantity */}
                     <div className="w-16 shrink-0">
                       <input
                         type="number"
@@ -350,8 +331,6 @@ export default function NewInvoicePage() {
                         placeholder="Qty"
                       />
                     </div>
-
-                    {/* Amount */}
                     <div className="w-36 shrink-0">
                       <input
                         type="number"
@@ -362,26 +341,16 @@ export default function NewInvoicePage() {
                         required
                       />
                     </div>
-
-                    {/* Delete */}
                     {lineItems.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeLineItem(item.id)}
-                        className="p-2 text-text-muted hover:text-red-400 transition-colors mt-0.5 shrink-0"
-                      >
+                      <button type="button" onClick={() => removeLineItem(item.id)} className="p-2 text-text-muted hover:text-red-400 transition-colors mt-0.5 shrink-0">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
-
-                  {/* PDF preview */}
                   {showPreview && (
                     <p className="text-[11px] text-text-muted ml-0.5 flex items-center gap-1">
                       <span className="text-[10px] uppercase tracking-wider font-semibold">PDF:</span>
-                      <span className="font-sans" style={{ color: svc?.color }}>
-                        &quot;{previewText}&quot;
-                      </span>
+                      <span className="font-sans" style={{ color: svc?.color }}>&quot;{previewText}&quot;</span>
                     </p>
                   )}
                 </div>
@@ -394,23 +363,17 @@ export default function NewInvoicePage() {
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center justify-between w-56">
                 <span className="text-sm text-text-muted">Subtotal</span>
-                <span className="text-sm font-sans font-semibold text-text-primary">
-                  {currencyPrefix}{subtotal.toLocaleString("en-IN")}
-                </span>
+                <span className="text-sm font-sans font-semibold text-text-primary">{currencyPrefix}{subtotal.toLocaleString("en-IN")}</span>
               </div>
               {taxRate > 0 && (
                 <div className="flex items-center justify-between w-56">
                   <span className="text-sm text-text-muted">GST ({taxRate}%)</span>
-                  <span className="text-sm font-sans text-text-secondary">
-                    Rs.{tax.toLocaleString("en-IN")}
-                  </span>
+                  <span className="text-sm font-sans text-text-secondary">Rs.{tax.toLocaleString("en-IN")}</span>
                 </div>
               )}
               <div className="flex items-center justify-between w-56 pt-2 border-t border-black/[0.05]">
                 <span className="text-sm font-semibold text-text-primary">Total</span>
-                <span className="text-lg font-sans font-bold text-accent">
-                  {currencyPrefix}{total.toLocaleString("en-IN")}
-                </span>
+                <span className="text-lg font-sans font-bold text-accent">{currencyPrefix}{total.toLocaleString("en-IN")}</span>
               </div>
             </div>
           </div>
@@ -419,7 +382,7 @@ export default function NewInvoicePage() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pb-6">
           <Link
-            href="/invoices"
+            href={isFromClient ? `/clients/${preselectedClientId}` : "/invoices"}
             className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all"
           >
             Cancel
@@ -445,5 +408,13 @@ export default function NewInvoicePage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewInvoicePage() {
+  return (
+    <Suspense fallback={<div className="animate-pulse space-y-4"><div className="h-8 bg-black/[0.04] rounded-xl w-48" /><div className="h-48 bg-black/[0.04] rounded-xl" /></div>}>
+      <NewInvoiceForm />
+    </Suspense>
   );
 }

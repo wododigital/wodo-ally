@@ -40,7 +40,7 @@ export function useClients() {
       const { data, error } = await supabase
         .from("clients")
         .select("*")
-        .order("company_name", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);
       return (data ?? []) as Client[];
@@ -53,6 +53,7 @@ export function useClients() {
 export function useClient(id: string) {
   return useQuery({
     queryKey: ["clients", id],
+    refetchOnMount: "always",
     queryFn: async (): Promise<ClientWithContacts> => {
       const supabase = createClient();
       const { data, error } = await supabase

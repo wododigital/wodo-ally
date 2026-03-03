@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, XCircle } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
 import { useClient, useUpdateClient } from "@/lib/hooks/use-clients";
@@ -30,12 +29,12 @@ export default function EditClientPage() {
   const [billingDay, setBillingDay] = useState<number>(1);
   const [phone, setPhone] = useState("");
 
-  // Populate state once client data loads
   useEffect(() => {
     if (client) {
       setClientType(client.client_type);
       setBillingDay(client.billing_day ?? 1);
       setPhone(client.phone ?? "");
+      setEngagementType(client.billing_day ? "retainer" : "one_time");
     }
   }, [client]);
 
@@ -62,18 +61,13 @@ export default function EditClientPage() {
 
     updateClient.mutate(
       { id, data: updateData },
-      {
-        onSuccess: () => {
-          router.push(`/clients/${id}`);
-        },
-      }
+      { onSuccess: () => router.push(`/clients/${id}`) }
     );
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-fade-in max-w-3xl">
-        <Skeleton className="h-4 w-32 mb-4" />
+      <div className="space-y-6 animate-fade-in">
         <Skeleton className="h-8 w-48" />
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -93,62 +87,17 @@ export default function EditClientPage() {
 
   if (isError || !client) {
     return (
-      <div className="space-y-4 animate-fade-in max-w-3xl">
-        <Link href={`/clients/${id}`} className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Client
-        </Link>
-        <div className="rounded-xl px-4 py-3 text-sm text-red-500 border border-red-500/20 bg-red-500/[0.06]">
-          Failed to load client: {(error as Error)?.message ?? "Client not found"}
-        </div>
+      <div className="rounded-xl px-4 py-3 text-sm text-red-500 border border-red-500/20 bg-red-500/[0.06]">
+        Failed to load client: {(error as Error)?.message ?? "Client not found"}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-3xl">
-      <div>
-        <Link
-          href={`/clients/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Client
-        </Link>
-        <PageHeader title="Edit Client" description="Update client account details" />
-      </div>
-
+    <div className="space-y-6 animate-fade-in">
       <form className="space-y-6" onSubmit={handleSubmit}>
-        {/* Client type */}
-        <GlassCard padding="md">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { value: "indian_gst", label: "GST Invoices", desc: "G-series, 18% GST - Indian registered" },
-              { value: "indian_non_gst", label: "Non-GST", desc: "NG-series, 0% tax - Unregistered Indian" },
-              { value: "international", label: "International", desc: "G-series, 0% tax - Foreign clients" },
-            ].map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => setClientType(type.value as typeof clientType)}
-                className={cn(
-                  "p-3 rounded-card text-left border transition-all duration-150",
-                  clientType === type.value
-                    ? "border-accent bg-accent-muted"
-                    : "border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08]"
-                )}
-              >
-                <p className={cn("text-sm font-medium", clientType === type.value ? "text-accent" : "text-text-primary")}>
-                  {type.label}
-                </p>
-                <p className="text-xs text-text-muted mt-0.5">{type.desc}</p>
-              </button>
-            ))}
-          </div>
-        </GlassCard>
 
-        {/* Company info */}
+        {/* Company info - first */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Company Information</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -179,12 +128,6 @@ export default function EditClientPage() {
                 <option value="GBP">GBP - British Pound</option>
               </select>
             </div>
-            {clientType === "indian_gst" && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">GSTIN</label>
-                <input name="gstin" type="text" defaultValue={client.gstin ?? ""} className="glass-input font-sans" placeholder="29AADCW8591N1ZA" />
-              </div>
-            )}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Address</label>
               <textarea name="address" rows={2} defaultValue={client.address ?? ""} className="glass-input resize-none" placeholder="Full address" />
@@ -219,18 +162,50 @@ export default function EditClientPage() {
           </div>
         </GlassCard>
 
+        {/* Invoice type - after company info */}
+        <GlassCard padding="md">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { value: "indian_gst",     label: "GST Invoices",  desc: "G-series, 18% GST - Indian registered" },
+              { value: "indian_non_gst", label: "Non-GST",       desc: "NG-series, 0% tax - Unregistered Indian" },
+              { value: "international",  label: "International", desc: "G-series, 0% tax - Foreign clients" },
+            ].map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => setClientType(type.value as typeof clientType)}
+                className={cn(
+                  "p-3 rounded-card text-left border transition-all duration-150",
+                  clientType === type.value
+                    ? "border-accent bg-accent-muted"
+                    : "border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08]"
+                )}
+              >
+                <p className={cn("text-sm font-medium", clientType === type.value ? "text-accent" : "text-text-primary")}>{type.label}</p>
+                <p className="text-xs text-text-muted mt-0.5">{type.desc}</p>
+              </button>
+            ))}
+          </div>
+          {clientType === "indian_gst" && (
+            <div className="mt-4 space-y-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">GSTIN</label>
+              <input name="gstin" type="text" defaultValue={client.gstin ?? ""} className="glass-input font-sans w-72" placeholder="29AADCW8591N1ZA" />
+            </div>
+          )}
+        </GlassCard>
+
         {/* Billing settings */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-1">Billing Settings</h3>
           <p className="text-xs text-text-muted mb-4">Configure recurring invoice generation for retainer clients.</p>
           <div className="space-y-4">
-            {/* Engagement type */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Engagement Type</label>
               <div className="grid grid-cols-2 gap-3">
                 {([
-                  { value: "retainer", label: "Retainer", desc: "Recurring monthly invoices" },
-                  { value: "one_time", label: "One-Time", desc: "Project-based, no recurrence" },
+                  { value: "retainer", label: "Retainer",  desc: "Recurring monthly invoices" },
+                  { value: "one_time", label: "One-Time",  desc: "Project-based, no recurrence" },
                 ] as const).map((opt) => (
                   <button
                     key={opt.value}
@@ -243,21 +218,16 @@ export default function EditClientPage() {
                         : "border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08]"
                     )}
                   >
-                    <p className={cn("text-sm font-medium", engagementType === opt.value ? "text-accent" : "text-text-primary")}>
-                      {opt.label}
-                    </p>
+                    <p className={cn("text-sm font-medium", engagementType === opt.value ? "text-accent" : "text-text-primary")}>{opt.label}</p>
                     <p className="text-xs text-text-muted mt-0.5">{opt.desc}</p>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Billing day - only for retainer */}
             {engagementType === "retainer" && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">
-                  Invoice Generation Day
-                </label>
+                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Invoice Generation Day</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="number"

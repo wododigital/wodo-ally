@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  ArrowLeft, Mail, Phone, Globe, MapPin, Building2,
-  FileText, CreditCard, FolderKanban, Edit, Plus,
+  Mail, Phone, Globe, MapPin, Building2,
+  FileText, FolderKanban, Edit, Plus,
   CheckCircle2, XCircle, Calendar,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { Skeleton } from "@/components/shared/loading-skeleton";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { useClient, useClientStats, useCloseClient, useReactivateClient } from "@/lib/hooks/use-clients";
 import { useProjects } from "@/lib/hooks/use-projects";
+import { AddProjectModal } from "@/components/shared/add-project-modal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,11 +58,7 @@ function CloseClientModal({
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel} />
       <div
         className="relative w-full max-w-md rounded-2xl p-6 space-y-5"
-        style={{
-          background: "rgba(255,255,255,0.97)",
-          border: "1px solid rgba(0,0,0,0.08)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-        }}
+        style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}
       >
         <div className="flex items-center gap-4">
           <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(239,68,68,0.10)" }}>
@@ -90,19 +88,10 @@ function CloseClientModal({
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            onClick={onCancel}
-            disabled={isPending}
-            className="px-4 py-2 rounded-button text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
+          <button onClick={onCancel} disabled={isPending} className="px-4 py-2 rounded-button text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50">
             Cancel
           </button>
-          <button
-            onClick={onConfirm}
-            disabled={isPending}
-            className="px-4 py-2 rounded-button text-sm font-semibold text-white transition-colors disabled:opacity-70"
-            style={{ background: "#ef4444" }}
-          >
+          <button onClick={onConfirm} disabled={isPending} className="px-4 py-2 rounded-button text-sm font-semibold text-white transition-colors disabled:opacity-70" style={{ background: "#ef4444" }}>
             {isPending ? "Closing..." : "Close Account"}
           </button>
         </div>
@@ -116,26 +105,23 @@ function CloseClientModal({
 function ClientDetailSkeleton() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <Skeleton className="h-4 w-32 mb-4" />
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4">
-            <Skeleton className="w-12 h-12 rounded-xl" />
-            <div className="space-y-2">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-32" />
-            </div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-12 h-12 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
           </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-8 w-20 rounded-button" />
-            <Skeleton className="h-8 w-24 rounded-button" />
-            <Skeleton className="h-8 w-28 rounded-button" />
-          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-20 rounded-button" />
+          <Skeleton className="h-8 w-24 rounded-button" />
+          <Skeleton className="h-8 w-28 rounded-button" />
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="glass-card p-4 space-y-2">
+          <div key={i} className="rounded-2xl p-5 space-y-2" style={{ background: "rgba(255,255,255,0.06)" }}>
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-6 w-32" />
           </div>
@@ -147,13 +133,14 @@ function ClientDetailSkeleton() {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-const TABS = ["Overview", "Projects", "Invoices", "Payments"];
+const TABS = ["Overview", "Projects", "Invoices & Payments"];
 
 export default function ClientDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [activeTab, setActiveTab] = useState("Overview");
   const [showCloseModal, setShowCloseModal] = useState(false);
+  const [showAddProjectModal, setShowAddProjectModal] = useState(false);
 
   const { data: client, isLoading, isError, error } = useClient(id);
   const { data: stats } = useClientStats(id);
@@ -165,14 +152,8 @@ export default function ClientDetailPage() {
 
   if (isError || !client) {
     return (
-      <div className="space-y-4 animate-fade-in">
-        <Link href="/clients" className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Clients
-        </Link>
-        <div className="rounded-xl px-4 py-3 text-sm text-red-500 border border-red-500/20 bg-red-500/[0.06]">
-          Failed to load client: {(error as Error)?.message ?? "Client not found"}
-        </div>
+      <div className="rounded-xl px-4 py-3 text-sm text-red-500 border border-red-500/20 bg-red-500/[0.06]">
+        Failed to load client: {(error as Error)?.message ?? "Client not found"}
       </div>
     );
   }
@@ -185,9 +166,7 @@ export default function ClientDetailPage() {
   const outstanding = stats?.outstanding ?? 0;
 
   function handleCloseConfirm() {
-    closeClient.mutate(undefined, {
-      onSuccess: () => setShowCloseModal(false),
-    });
+    closeClient.mutate(undefined, { onSuccess: () => setShowCloseModal(false) });
   }
 
   function handleReactivate() {
@@ -196,6 +175,10 @@ export default function ClientDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {showAddProjectModal && (
+        <AddProjectModal onClose={() => setShowAddProjectModal(false)} preselectedClientId={id} />
+      )}
+
       {showCloseModal && (
         <CloseClientModal
           clientName={client.display_name ?? client.company_name}
@@ -205,112 +188,94 @@ export default function ClientDetailPage() {
         />
       )}
 
-      {/* Back + header */}
-      <div>
-        <Link
-          href="/clients"
-          className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Clients
-        </Link>
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-accent"
-              style={{ background: "rgba(253,126,20,0.12)", border: "1px solid rgba(253,126,20,0.2)" }}
-            >
-              {client.company_name.charAt(0)}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-text-primary">{client.display_name ?? client.company_name}</h1>
-              <p className="text-sm text-text-muted">{client.company_name}</p>
-            </div>
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-accent"
+            style={{ background: "rgba(253,126,20,0.12)", border: "1px solid rgba(253,126,20,0.2)" }}
+          >
+            {client.company_name.charAt(0)}
           </div>
-          <div className="flex items-center gap-2">
-            <StatusBadge status={client.status} />
-            <Link
-              href={`/clients/${id}/edit`}
-              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all duration-150"
-            >
-              <Edit className="w-4 h-4" />
-              Edit
-            </Link>
-            {!isClosed && (
-              <button
-                onClick={() => setShowCloseModal(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-all duration-150"
-                style={{
-                  color: "#ef4444",
-                  background: "rgba(239,68,68,0.06)",
-                  border: "1px solid rgba(239,68,68,0.15)",
-                }}
-              >
-                <XCircle className="w-4 h-4" />
-                Close Client
-              </button>
-            )}
-            {isClosed && (
-              <button
-                onClick={handleReactivate}
-                disabled={reactivateClient.isPending}
-                className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-all duration-150 disabled:opacity-70"
-                style={{
-                  color: "#16a34a",
-                  background: "rgba(22,163,74,0.06)",
-                  border: "1px solid rgba(22,163,74,0.15)",
-                }}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {reactivateClient.isPending ? "Reactivating..." : "Re-activate"}
-              </button>
-            )}
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">{client.display_name ?? client.company_name}</h1>
+            <p className="text-sm text-text-muted">{client.company_name}</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusBadge status={client.status} />
+          <Link
+            href={`/clients/${id}/edit`}
+            className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT hover:bg-surface-hover border border-black/[0.05] transition-all duration-150"
+          >
+            <Edit className="w-4 h-4" />
+            Edit
+          </Link>
+          {!isClosed ? (
+            <button
+              onClick={() => setShowCloseModal(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-all duration-150"
+              style={{ color: "#ef4444", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}
+            >
+              <XCircle className="w-4 h-4" />
+              Close Client
+            </button>
+          ) : (
+            <button
+              onClick={handleReactivate}
+              disabled={reactivateClient.isPending}
+              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-all duration-150 disabled:opacity-70"
+              style={{ color: "#16a34a", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)" }}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {reactivateClient.isPending ? "Reactivating..." : "Re-activate"}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Closed banner */}
       {isClosed && (
-        <div
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-          style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}
-        >
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
           <XCircle className="w-4 h-4 text-red-400 shrink-0" />
           <span className="text-red-400 font-medium">This client account is closed.</span>
           <span className="text-red-400/70">Billing reminders paused. All history preserved.</span>
         </div>
       )}
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <GlassCard padding="md">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Total Invoiced</p>
-          <CurrencyDisplay amount={totalInvoiced} currency={client.currency} size="md" />
-        </GlassCard>
-        <GlassCard padding="md">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Total Received</p>
-          <CurrencyDisplay amount={totalReceived} currency={client.currency} size="md" className="text-green-400" />
-        </GlassCard>
-        <GlassCard padding="md">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Balance Due</p>
-          <CurrencyDisplay amount={outstanding} currency={client.currency} size="md" className="text-yellow-400" />
-        </GlassCard>
-        <GlassCard padding="md">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Health Score</p>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1.5 bg-black/[0.04] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${client.health_score}%`,
-                  backgroundColor: client.health_score >= 80 ? "#16a34a" : client.health_score >= 60 ? "#f59e0b" : "#ef4444",
-                }}
-              />
-            </div>
-            <span className="text-sm font-bold font-sans text-text-primary">{client.health_score}</span>
-          </div>
-        </GlassCard>
-      </div>
+      {/* KPI Stats - dark styling */}
+      <DarkSection>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: "Total Invoiced", value: <CurrencyDisplay amount={totalInvoiced} currency={client.currency} size="md" />, color: "#3b82f6" },
+            { label: "Total Received", value: <CurrencyDisplay amount={totalReceived} currency={client.currency} size="md" className="text-green-400" />, color: "#22c55e" },
+            { label: "Balance Due", value: <CurrencyDisplay amount={outstanding} currency={client.currency} size="md" className="text-yellow-400" />, color: "#f59e0b" },
+            {
+              label: "Health Score",
+              value: (
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${client.health_score}%`,
+                        backgroundColor: client.health_score >= 80 ? "#16a34a" : client.health_score >= 60 ? "#f59e0b" : "#ef4444",
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-bold font-sans" style={{ color: "rgba(255,255,255,0.9)" }}>{client.health_score}</span>
+                </div>
+              ),
+              color: "#fd7e14",
+            },
+          ].map((stat) => (
+            <DarkCard key={stat.label} className="p-4">
+              <p className="text-[11px] uppercase tracking-wider mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>{stat.label}</p>
+              <div>{stat.value}</div>
+            </DarkCard>
+          ))}
+        </div>
+      </DarkSection>
 
       {/* Tabs */}
       <div>
@@ -332,9 +297,9 @@ export default function ClientDetailPage() {
         </div>
 
         <div className="mt-6">
+          {/* Overview Tab */}
           {activeTab === "Overview" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Company details */}
               <GlassCard padding="md">
                 <h3 className="text-sm font-semibold text-text-primary mb-4">Company Details</h3>
                 <div className="space-y-3">
@@ -352,7 +317,6 @@ export default function ClientDetailPage() {
                   ))}
                 </div>
 
-                {/* Billing schedule - only for retainer clients */}
                 {isRetainer && (
                   <div className="mt-5 pt-4 border-t border-black/[0.05]">
                     <div className="flex items-center justify-between">
@@ -373,21 +337,13 @@ export default function ClientDetailPage() {
                         </span>
                       )}
                       {isClosed && (
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-gray-400 bg-gray-500/10">
-                          Paused
-                        </span>
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-gray-400 bg-gray-500/10">Paused</span>
                       )}
                     </div>
-                    {client.billing_day !== null && !isClosed && (
-                      <p className="text-xs text-text-muted mt-2 ml-6">
-                        Next invoice reminder: <span className="font-medium text-text-secondary">Apr {client.billing_day}, 2026</span>
-                      </p>
-                    )}
                   </div>
                 )}
               </GlassCard>
 
-              {/* Contacts */}
               <GlassCard padding="md">
                 <h3 className="text-sm font-semibold text-text-primary mb-4">Contacts</h3>
                 {client.client_contacts.length === 0 ? (
@@ -433,16 +389,17 @@ export default function ClientDetailPage() {
             </div>
           )}
 
+          {/* Projects Tab */}
           {activeTab === "Projects" && (
             <div className="space-y-3">
               <div className="flex justify-end">
-                <Link
-                  href="/projects/new"
+                <button
+                  onClick={() => setShowAddProjectModal(true)}
                   className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-white bg-accent hover:bg-accent-hover transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   New Project
-                </Link>
+                </button>
               </div>
               {projects.length === 0 ? (
                 <div className="text-center py-12 text-text-muted text-sm">No projects yet</div>
@@ -468,32 +425,11 @@ export default function ClientDetailPage() {
             </div>
           )}
 
-          {activeTab === "Invoices" && (
-            <div className="space-y-3">
-              <div className="flex justify-end">
-                <Link
-                  href="/invoices/new"
-                  className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-white bg-accent hover:bg-accent-hover transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Invoice
-                </Link>
-              </div>
-              <GlassCard padding="md">
-                <div className="flex flex-col items-center py-10 text-center">
-                  <FileText className="w-8 h-8 text-text-muted mb-3" />
-                  <p className="text-sm text-text-muted">Invoice list coming soon.</p>
-                  <Link href="/invoices" className="text-accent hover:text-accent-hover text-sm mt-2">
-                    View all invoices
-                  </Link>
-                </div>
-              </GlassCard>
-            </div>
-          )}
-
-          {activeTab === "Payments" && (
+          {/* Invoices & Payments Tab */}
+          {activeTab === "Invoices & Payments" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {/* Summary stats */}
+              <div className="grid grid-cols-3 gap-4">
                 <GlassCard padding="md">
                   <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Total Invoiced</p>
                   <CurrencyDisplay amount={totalInvoiced} currency={client.currency} size="md" />
@@ -508,12 +444,24 @@ export default function ClientDetailPage() {
                 </GlassCard>
               </div>
 
+              {/* Invoice list */}
               <GlassCard padding="md">
-                <div className="flex flex-col items-center py-10 text-center">
-                  <CreditCard className="w-8 h-8 text-text-muted mb-3" />
-                  <p className="text-sm text-text-muted">Payment history coming soon.</p>
-                  <Link href="/payments" className="text-accent hover:text-accent-hover text-sm mt-2">
-                    View all payments
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-text-primary">Invoices</h3>
+                  <Link
+                    href={`/invoices/new?client=${id}&type=proforma`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-button text-xs font-medium text-white bg-accent hover:bg-accent-hover transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    New Invoice
+                  </Link>
+                </div>
+                <div className="flex flex-col items-center py-8 text-center">
+                  <FileText className="w-7 h-7 text-text-muted mb-2" />
+                  <p className="text-sm text-text-muted">Invoice list coming soon.</p>
+                  <p className="text-xs text-text-muted mt-0.5">Payment date and status will be shown inline.</p>
+                  <Link href="/invoices" className="text-accent hover:text-accent-hover text-sm mt-3">
+                    View all invoices
                   </Link>
                 </div>
               </GlassCard>

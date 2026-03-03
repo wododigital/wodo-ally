@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, FolderKanban, Search, TrendingUp, Users, CheckCircle2 } from "lucide-react";
+import { Plus, FolderKanban, Search, TrendingUp, Users, CheckCircle2, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { AddProjectModal } from "@/components/shared/add-project-modal";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { useProjects, useUpdateProject } from "@/lib/hooks/use-projects";
@@ -152,6 +153,7 @@ function ProgressBar({ projectId, pct, color }: { projectId: string; pct: number
 export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "retainer" | "one_time">("all");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data: projects = [], isLoading, isError, error } = useProjects();
 
@@ -175,6 +177,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {showAddModal && <AddProjectModal onClose={() => setShowAddModal(false)} />}
 
       {/* Project KPIs */}
       <DarkSection>
@@ -182,15 +185,18 @@ export default function ProjectsPage() {
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Project Overview</p>
           <div className="flex items-center gap-2">
             <Link href="/analytics/projects"
-              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
+              <BarChart2 className="w-3.5 h-3.5" />
               Analytics
             </Link>
-            <Link href="/projects/new"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "rgba(253,126,20,0.85)" }}>
-              <Plus className="w-3 h-3" />
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(253,126,20,0.85)" }}
+            >
+              <Plus className="w-3.5 h-3.5" />
               New Project
-            </Link>
+            </button>
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -262,6 +268,7 @@ export default function ProjectsPage() {
           icon={FolderKanban}
           title="No projects found"
           description="Add a project to start tracking work and billing."
+          action={{ label: "New Project", onClick: () => setShowAddModal(true) }}
         />
       ) : (
         <div className="space-y-3">
