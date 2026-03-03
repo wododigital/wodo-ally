@@ -24,8 +24,8 @@
 ## Current Status
 - [x] Phase 1: Foundation & Design System
 - [x] Phase 2: Core Pages (UI Only)
-- [ ] Phase 3: Core Backend Logic
-- [ ] Phase 4: Advanced Features
+- [x] Phase 3: Core Backend Logic
+- [x] Phase 4: Advanced Features
 - [ ] Phase 5: Polish & Deploy
 
 ## Completed Modules
@@ -48,29 +48,36 @@
 | Contracts UI | Complete | 2026-03-03 | Search, status filter dropdown, contract cards |
 | Targets UI | Complete | 2026-03-03 | Progress cards with bars, inline add form |
 | Settings UI | Complete | 2026-03-03 | 5 tabs: Company, Bank Details, Invoice settings, Users, Notifications |
-| Client CRUD | Pending | - | Phase 3 |
-| Invoice Engine | Pending | - | Phase 3 |
-| PDF Generation | Pending | - | Phase 3 |
-| Payment Logic | Pending | - | Phase 3 |
-| Expense Parser | Pending | - | Phase 3 |
-| Analytics Queries | Pending | - | Phase 4 |
-| Investor Reports | Pending | - | Phase 4 |
-| Contract Gen | Pending | - | Phase 4 |
-| Email System | Pending | - | Phase 4 |
-| Financial Targets | Pending | - | Phase 4 |
+| Client CRUD | Complete | 2026-03-03 | use-clients.ts - full CRUD, close/reactivate, stats |
+| Invoice Engine | Complete | 2026-03-03 | use-invoices.ts - create/finalize/number gen/retainer auto-draft |
+| PDF Generation | Complete | 2026-03-03 | invoice-pdf.tsx (4 types), contract-pdf.tsx, report-pdf.tsx |
+| Payment Logic | Complete | 2026-03-03 | useRecordPayment - auto-recalculates balance, updates status |
+| Expense Parser | Complete | 2026-03-03 | bank-statement.ts + auto-categorize.ts + use-transactions.ts |
+| Pipeline Backend | Complete | 2026-03-03 | useScheduledInvoices, useCollectionsInvoices wired in pipeline |
+| Analytics Queries | Complete | 2026-03-03 | use-analytics.ts (10 hooks) - all 7 SQL views + dashboard KPIs + payments |
+| Services Catalogue | Complete | 2026-03-03 | use-services.ts - CRUD; invoice line items wired to real services |
+| Investor Reports | Complete | 2026-03-03 | use-reports.ts - data collection, PDF gen, email send |
+| Contract Gen | Complete | 2026-03-03 | use-contracts.ts + contract-pdf.tsx - CRUD, PDF, status lifecycle |
+| Email System | Complete | 2026-03-03 | email/client.ts + templates.ts + /api/email/send (Microsoft 365 SMTP) |
+| Financial Targets | Complete | 2026-03-03 | use-targets.ts - CRUD + useRefreshTargetProgress (live calculations) |
+| Dashboard KPIs | Complete | 2026-03-03 | useDashboardKPIs - real revenue/outstanding/clients/overdue/MRR |
+| Payments Page | Complete | 2026-03-03 | usePaymentsList - wired to real invoice_payments table |
 | Deployment | Pending | - | Phase 5 |
 
 ## Environment Setup
 - Supabase URL: (to be filled)
 - Supabase Region: ap-south-1 (Mumbai)
-- SMTP (Microsoft 365): (to be configured)
-- Sentry: (to be configured)
-- Railway: (to be configured)
+- SMTP Host: smtp.office365.com port 587 (STARTTLS)
+- SMTP User: accounts@wodo.digital - add SMTP_PASS to .env
+- Sentry: (to be configured - Phase 5)
+- Railway: (to be configured - Phase 5)
 
 ## Known Issues / Decisions Log
-(Record architectural decisions, trade-offs, and known issues here)
 
-1. (No entries yet)
+1. Supabase SQL views (monthly_pl_view, etc.) are not in generated Database types - use `(supabase as any).from('view_name')` pattern with explicit `Record<string, unknown>[]` casts. Same for `services` table until types are regenerated.
+2. Migration 006_project_expenses.sql (project_expense_breakdown view) needs to be run in Supabase SQL Editor before project-level expense analytics appear.
+3. Email requires SMTP_PASS in .env - fill in Microsoft 365 app password for accounts@wodo.digital.
+4. `useRefreshTargetProgress` uses Apr-Mar Indian FY bounds. For '2025-26': Apr 1 2025 - Mar 31 2026.
 
 ## Files Modified Registry
 (Track which major files each agent/phase created or modified)

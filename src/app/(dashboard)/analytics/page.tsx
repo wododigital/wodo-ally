@@ -2,53 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, TrendingDown, IndianRupee } from "lucide-react";
+import { ArrowRight, TrendingUp, TrendingDown, IndianRupee, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Skeleton } from "@/components/shared/loading-skeleton";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils/cn";
+import {
+  useMonthlyPL,
+  useRevenueByService,
+  useRevenueByClient,
+  useDashboardKPIs,
+} from "@/lib/hooks/use-analytics";
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-const MONTHLY_DATA = [
-  { month: "Apr", revenue: 218000, expenses: 42000 },
-  { month: "May", revenue: 248000, expenses: 48000 },
-  { month: "Jun", revenue: 282000, expenses: 51000 },
-  { month: "Jul", revenue: 265000, expenses: 44000 },
-  { month: "Aug", revenue: 354000, expenses: 62000 },
-  { month: "Sep", revenue: 321000, expenses: 55000 },
-  { month: "Oct", revenue: 298000, expenses: 49000 },
-  { month: "Nov", revenue: 342000, expenses: 58000 },
-  { month: "Dec", revenue: 387000, expenses: 67000 },
-  { month: "Jan", revenue: 345000, expenses: 54000 },
-  { month: "Feb", revenue: 335830, expenses: 29596 },
-  { month: "Mar", revenue: 76700,  expenses: 0     },
-];
-
-const PROJECTED = [
-  { month: "Apr*", revenue: 360000, expenses: 52000, projected: true },
-  { month: "May*", revenue: 375000, expenses: 54000, projected: true },
-  { month: "Jun*", revenue: 390000, expenses: 56000, projected: true },
-];
-
-const REVENUE_BY_SERVICE = [
-  { name: "SEO",         value: 1890000, color: "#fd7e14" },
-  { name: "Web Dev",     value: 1265830, color: "#3b82f6" },
-  { name: "Branding",    value: 450000,  color: "#8b5cf6" },
-  { name: "Google Ads",  value: 240000,  color: "#16a34a" },
-];
-
-const CLIENT_REVENUE = [
-  { client: "Nandhini Hotel",  revenue: 921900 },
-  { client: "Dentique",        revenue: 115830 },
-  { client: "Sea Wonders",     revenue: 357600 },
-  { client: "Maximus OIGA",    revenue: 590000 },
-  { client: "Godavari",        revenue: 100300 },
-  { client: "Raj Ent.",        revenue: 17500  },
-];
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CHART_TOOLTIP = {
   backgroundColor: "rgba(255,255,255,0.92)",
@@ -61,53 +32,84 @@ const CHART_TOOLTIP = {
 const GRID = { stroke: "rgba(0,0,0,0.06)" };
 const AXIS  = { fill: "#9ca3af", fontSize: 11 };
 
-// ─── Period helpers ───────────────────────────────────────────────────────────
-
 type Period = "month" | "q4" | "q3" | "ytd" | "fy" | "custom";
-type MonthIdx = 0|1|2|3|4|5|6|7|8|9|10|11;
 
-const MONTH_LABELS = ["Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"];
+const PERIODS: { key: Period; label: string }[] = [
+  { key: "month", label: "Month" },
+  { key: "q3",    label: "Q3 (Oct-Dec)" },
+  { key: "q4",    label: "Q4 (Jan-Mar)" },
+  { key: "ytd",   label: "YTD" },
+  { key: "fy",    label: "Full Year" },
+  { key: "custom",label: "Custom" },
+];
 
-function getChartData(period: Period, monthIdx: MonthIdx, showProjection: boolean) {
-  let base: typeof MONTHLY_DATA;
-  if (period === "month")  base = [MONTHLY_DATA[monthIdx]];
-  else if (period === "q3") base = MONTHLY_DATA.slice(6, 9);   // Oct Nov Dec
-  else if (period === "q4") base = MONTHLY_DATA.slice(9, 12);  // Jan Feb Mar
-  else if (period === "ytd") base = MONTHLY_DATA.slice(0, 11);
-  else base = MONTHLY_DATA;
-  if (showProjection && period === "fy") return [...base, ...PROJECTED];
-  return base;
+// Map month labels to fiscal quarter (Apr=Q1 ... Mar=Q4 in FY Apr-Mar)
+function isQ3Month(label: string) {
+  return ["Oct", "Nov", "Dec"].some((m) => label.startsWith(m));
 }
-
-function sum(data: { revenue: number; expenses: number }[]) {
-  return data.filter(m => !(m as { projected?: boolean }).projected).reduce(
-    (a, m) => ({ revenue: a.revenue + m.revenue, expenses: a.expenses + m.expenses }),
-    { revenue: 0, expenses: 0 }
-  );
+function isQ4Month(label: string) {
+  return ["Jan", "Feb", "Mar"].some((m) => label.startsWith(m));
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
   const [period, setPeriod]         = useState<Period>("fy");
-  const [monthIdx, setMonthIdx]     = useState<MonthIdx>(10); // Feb
   const [showProjection, setShowProjection] = useState(false);
-  const [customFrom, setCustomFrom] = useState("2025-04-01");
-  const [customTo, setCustomTo]     = useState("2026-03-31");
+  const [customFrom] = useState("2025-04-01");
+  const [customTo]   = useState("2026-03-31");
 
-  const chartData = getChartData(period, monthIdx, showProjection);
-  const { revenue, expenses } = sum(chartData);
+  const { data: plRows, isLoading: plLoading } = useMonthlyPL();
+  const { data: serviceRows, isLoading: serviceLoading } = useRevenueByService();
+  const { data: clientRows, isLoading: clientLoading } = useRevenueByClient();
+  const { data: kpis, isLoading: kpisLoading } = useDashboardKPIs();
+
+  const isLoading = plLoading || serviceLoading || clientLoading || kpisLoading;
+
+  // Build chart data from PL view rows
+  const allChartData = (plRows ?? []).map((row) => ({
+    month: row.month_label.slice(0, 3),
+    monthFull: row.month_label,
+    month_start: row.month_start,
+    revenue: row.total_revenue,
+    expenses: row.total_expenses,
+  }));
+
+  // Filter by period
+  const chartData = (() => {
+    if (!allChartData.length) return [];
+    if (period === "month")  return allChartData.slice(-1);
+    if (period === "q3")     return allChartData.filter((d) => isQ3Month(d.month));
+    if (period === "q4")     return allChartData.filter((d) => isQ4Month(d.month));
+    if (period === "ytd")    return allChartData.slice(0, -1);
+    return allChartData; // fy + custom
+  })();
+
+  const revenue  = chartData.reduce((s, m) => s + m.revenue, 0);
+  const expenses = chartData.reduce((s, m) => s + m.expenses, 0);
   const netProfit = revenue - expenses;
   const margin    = revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0;
 
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "month", label: "Month" },
-    { key: "q3",    label: "Q3 (Oct-Dec)" },
-    { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd",   label: "YTD" },
-    { key: "fy",    label: "Full Year" },
-    { key: "custom",label: "Custom" },
-  ];
+  // Revenue by service - for donut
+  const activeServices = (serviceRows ?? []).filter((s) => s.total_line_item_revenue > 0 || s.monthly_retainer_value > 0);
+  const totalServiceRevenue = activeServices.reduce(
+    (s, r) => s + r.total_line_item_revenue + r.monthly_retainer_value,
+    0
+  );
+  const serviceDonutData = activeServices.slice(0, 6).map((s) => ({
+    name: s.service_name,
+    value: s.total_line_item_revenue + s.monthly_retainer_value,
+    color: s.color || "#fd7e14",
+  }));
+
+  // Revenue by client - top 5
+  const topClients = (clientRows ?? [])
+    .filter((c) => c.total_collected > 0)
+    .slice(0, 6)
+    .map((c) => ({
+      client: c.client_name.length > 12 ? c.client_name.slice(0, 11) + "." : c.client_name,
+      revenue: c.total_collected,
+    }));
 
   return (
     <div className="space-y-6">
@@ -130,7 +132,7 @@ export default function AnalyticsPage() {
         ))}
         {period === "fy" && (
           <button
-            onClick={() => setShowProjection(v => !v)}
+            onClick={() => setShowProjection((v) => !v)}
             className={cn(
               "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
               showProjection
@@ -141,77 +143,67 @@ export default function AnalyticsPage() {
             {showProjection ? "Hide" : "Show"} Projection
           </button>
         )}
-        {period === "month" && (
-          <select
-            value={monthIdx}
-            onChange={e => setMonthIdx(Number(e.target.value) as MonthIdx)}
-            className="glass-input w-auto text-xs py-1.5 pl-3 pr-8"
-          >
-            {MONTH_LABELS.map((m, i) => (
-              <option key={m} value={i}>{m} {i >= 9 ? "2026" : "2025"}</option>
-            ))}
-          </select>
-        )}
-        {period === "custom" && (
-          <div className="flex items-center gap-2">
-            <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="glass-input text-xs py-1.5 w-auto" />
-            <span className="text-text-muted text-xs">to</span>
-            <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="glass-input text-xs py-1.5 w-auto" />
-          </div>
-        )}
       </div>
 
-      {/* Dark Financial Snapshot - KPIs above chart */}
+      {/* Dark Financial Snapshot */}
       <DarkSection>
         <DarkLabel>Financial Snapshot</DarkLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            {
-              label: "Total Revenue",
-              value: `Rs.${(revenue/100000).toFixed(2)}L`,
-              sub: period === "fy" ? "FY 2025-26" : "Selected period",
-              icon: IndianRupee,
-              color: "#fd7e14",
-            },
-            {
-              label: "Total Expenses",
-              value: `Rs.${(expenses/1000).toFixed(0)}K`,
-              sub: `${Math.round(expenses/revenue*100)}% of revenue`,
-              icon: TrendingDown,
-              color: "#ef4444",
-            },
-            {
-              label: "Net Profit",
-              value: `Rs.${(netProfit/100000).toFixed(2)}L`,
-              sub: period === "fy" ? "After all expenses" : "For period",
-              icon: TrendingUp,
-              color: "#22c55e",
-            },
-            {
-              label: "Profit Margin",
-              value: `${margin}%`,
-              sub: margin >= 70 ? "Healthy margin" : "Watch expenses",
-              icon: TrendingUp,
-              color: margin >= 70 ? "#22c55e" : "#f59e0b",
-            },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{ background: `${stat.color}18` }}>
-                  <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
-                </div>
-                <span className="text-[11px] uppercase tracking-wider font-bold"
-                  style={{ color: "rgba(255,255,255,0.3)" }}>
-                  {stat.label}
-                </span>
-              </div>
-              <p className="text-2xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <DarkCard key={i} className="p-5 space-y-3">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </DarkCard>
+              ))
+            : [
+                {
+                  label: "Total Revenue",
+                  value: `Rs.${(revenue / 100000).toFixed(2)}L`,
+                  sub: period === "fy" ? "FY 2025-26" : "Selected period",
+                  icon: IndianRupee,
+                  color: "#fd7e14",
+                },
+                {
+                  label: "Total Expenses",
+                  value: `Rs.${(expenses / 1000).toFixed(0)}K`,
+                  sub: revenue > 0 ? `${Math.round((expenses / revenue) * 100)}% of revenue` : "-",
+                  icon: TrendingDown,
+                  color: "#ef4444",
+                },
+                {
+                  label: "Net Profit",
+                  value: `Rs.${(netProfit / 100000).toFixed(2)}L`,
+                  sub: period === "fy" ? "After all expenses" : "For period",
+                  icon: TrendingUp,
+                  color: "#22c55e",
+                },
+                {
+                  label: "Profit Margin",
+                  value: `${margin}%`,
+                  sub: margin >= 70 ? "Healthy margin" : "Watch expenses",
+                  icon: TrendingUp,
+                  color: margin >= 70 ? "#22c55e" : "#f59e0b",
+                },
+              ].map((stat) => (
+                <DarkCard key={stat.label} className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center"
+                      style={{ background: `${stat.color}18` }}>
+                      <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
+                    </div>
+                    <span className="text-[11px] uppercase tracking-wider font-bold"
+                      style={{ color: "rgba(255,255,255,0.3)" }}>
+                      {stat.label}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{stat.sub}</p>
+                </DarkCard>
+              ))}
         </div>
       </DarkSection>
 
@@ -229,26 +221,32 @@ export default function AnalyticsPage() {
           </div>
         </div>
         <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#fd7e14" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#fd7e14" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" {...GRID} />
-              <XAxis dataKey="month" tick={AXIS} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-              <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${(v as number).toLocaleString("en-IN")}`, ""]} />
-              <Area type="monotone" dataKey="revenue"  name="Revenue"  stroke="#fd7e14" strokeWidth={2} fill="url(#revGrad)" />
-              <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#ef4444" strokeWidth={2} fill="url(#expGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          {plLoading ? (
+            <Skeleton className="w-full h-full" />
+          ) : chartData.length === 0 ? (
+            <EmptyState icon={BarChart2} title="No data for this period" description="Add invoice payments or transactions to see the chart." />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#fd7e14" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#fd7e14" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" {...GRID} />
+                <XAxis dataKey="month" tick={AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${(v as number).toLocaleString("en-IN")}`, ""]} />
+                <Area type="monotone" dataKey="revenue"  name="Revenue"  stroke="#fd7e14" strokeWidth={2} fill="url(#revGrad)" />
+                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#ef4444" strokeWidth={2} fill="url(#expGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </GlassCard>
 
@@ -261,34 +259,50 @@ export default function AnalyticsPage() {
               Detail <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="h-44 w-44 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={REVENUE_BY_SERVICE} cx="50%" cy="50%" innerRadius={46} outerRadius={72} dataKey="value" paddingAngle={3}>
-                    {REVENUE_BY_SERVICE.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${(v/100000).toFixed(1)}L`, ""]} />
-                </PieChart>
-              </ResponsiveContainer>
+          {serviceLoading ? (
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-44 w-44 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
+              </div>
             </div>
-            <div className="space-y-2.5 flex-1">
-              {REVENUE_BY_SERVICE.map((item) => (
-                <div key={item.name}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-text-secondary flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: item.color }} />
-                      {item.name}
-                    </span>
-                    <span className="font-sans text-text-primary">Rs.{(item.value/100000).toFixed(1)}L</span>
+          ) : serviceDonutData.length === 0 ? (
+            <EmptyState icon={BarChart2} title="No service revenue" description="Tag line items with services to see breakdown." />
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="h-44 w-44 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={serviceDonutData} cx="50%" cy="50%" innerRadius={46} outerRadius={72} dataKey="value" paddingAngle={3}>
+                      {serviceDonutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${(v / 100000).toFixed(1)}L`, ""]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2.5 flex-1">
+                {serviceDonutData.map((item) => (
+                  <div key={item.name}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-text-secondary flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: item.color }} />
+                        {item.name}
+                      </span>
+                      <span className="font-sans text-text-primary">
+                        Rs.{(item.value / 100000).toFixed(1)}L
+                      </span>
+                    </div>
+                    <div className="h-1 bg-black/[0.04] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{
+                        width: `${totalServiceRevenue > 0 ? Math.round((item.value / totalServiceRevenue) * 100) : 0}%`,
+                        backgroundColor: item.color,
+                      }} />
+                    </div>
                   </div>
-                  <div className="h-1 bg-black/[0.04] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.round(item.value/revenue*100)}%`, backgroundColor: item.color }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </GlassCard>
 
         <GlassCard padding="md">
@@ -298,16 +312,22 @@ export default function AnalyticsPage() {
               Detail <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CLIENT_REVENUE} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
-                <XAxis type="number" tick={AXIS} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-                <YAxis type="category" dataKey="client" tick={AXIS} axisLine={false} tickLine={false} width={72} />
-                <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, "Revenue"]} />
-                <Bar dataKey="revenue" fill="#fd7e14" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {clientLoading ? (
+            <Skeleton className="h-44 w-full" />
+          ) : topClients.length === 0 ? (
+            <EmptyState icon={BarChart2} title="No client revenue" description="Record invoice payments to see client revenue." />
+          ) : (
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topClients} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
+                  <XAxis type="number" tick={AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                  <YAxis type="category" dataKey="client" tick={AXIS} axisLine={false} tickLine={false} width={72} />
+                  <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, "Revenue"]} />
+                  <Bar dataKey="revenue" fill="#fd7e14" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </GlassCard>
       </div>
 

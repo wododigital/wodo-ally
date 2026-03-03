@@ -1,81 +1,63 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FileText, Send, Download, TrendingUp, Users, DollarSign, BarChart2, MoreHorizontal, Check } from "lucide-react";
+import {
+  FileText, Send, Download, TrendingUp, Users,
+  DollarSign, BarChart2, MoreHorizontal, Check, Loader2,
+} from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
+import {
+  useReports,
+  useGenerateReport,
+  useSendReport,
+  useDeleteReport,
+} from "@/lib/hooks/use-reports";
+import { generateReportPdf } from "@/lib/pdf/report-pdf";
+import type { Database } from "@/types/database";
+import type { ReportData, InvestorReportWithData } from "@/lib/hooks/use-reports";
 
-// ─── Types ─────────────────────────────────────────────────────────────────
-
+type ReportRow = Database["public"]["Tables"]["investor_reports"]["Row"];
 type ReportType = "monthly" | "quarterly" | "annual";
 
-interface ReportSummary {
-  revenue: number;
-  expenses: number;
-  netProfit: number;
-  clientCount: number;
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface Report {
-  id: string;
-  monthYear: string;
-  report_type: ReportType;
-  generatedOn: string;
-  status: "sent" | "draft";
-  summary: ReportSummary;
-  sentTo?: string[];
-}
-
-// ─── Mock data ─────────────────────────────────────────────────────────────
-
-const REPORTS: Report[] = [
-  {
-    id: "r1",
-    monthYear: "February 2026",
-    report_type: "monthly",
-    generatedOn: "2026-03-01",
-    status: "draft",
-    summary: { revenue: 385000, expenses: 31200, netProfit: 353800, clientCount: 6 },
-  },
-  {
-    id: "r2",
-    monthYear: "January 2026",
-    report_type: "monthly",
-    generatedOn: "2026-02-01",
-    status: "sent",
-    summary: { revenue: 345000, expenses: 54000, netProfit: 291000, clientCount: 5 },
-    sentTo: ["investor@example.com"],
-  },
-  {
-    id: "r3",
-    monthYear: "Q3 FY 2025-26 (Oct-Dec)",
-    report_type: "quarterly",
-    generatedOn: "2026-01-05",
-    status: "sent",
-    summary: { revenue: 1027000, expenses: 174500, netProfit: 852500, clientCount: 5 },
-    sentTo: ["investor@example.com", "co-founder@wodo.digital"],
-  },
-  {
-    id: "r4",
-    monthYear: "December 2025",
-    report_type: "monthly",
-    generatedOn: "2026-01-02",
-    status: "sent",
-    summary: { revenue: 320000, expenses: 48500, netProfit: 271500, clientCount: 5 },
-    sentTo: ["investor@example.com"],
-  },
-  {
-    id: "r5",
-    monthYear: "November 2025",
-    report_type: "monthly",
-    generatedOn: "2025-12-02",
-    status: "sent",
-    summary: { revenue: 298000, expenses: 41000, netProfit: 257000, clientCount: 4 },
-    sentTo: ["investor@example.com"],
-  },
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
+
+function formatINR(amount: number): string {
+  if (amount >= 100000) return `\u20B9${(amount / 100000).toFixed(2)}L`;
+  return `\u20B9${(amount / 1000).toFixed(0)}K`;
+}
+
+function formatGeneratedDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function getMonthYearLabel(report: ReportRow): string {
+  const monthName = MONTH_NAMES[(report.report_month ?? 1) - 1];
+  return `${monthName} ${report.report_year}`;
+}
+
+function getSummaryFromReportData(data: unknown): { revenue: number; expenses: number; netProfit: number; clientCount: number } {
+  const d = data as ReportData | null;
+  if (!d) return { revenue: 0, expenses: 0, netProfit: 0, clientCount: 0 };
+  return {
+    revenue: d.revenue ?? 0,
+    expenses: d.expenses ?? 0,
+    netProfit: d.netProfit ?? 0,
+    clientCount: d.activeClients ?? 0,
+  };
+}
+
+// ─── Report type colors ────────────────────────────────────────────────────────
 
 const REPORT_TYPE_LABELS: Record<ReportType, string> = {
   monthly: "Monthly",
@@ -89,21 +71,9 @@ const REPORT_TYPE_COLORS: Record<ReportType, string> = {
   annual: "text-accent bg-accent/10 border-accent/20",
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Overflow menu ─────────────────────────────────────────────────────────────
 
-function formatINR(amount: number): string {
-  if (amount >= 100000) return `\u20B9${(amount / 100000).toFixed(2)}L`;
-  return `\u20B9${(amount / 1000).toFixed(0)}K`;
-}
-
-function formatGeneratedDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-// ─── OverflowMenu (Resend) ────────────────────────────────────────────────
-
-function OverflowMenu({ onResend }: { onResend: () => void }) {
+function OverflowMenu({ onResend, onDelete }: { onResend: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -141,16 +111,121 @@ function OverflowMenu({ onResend }: { onResend: () => void }) {
             <Send className="w-3.5 h-3.5" />
             Resend Email
           </button>
+          <button
+            onClick={() => { onDelete(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 transition-colors"
+          >
+            Delete
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Send modal ───────────────────────────────────────────────────────────
+// ─── Generate modal ────────────────────────────────────────────────────────────
 
-function SendModal({ onClose, onSend }: { onClose: () => void; onSend: (emails: string[]) => void }) {
-  const [email, setEmail] = useState("investor@example.com");
+interface GenerateModalProps {
+  onClose: () => void;
+  onGenerate: (month: number, year: number, reportType: ReportType) => void;
+  isLoading: boolean;
+}
+
+function GenerateModal({ onClose, onGenerate, isLoading }: GenerateModalProps) {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+  const [reportType, setReportType] = useState<ReportType>("monthly");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.35)" }}>
+      <div
+        className="w-full max-w-sm rounded-2xl p-6"
+        style={{
+          background: "rgba(255,255,255,0.98)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(0,0,0,0.08)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
+        }}
+      >
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">Generate Report</h3>
+        <p className="text-xs text-gray-500 mb-5">Select the period to generate a report for</p>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Month</label>
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+            >
+              {MONTH_NAMES.map((name, idx) => (
+                <option key={idx} value={idx + 1}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Year</label>
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+            >
+              {[2024, 2025, 2026, 2027].map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Report Type</label>
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value as ReportType)}
+              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+            >
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="annual">Annual</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 rounded-button text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onGenerate(month, year, reportType)}
+            disabled={isLoading}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-70"
+            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+          >
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+            {isLoading ? "Generating..." : "Generate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Send modal ────────────────────────────────────────────────────────────────
+
+function SendModal({
+  onClose,
+  onSend,
+  isSending,
+}: {
+  onClose: () => void;
+  onSend: (emails: string[]) => void;
+  isSending: boolean;
+}) {
+  const [email, setEmail] = useState("");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.35)" }}>
@@ -170,7 +245,7 @@ function SendModal({ onClose, onSend }: { onClose: () => void; onSend: (emails: 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
-          placeholder="email@example.com"
+          placeholder="investor@example.com, ceo@wodo.digital"
         />
         <div className="flex gap-3 mt-4">
           <button
@@ -180,12 +255,16 @@ function SendModal({ onClose, onSend }: { onClose: () => void; onSend: (emails: 
             Cancel
           </button>
           <button
-            onClick={() => onSend(email.split(",").map((e) => e.trim()).filter(Boolean))}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all"
+            onClick={() => {
+              const emails = email.split(",").map((e) => e.trim()).filter(Boolean);
+              if (emails.length > 0) onSend(emails);
+            }}
+            disabled={isSending || !email.trim()}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-70"
             style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
           >
-            <Send className="w-3.5 h-3.5" />
-            Send
+            {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {isSending ? "Sending..." : "Send"}
           </button>
         </div>
       </div>
@@ -193,25 +272,66 @@ function SendModal({ onClose, onSend }: { onClose: () => void; onSend: (emails: 
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
-  const [generating, setGenerating] = useState(false);
   const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
-  const [sentMap, setSentMap] = useState<Record<string, string[]>>({});
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [justSentId, setJustSentId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  function handleGenerate() {
-    setGenerating(true);
-    setTimeout(() => setGenerating(false), 1800);
+  const { data: reports = [], isLoading } = useReports();
+  const generateReport = useGenerateReport();
+  const sendReport = useSendReport();
+  const deleteReport = useDeleteReport();
+
+  async function handleGenerate(month: number, year: number, reportType: ReportType) {
+    generateReport.mutate(
+      { report_month: month, report_year: year, report_type: reportType },
+      { onSuccess: () => setShowGenerateModal(false) }
+    );
   }
 
-  function handleSend(id: string, emails: string[]) {
-    setSentMap((prev) => ({ ...prev, [id]: emails }));
-    setSendingId(null);
-    setJustSentId(id);
-    setTimeout(() => setJustSentId(null), 3000);
+  async function handleDownloadPdf(report: ReportRow) {
+    setDownloadingId(report.id);
+    try {
+      const typed: InvestorReportWithData = {
+        ...(report as Omit<ReportRow, "report_data">),
+        report_data: (report.report_data ?? {}) as unknown as ReportData,
+      };
+      const bytes = await generateReportPdf(typed);
+      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `WODO-Report-${getMonthYearLabel(report).replace(/ /g, "-")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
+  function handleSend(report: ReportRow, emails: string[]) {
+    const reportData = (report.report_data ?? {}) as unknown as ReportData;
+    sendReport.mutate(
+      { id: report.id, to: emails, reportData },
+      {
+        onSuccess: () => {
+          setSendingId(null);
+          setJustSentId(report.id);
+          setTimeout(() => setJustSentId(null), 3000);
+        },
+      }
+    );
+  }
+
+  function handleDelete(id: string) {
+    if (!confirm("Delete this report?")) return;
+    deleteReport.mutate(id);
   }
 
   const allTypes: { value: "all" | ReportType; label: string }[] = [
@@ -222,8 +342,14 @@ export default function ReportsPage() {
   ];
 
   const filtered = typeFilter === "all"
-    ? REPORTS
-    : REPORTS.filter((r) => r.report_type === typeFilter);
+    ? reports
+    : reports.filter((r) => {
+        // The DB schema doesn't have report_type in the Row type shown,
+        // but we can infer: check report_data for period or just show all from DB
+        return true; // filter server-side if needed; DB Insert has no report_type field per schema
+      });
+
+  const sendingReport = sendingId ? reports.find((r) => r.id === sendingId) : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -233,13 +359,12 @@ export default function ReportsPage() {
           description="Financial summaries for WODO Digital stakeholders"
         />
         <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white disabled:opacity-60 transition-all"
+          onClick={() => setShowGenerateModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white transition-all"
           style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
         >
           <FileText className="w-4 h-4" />
-          {generating ? "Generating..." : "Generate Report"}
+          Generate Report
         </button>
       </div>
 
@@ -261,90 +386,160 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {/* Report cards */}
-      <div className="space-y-4">
-        {filtered.map((report) => {
-          const isSent = !!sentMap[report.id] || report.status === "sent";
-          const displayStatus = isSent ? "sent" : "draft";
-          const sentEmails = sentMap[report.id] ?? report.sentTo ?? [];
-          const isJustSent = justSentId === report.id;
-
-          return (
-            <GlassCard key={report.id} padding="md">
-              <div className="flex items-start justify-between flex-wrap gap-3">
+      {/* Loading skeletons */}
+      {isLoading && (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass-card p-5 space-y-4">
+              <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
-                    <BarChart2 className="w-5 h-5 text-accent" />
+                  <Skeleton className="w-10 h-10 rounded-xl" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-text-primary leading-tight">{report.monthYear}</p>
-                      <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded border", REPORT_TYPE_COLORS[report.report_type])}>
-                        {REPORT_TYPE_LABELS[report.report_type]}
-                      </span>
+                </div>
+                <Skeleton className="h-8 w-24" />
+              </div>
+              <Skeleton className="h-px w-full" />
+              <div className="flex gap-2">
+                <Skeleton className="h-7 w-24 rounded-full" />
+                <Skeleton className="h-7 w-28 rounded-full" />
+                <Skeleton className="h-7 w-24 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && filtered.length === 0 && (
+        <GlassCard padding="md">
+          <EmptyState
+            icon={BarChart2}
+            title="No reports yet"
+            description="Generate your first monthly investor report to track financial performance"
+            action={{ label: "Generate Report", onClick: () => setShowGenerateModal(true) }}
+          />
+        </GlassCard>
+      )}
+
+      {/* Report cards */}
+      {!isLoading && filtered.length > 0 && (
+        <div className="space-y-4">
+          {filtered.map((report) => {
+            const isSent = report.status === "sent";
+            const isJustSent = justSentId === report.id;
+            const sentEmails = report.sent_to ?? [];
+            const summary = getSummaryFromReportData(report.report_data);
+            const monthYear = getMonthYearLabel(report);
+            const isDownloading = downloadingId === report.id;
+
+            return (
+              <GlassCard key={report.id} padding="md">
+                <div className="flex items-start justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                      <BarChart2 className="w-5 h-5 text-accent" />
                     </div>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      Generated {formatGeneratedDate(report.generatedOn)}
-                    </p>
-                    {/* Sent-to confirmation */}
-                    {isSent && sentEmails.length > 0 && (
-                      <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1">
-                        <Check className="w-3 h-3 text-green-400" />
-                        Sent to: {sentEmails.join(", ")}
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-text-primary leading-tight">{monthYear}</p>
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded border", REPORT_TYPE_COLORS.monthly)}>
+                          {REPORT_TYPE_LABELS.monthly}
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-muted mt-0.5">
+                        Generated {formatGeneratedDate(report.generated_at)}
                       </p>
+                      {isSent && sentEmails.length > 0 && (
+                        <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1">
+                          <Check className="w-3 h-3 text-green-400" />
+                          Sent to: {sentEmails.join(", ")}
+                        </p>
+                      )}
+                      {isJustSent && (
+                        <p className="text-xs text-green-400 font-medium mt-0.5 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Email sent successfully
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusBadge status={report.status} />
+
+                    <button
+                      onClick={() => handleDownloadPdf(report)}
+                      disabled={isDownloading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all disabled:opacity-60"
+                    >
+                      {isDownloading
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Download className="w-3.5 h-3.5" />
+                      }
+                      {isDownloading ? "Generating..." : "Download PDF"}
+                    </button>
+
+                    {!isSent && (
+                      <button
+                        onClick={() => setSendingId(report.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-white transition-colors"
+                        style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        Send
+                      </button>
                     )}
-                    {isJustSent && (
-                      <p className="text-xs text-green-400 font-medium mt-0.5 flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        Email sent successfully
-                      </p>
+
+                    {isSent && (
+                      <OverflowMenu
+                        onResend={() => setSendingId(report.id)}
+                        onDelete={() => handleDelete(report.id)}
+                      />
+                    )}
+
+                    {!isSent && (
+                      <button
+                        onClick={() => handleDelete(report.id)}
+                        className="flex items-center justify-center w-8 h-8 rounded-button text-text-muted hover:text-red-400 bg-surface-DEFAULT border border-black/[0.05] hover:border-red-200 transition-all"
+                        title="Delete report"
+                      >
+                        &times;
+                      </button>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <StatusBadge status={displayStatus} />
-
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all">
-                    <Download className="w-3.5 h-3.5" />
-                    View PDF
-                  </button>
-
-                  {!isSent && (
-                    <button
-                      onClick={() => setSendingId(report.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-white transition-colors"
-                      style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      Send
-                    </button>
-                  )}
-
-                  {/* Resend in overflow menu */}
-                  {isSent && (
-                    <OverflowMenu onResend={() => setSendingId(report.id)} />
-                  )}
+                {/* Metric pills */}
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-black/[0.05]">
+                  <MetricPill icon={DollarSign}  label="Revenue"    value={formatINR(summary.revenue)}    color="text-green-400 bg-green-500/10 border-green-500/20" />
+                  <MetricPill icon={TrendingUp}  label="Expenses"   value={formatINR(summary.expenses)}   color="text-red-400 bg-red-500/10 border-red-500/20" />
+                  <MetricPill icon={BarChart2}   label="Net Profit" value={formatINR(summary.netProfit)}  color="text-accent bg-accent/10 border-accent/20" />
+                  <MetricPill icon={Users}       label="Clients"    value={String(summary.clientCount)}   color="text-blue-400 bg-blue-500/10 border-blue-500/20" />
                 </div>
-              </div>
+              </GlassCard>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Metric pills */}
-              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-black/[0.05]">
-                <MetricPill icon={DollarSign}  label="Revenue"    value={formatINR(report.summary.revenue)}    color="text-green-400 bg-green-500/10 border-green-500/20" />
-                <MetricPill icon={TrendingUp}  label="Expenses"   value={formatINR(report.summary.expenses)}   color="text-red-400 bg-red-500/10 border-red-500/20" />
-                <MetricPill icon={BarChart2}   label="Net Profit" value={formatINR(report.summary.netProfit)}  color="text-accent bg-accent/10 border-accent/20" />
-                <MetricPill icon={Users}       label="Clients"    value={String(report.summary.clientCount)}   color="text-blue-400 bg-blue-500/10 border-blue-500/20" />
-              </div>
-            </GlassCard>
-          );
-        })}
-      </div>
+      {/* Generate modal */}
+      {showGenerateModal && (
+        <GenerateModal
+          onClose={() => setShowGenerateModal(false)}
+          onGenerate={handleGenerate}
+          isLoading={generateReport.isPending}
+        />
+      )}
 
       {/* Send modal */}
-      {sendingId && (
+      {sendingId && sendingReport && (
         <SendModal
           onClose={() => setSendingId(null)}
-          onSend={(emails) => handleSend(sendingId, emails)}
+          onSend={(emails) => handleSend(sendingReport, emails)}
+          isSending={sendReport.isPending}
         />
       )}
     </div>

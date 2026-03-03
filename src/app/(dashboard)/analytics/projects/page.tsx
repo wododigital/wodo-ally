@@ -1,53 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Briefcase, TrendingUp, CheckCircle2, Clock } from "lucide-react";
+import { Briefcase, TrendingUp, CheckCircle2, Clock, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Skeleton } from "@/components/shared/loading-skeleton";
 import {
   PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils/cn";
-
-// ─── Data ──────────────────────────────────────────────────────────────────
-
-const PROJECTS_BY_TYPE = [
-  { name: "SEO Retainer",   value: 1890000, color: "#fd7e14", count: 3 },
-  { name: "Web Dev",        value: 1265830, color: "#3b82f6", count: 5 },
-  { name: "Branding",       value: 450000,  color: "#8b5cf6", count: 4 },
-  { name: "Google Ads",     value: 240000,  color: "#16a34a", count: 2 },
-];
-
-const STATUS_DATA = [
-  { name: "Active",     value: 8,  color: "#22c55e" },
-  { name: "Completed",  value: 5,  color: "#3b82f6" },
-  { name: "On Hold",    value: 1,  color: "#f59e0b" },
-  { name: "Overdue",    value: 1,  color: "#ef4444" },
-];
-
-const MRR_TREND = [
-  { month: "Apr", mrr: 218000 },
-  { month: "May", mrr: 225300 },
-  { month: "Jun", mrr: 225300 },
-  { month: "Jul", mrr: 225300 },
-  { month: "Aug", mrr: 225300 },
-  { month: "Sep", mrr: 225300 },
-  { month: "Oct", mrr: 225300 },
-  { month: "Nov", mrr: 225300 },
-  { month: "Dec", mrr: 225300 },
-  { month: "Jan", mrr: 225300 },
-  { month: "Feb", mrr: 225300 },
-];
-
-const ACTIVE_PROJECTS = [
-  { name: "Nandhini Hotel - SEO",      client: "Nandhini Hotel",  type: "SEO Retainer", mrr: 76700, status: "active",    completion: 85 },
-  { name: "Maximus - SEO + Ads",       client: "Maximus OIGA",    type: "SEO + Ads",    mrr: 59000, status: "active",    completion: 70 },
-  { name: "Sea Wonders - Web Dev",     client: "Sea Wonders",     type: "Web Dev",      mrr: 28700, status: "active",    completion: 60 },
-  { name: "Dentique - Website",        client: "Dentique",        type: "Web Dev",      mrr: 0,     status: "completed", completion: 100},
-  { name: "Godavari - SEO",           client: "Godavari",        type: "SEO Retainer", mrr: 14300, status: "active",    completion: 55 },
-  { name: "Raj Ent. - Branding",      client: "Raj Ent.",        type: "Branding",     mrr: 0,     status: "on_hold",   completion: 30 },
-];
+import {
+  useProjectRevenueByType,
+  useMonthlyPL,
+  useDashboardKPIs,
+} from "@/lib/hooks/use-analytics";
 
 const CHART_TOOLTIP = {
   backgroundColor: "rgba(255,255,255,0.92)",
@@ -57,12 +25,17 @@ const CHART_TOOLTIP = {
   color: "#111827",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  active:    "#22c55e",
-  completed: "#3b82f6",
-  on_hold:   "#f59e0b",
-  overdue:   "#ef4444",
-};
+// Palette for project types
+const TYPE_COLORS = [
+  "#fd7e14", "#3b82f6", "#8b5cf6", "#16a34a",
+  "#ec4899", "#f59e0b", "#06b6d4", "#ef4444",
+];
+
+function formatProjectType(t: string): string {
+  return t
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 type Period = "month" | "ytd" | "q4" | "fy";
 
@@ -75,21 +48,45 @@ export default function ProjectAnalyticsPage() {
     if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
   }, []);
 
-  const mrrData = period === "month"
-    ? MRR_TREND.slice(-1)
-    : period === "q4"
-    ? MRR_TREND.slice(9)
-    : period === "ytd"
-    ? MRR_TREND.slice(0, 11)
-    : MRR_TREND;
+  const { data: revenueByType, isLoading: typeLoading } = useProjectRevenueByType();
+  const { data: plRows, isLoading: plLoading } = useMonthlyPL();
+  const { data: kpis, isLoading: kpisLoading } = useDashboardKPIs();
 
-  const totalRevenue = PROJECTS_BY_TYPE.reduce((s, p) => s + p.value, 0);
+  const isLoading = typeLoading || plLoading || kpisLoading;
+
+  // MRR trend from PL view (use total_revenue as proxy)
+  const allMrrData = (plRows ?? []).map((row) => ({
+    month: row.month_label.slice(0, 3),
+    mrr: row.total_revenue,
+  }));
+
+  const mrrData = (() => {
+    const n = allMrrData.length;
+    if (!n) return [];
+    if (period === "month") return allMrrData.slice(-1);
+    if (period === "q4")    return allMrrData.slice(-3);
+    if (period === "ytd")   return allMrrData.slice(0, Math.max(n - 1, 1));
+    return allMrrData;
+  })();
+
+  // Revenue by type for donut
+  const typeDonutData = (revenueByType ?? [])
+    .filter((r) => r.total_collected != null && Number(r.total_collected) > 0)
+    .map((r, i) => ({
+      name: formatProjectType(r.project_type),
+      value: Number(r.total_collected ?? 0),
+      count: Number(r.project_count),
+      color: TYPE_COLORS[i % TYPE_COLORS.length],
+    }));
+
+  const totalRevenue = typeDonutData.reduce((s, r) => s + r.value, 0);
+  const totalProjects = typeDonutData.reduce((s, r) => s + r.count, 0);
 
   const PERIODS: { key: Period; label: string }[] = [
     { key: "month", label: "This Month" },
     { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd", label: "YTD" },
-    { key: "fy",  label: "Full Year" },
+    { key: "ytd",   label: "YTD" },
+    { key: "fy",    label: "Full Year" },
   ];
 
   return (
@@ -113,144 +110,167 @@ export default function ProjectAnalyticsPage() {
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: Briefcase,    label: "Total projects",   value: "15",       sub: "8 active, 5 completed",       color: "#fd7e14" },
-            { icon: TrendingUp,   label: "Retainer revenue", value: "Rs.18.9L", sub: "SEO retainers - 49% share",   color: "#3b82f6" },
-            { icon: CheckCircle2, label: "Completion rate",  value: "73%",      sub: "8 of 15 in active delivery",  color: "#22c55e" },
-            { icon: Clock,        label: "On-hold projects", value: "1",        sub: "Raj Enterprises branding",    color: "#f59e0b" },
-          ].map((stat) => (
-            <DarkCard key={stat.label} className="p-5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-                style={{ background: `${stat.color}18` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-              </div>
-              <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
-                {stat.value}
-              </p>
-              <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
-            </DarkCard>
-          ))}
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <DarkCard key={i} className="p-5 space-y-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </DarkCard>
+              ))
+            : [
+                {
+                  icon: Briefcase,
+                  label: "Service types",
+                  value: String(typeDonutData.length),
+                  sub: `${totalProjects} project${totalProjects !== 1 ? "s" : ""} generating revenue`,
+                  color: "#fd7e14",
+                },
+                {
+                  icon: TrendingUp,
+                  label: "Total collected",
+                  value: totalRevenue > 0 ? `Rs.${(totalRevenue / 100000).toFixed(2)}L` : "-",
+                  sub: "Across all project types",
+                  color: "#3b82f6",
+                },
+                {
+                  icon: CheckCircle2,
+                  label: "Active clients",
+                  value: String(kpis?.active_clients ?? 0),
+                  sub: "Status = active",
+                  color: "#22c55e",
+                },
+                {
+                  icon: Clock,
+                  label: "MRR",
+                  value: kpis ? `Rs.${(kpis.mrr / 1000).toFixed(0)}K` : "-",
+                  sub: "Active retainer projects",
+                  color: "#f59e0b",
+                },
+              ].map((stat) => (
+                <DarkCard key={stat.label} className="p-5">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
+                    style={{ background: `${stat.color}18` }}>
+                    <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+                  </div>
+                  <p className="text-xl font-light font-sans mb-0.5" style={{ color: "rgba(255,255,255,0.92)" }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{stat.label}</p>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{stat.sub}</p>
+                </DarkCard>
+              ))}
         </div>
       </DarkSection>
 
-      {/* MRR trend */}
+      {/* Revenue trend chart */}
       <GlassCard padding="md">
-        <h3 className="text-sm font-semibold text-text-primary mb-4">Retainer MRR Trend</h3>
-        <div className="h-44">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mrrData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#fd7e14" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#fd7e14" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-              <XAxis dataKey="month" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-              <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, "MRR"]} />
-              <Area type="monotone" dataKey="mrr" name="MRR" stroke="#fd7e14" strokeWidth={2} fill="url(#mrrGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Revenue Trend</h3>
+        {plLoading ? (
+          <Skeleton className="h-44 w-full" />
+        ) : mrrData.length === 0 ? (
+          <EmptyState icon={BarChart2} title="No data" description="Record payments to see revenue trend." />
+        ) : (
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={mrrData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#fd7e14" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#fd7e14" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                <XAxis dataKey="month" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, "Revenue"]} />
+                <Area type="monotone" dataKey="mrr" name="Revenue" stroke="#fd7e14" strokeWidth={2} fill="url(#mrrGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </GlassCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue by type donut */}
         <GlassCard padding="md">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue by Service</h3>
-          <div className="flex items-center gap-4">
-            <div className="h-44 w-44 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={PROJECTS_BY_TYPE} cx="50%" cy="50%" innerRadius={44} outerRadius={70} dataKey="value" paddingAngle={3}>
-                    {PROJECTS_BY_TYPE.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${(v/100000).toFixed(1)}L`, ""]} />
-                </PieChart>
-              </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue by Project Type</h3>
+          {typeLoading ? (
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-44 w-44 rounded-full shrink-0" />
+              <div className="flex-1 space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
+              </div>
             </div>
-            <div className="space-y-2.5 flex-1">
-              {PROJECTS_BY_TYPE.map((item) => (
-                <div key={item.name}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-text-secondary flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                      {item.name}
-                    </span>
-                    <span className="font-sans text-text-primary">Rs.{(item.value/100000).toFixed(1)}L</span>
+          ) : typeDonutData.length === 0 ? (
+            <EmptyState icon={BarChart2} title="No project revenue" description="Revenue will appear once invoice payments are recorded." />
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="h-44 w-44 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={typeDonutData} cx="50%" cy="50%" innerRadius={44} outerRadius={70} dataKey="value" paddingAngle={3}>
+                      {typeDonutData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                    </Pie>
+                    <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${(v / 100000).toFixed(1)}L`, ""]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2.5 flex-1">
+                {typeDonutData.map((item) => (
+                  <div key={item.name}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-text-secondary flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                        {item.name}
+                      </span>
+                      <span className="font-sans text-text-primary">Rs.{(item.value / 100000).toFixed(1)}L</span>
+                    </div>
+                    <div className="h-1 bg-black/[0.04] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{
+                        width: `${totalRevenue > 0 ? Math.round((item.value / totalRevenue) * 100) : 0}%`,
+                        background: item.color,
+                      }} />
+                    </div>
                   </div>
-                  <div className="h-1 bg-black/[0.04] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.round(item.value/totalRevenue*100)}%`, background: item.color }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </GlassCard>
 
-        {/* Status breakdown */}
+        {/* Revenue breakdown table */}
         <GlassCard padding="md">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Project Status</h3>
-          <div className="flex items-center gap-6">
-            <div className="h-40 w-40 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={STATUS_DATA} cx="50%" cy="50%" innerRadius={42} outerRadius={64} dataKey="value" paddingAngle={3}>
-                    {STATUS_DATA.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`${v} projects`, ""]} />
-                </PieChart>
-              </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue Breakdown</h3>
+          {typeLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
             </div>
-            <div className="space-y-3 flex-1">
-              {STATUS_DATA.map((s) => (
-                <div key={s.name} className="flex items-center justify-between">
-                  <span className="text-xs text-text-secondary flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
-                    {s.name}
-                  </span>
-                  <span className="text-sm font-bold font-sans px-2 py-0.5 rounded-full"
-                    style={{ background: `${s.color}18`, color: s.color }}>
-                    {s.value}
-                  </span>
+          ) : typeDonutData.length === 0 ? (
+            <EmptyState icon={BarChart2} title="No data" description="No project revenue data found." />
+          ) : (
+            <div className="space-y-3">
+              {typeDonutData.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-3 py-2 border-b border-black/[0.04] last:border-0">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: item.color }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary">{item.name}</p>
+                    <p className="text-xs text-text-muted">{item.count} project{item.count !== 1 ? "s" : ""}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-sans font-semibold text-text-primary">
+                      Rs.{(item.value / 1000).toFixed(0)}K
+                    </span>
+                    <p className="text-xs text-text-muted">
+                      {totalRevenue > 0 ? Math.round((item.value / totalRevenue) * 100) : 0}%
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </GlassCard>
       </div>
-
-      {/* Active projects table */}
-      <GlassCard padding="md">
-        <h3 className="text-sm font-semibold text-text-primary mb-4">All Projects</h3>
-        <div className="space-y-3">
-          {ACTIVE_PROJECTS.map((p, idx) => (
-            <div key={idx} className="flex items-center gap-4 py-2 border-b border-black/[0.04] last:border-0">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text-primary">{p.name}</p>
-                <p className="text-xs text-text-muted">{p.client} - {p.type}</p>
-              </div>
-              <div className="w-24 hidden sm:block">
-                <div className="h-1.5 bg-black/[0.04] rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${p.completion}%`, background: STATUS_COLORS[p.status] }} />
-                </div>
-                <span className="text-[10px] text-text-muted mt-0.5 block">{p.completion}%</span>
-              </div>
-              {p.mrr > 0 && (
-                <span className="text-xs font-sans font-semibold text-text-primary w-16 text-right">
-                  Rs.{(p.mrr/1000).toFixed(0)}K/mo
-                </span>
-              )}
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: `${STATUS_COLORS[p.status]}15`, color: STATUS_COLORS[p.status] }}>
-                {p.status.replace("_", " ")}
-              </span>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
     </div>
   );
 }

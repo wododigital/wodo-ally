@@ -7,9 +7,11 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils/cn";
+import { useServices } from "@/lib/hooks/use-services";
 
 interface LineItem {
   id: string;
+  service_id: string;
   description: string;
   amount: string;
   quantity: number;
@@ -164,6 +166,8 @@ export default function EditInvoicePage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { data: servicesData = [] } = useServices();
+  const services = servicesData.map((s) => ({ id: s.id, name: s.name, color: s.color ?? "#888888" }));
 
   const defaults = INVOICE_DEFAULTS[id] ?? {
     invoice_number: "",
@@ -183,6 +187,7 @@ export default function EditInvoicePage() {
   const [lineItems, setLineItems] = useState<LineItem[]>(
     defaults.line_items.map((item, i) => ({
       id: String(i + 1),
+      service_id: "",
       description: item.description,
       amount: String(item.amount),
       quantity: item.quantity,
@@ -200,7 +205,7 @@ export default function EditInvoicePage() {
   function addLineItem() {
     setLineItems((prev) => [
       ...prev,
-      { id: Date.now().toString(), description: "", amount: "", quantity: 1 },
+      { id: Date.now().toString(), service_id: "", description: "", amount: "", quantity: 1 },
     ]);
   }
 
@@ -353,48 +358,72 @@ export default function EditInvoicePage() {
           </div>
 
           <div className="space-y-3">
-            {lineItems.map((item, idx) => (
-              <div key={item.id} className="flex items-start gap-3">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={item.description}
-                    onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
-                    placeholder={`Service description ${idx + 1}`}
-                    className="glass-input"
-                    required
-                  />
+            {lineItems.map((item, idx) => {
+              const svc = services.find((s) => s.id === item.service_id);
+              return (
+                <div key={item.id} className="flex items-start gap-2">
+                  {/* Service dropdown */}
+                  <div className="w-36 shrink-0">
+                    <select
+                      value={item.service_id}
+                      onChange={(e) => updateLineItem(item.id, "service_id", e.target.value)}
+                      className="glass-input text-xs py-2"
+                      style={svc ? { borderColor: `${svc.color}40`, color: svc.color } : undefined}
+                    >
+                      <option value="">-- service --</option>
+                      {services.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Description */}
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={item.description}
+                      onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
+                      placeholder={`Service description ${idx + 1}`}
+                      className="glass-input"
+                      required
+                    />
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="w-16 shrink-0">
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => updateLineItem(item.id, "quantity", parseInt(e.target.value) || 1)}
+                      min="1"
+                      className="glass-input text-center"
+                    />
+                  </div>
+
+                  {/* Amount */}
+                  <div className="w-36 shrink-0">
+                    <input
+                      type="number"
+                      value={item.amount}
+                      onChange={(e) => updateLineItem(item.id, "amount", e.target.value)}
+                      placeholder="Amount"
+                      className="glass-input font-sans"
+                      required
+                    />
+                  </div>
+
+                  {lineItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeLineItem(item.id)}
+                      className="p-2 text-text-muted hover:text-red-400 transition-colors mt-0.5"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                <div className="w-16 shrink-0">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItem(item.id, "quantity", parseInt(e.target.value) || 1)}
-                    min="1"
-                    className="glass-input text-center"
-                  />
-                </div>
-                <div className="w-36 shrink-0">
-                  <input
-                    type="number"
-                    value={item.amount}
-                    onChange={(e) => updateLineItem(item.id, "amount", e.target.value)}
-                    placeholder="Amount"
-                    className="glass-input font-sans"
-                    required
-                  />
-                </div>
-                {lineItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeLineItem(item.id)}
-                    className="p-2 text-text-muted hover:text-red-400 transition-colors mt-0.5"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Totals */}

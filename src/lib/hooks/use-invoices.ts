@@ -551,7 +551,7 @@ export function useUpdateScheduledInvoice() {
       const supabase = createClient();
       const { error } = await supabase
         .from("scheduled_invoices")
-        .update({ status, ...(generated_invoice_id ? { generated_invoice_id } : {}) })
+        .update({ status, ...(generated_invoice_id ? { invoice_id: generated_invoice_id } : {}) })
         .eq("id", id);
       if (error) throw new Error(error.message);
     },

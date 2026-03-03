@@ -1,42 +1,12 @@
+"use client";
+
 import { IndianRupee, TrendingUp, Users, Clock } from "lucide-react";
 import { KpiCardV2 }          from "@/components/dashboard-v2/KpiCardV2";
 import { DarkSectionTabs }    from "@/components/dashboard-v2/DarkSectionTabs";
 import { HeroSectionV2 }      from "@/components/dashboard-v2/HeroSectionV2";
 import { AnalyticsQuickBar }  from "@/components/dashboard-v2/AnalyticsQuickBar";
-
-const STATS = [
-  {
-    title: "Revenue This Month",
-    value: "Rs.3,21,700",
-    change: "+18.4% vs last month",
-    trend: "up" as const,
-    icon: IndianRupee,
-  },
-  {
-    title: "Outstanding",
-    value: "Rs.2,53,500",
-    change: "4 invoices pending",
-    trend: "neutral" as const,
-    icon: Clock,
-    accentColor: "#f59e0b",
-  },
-  {
-    title: "Active Clients",
-    value: "6",
-    change: "+2 this quarter",
-    trend: "up" as const,
-    icon: Users,
-    accentColor: "#3b82f6",
-  },
-  {
-    title: "MRR",
-    value: "Rs.3,85,000",
-    change: "+12% vs Apr 2025",
-    trend: "up" as const,
-    icon: TrendingUp,
-    accentColor: "#16a34a",
-  },
-];
+import { useDashboardKPIs }   from "@/lib/hooks/use-analytics";
+import { StatCardSkeleton }   from "@/components/shared/loading-skeleton";
 
 const ATTENTION_ITEMS = [
   {
@@ -129,7 +99,66 @@ const PIPELINE_ITEMS = [
   },
 ];
 
+function formatRevenue(amount: number): string {
+  if (amount >= 100000) return `Rs.${(amount / 100000).toFixed(2)}L`;
+  if (amount >= 1000) return `Rs.${(amount / 1000).toFixed(1)}K`;
+  return `Rs.${amount.toLocaleString("en-IN")}`;
+}
+
 export default function DashboardPage() {
+  const { data: kpis, isLoading } = useDashboardKPIs();
+
+  const momChange =
+    kpis && kpis.revenue_last_month > 0
+      ? ((kpis.revenue_this_month - kpis.revenue_last_month) /
+          kpis.revenue_last_month) *
+        100
+      : 0;
+
+  const momLabel =
+    kpis && kpis.revenue_last_month > 0
+      ? `${momChange >= 0 ? "+" : ""}${momChange.toFixed(1)}% vs last month`
+      : "No prior month data";
+
+  const overdueLabel =
+    kpis
+      ? `${kpis.overdue_invoices} invoice${kpis.overdue_invoices !== 1 ? "s" : ""} overdue`
+      : "-";
+
+  const STATS = [
+    {
+      title: "Revenue This Month",
+      value: isLoading ? "-" : formatRevenue(kpis?.revenue_this_month ?? 0),
+      change: isLoading ? "Loading..." : momLabel,
+      trend: (momChange >= 0 ? "up" : "down") as "up" | "down" | "neutral",
+      icon: IndianRupee,
+    },
+    {
+      title: "Outstanding",
+      value: isLoading ? "-" : formatRevenue(kpis?.outstanding ?? 0),
+      change: isLoading ? "Loading..." : overdueLabel,
+      trend: "neutral" as const,
+      icon: Clock,
+      accentColor: "#f59e0b",
+    },
+    {
+      title: "Active Clients",
+      value: isLoading ? "-" : String(kpis?.active_clients ?? 0),
+      change: "Currently active",
+      trend: "up" as const,
+      icon: Users,
+      accentColor: "#3b82f6",
+    },
+    {
+      title: "MRR",
+      value: isLoading ? "-" : formatRevenue(kpis?.mrr ?? 0),
+      change: "Active retainer projects",
+      trend: "up" as const,
+      icon: TrendingUp,
+      accentColor: "#16a34a",
+    },
+  ];
+
   return (
     <div className="space-y-10">
       <HeroSectionV2 />
@@ -138,17 +167,21 @@ export default function DashboardPage() {
       <AnalyticsQuickBar period="Mar 2026" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-7">
-        {STATS.map((stat) => (
-          <KpiCardV2
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            change={stat.change}
-            trend={stat.trend}
-            icon={stat.icon}
-            accentColor={stat.accentColor}
-          />
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))
+          : STATS.map((stat) => (
+              <KpiCardV2
+                key={stat.title}
+                title={stat.title}
+                value={stat.value}
+                change={stat.change}
+                trend={stat.trend}
+                icon={stat.icon}
+                accentColor={stat.accentColor}
+              />
+            ))}
       </div>
 
       <DarkSectionTabs

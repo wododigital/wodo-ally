@@ -5,8 +5,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Download, Plus, CheckCircle2,
-  Calendar, Building2, Hash, X, Pencil, Eye, Loader2
+  Calendar, Building2, Hash, X, Pencil, Eye, Loader2, Mail
 } from "lucide-react";
+import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
@@ -284,6 +285,8 @@ export default function InvoiceDetailPage() {
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const { data: invoice, isLoading } = useInvoice(id);
   const { data: payments = [] } = useInvoicePayments(id);
@@ -334,6 +337,49 @@ export default function InvoiceDetailPage() {
     }
   }
 
+  async function handleSendInvoiceEmail(emails: string[]) {
+    if (!invoice) return;
+    setIsSendingEmail(true);
+    try {
+      const clientName = invoice.client?.company_name ?? "Client";
+      const invoiceRef =
+        invoice.invoice_type === "proforma"
+          ? (invoice.proforma_ref ?? "Pro Forma")
+          : (invoice.invoice_number ?? "DRAFT");
+      const currencySymbol = invoice.currency === "USD" ? "$" : invoice.currency === "AED" ? "AED " : "Rs.";
+      const amount = `${currencySymbol}${invoice.total_amount.toLocaleString("en-IN")}`;
+      const dueDate = invoice.due_date
+        ? new Date(invoice.due_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+      const response = await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "invoice_sent",
+          to: emails,
+          clientName,
+          invoiceNumber: invoiceRef,
+          amount,
+          dueDate,
+          currency: invoice.currency,
+        }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Failed to send");
+      }
+
+      toast.success(`Invoice sent to ${emails.join(", ")}`);
+      setShowSendModal(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send invoice");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }
+
   if (isLoading || !invoice) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -359,6 +405,15 @@ export default function InvoiceDetailPage() {
         pdfUrl={pdfUrl}
         onDownload={handleDownloadPdf}
       />
+
+      {showSendModal && (
+        <SendInvoiceModal
+          defaultEmail={invoice.client?.billing_emails?.[0] ?? ""}
+          onClose={() => setShowSendModal(false)}
+          onSend={handleSendInvoiceEmail}
+          isSending={isSendingEmail}
+        />
+      )}
 
       {showPaymentModal && invoice && (
         <RecordPaymentModal
@@ -426,11 +481,22 @@ export default function InvoiceDetailPage() {
             )}
             {invoice.status === "sent" && (
               <button
+                onClick={() => setShowSendModal(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white"
                 style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
               >
-                <Send className="w-4 h-4" />
-                Resend
+                <Mail className="w-4 h-4" />
+                Resend Email
+              </button>
+            )}
+            {invoice.status === "draft" && invoice.invoice_number && (
+              <button
+                onClick={() => setShowSendModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+              >
+                <Mail className="w-4 h-4" />
+                Send Invoice
               </button>
             )}
           </div>
@@ -606,6 +672,73 @@ export default function InvoiceDetailPage() {
               </div>
             </GlassCard>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Send Invoice Modal ───────────────────────────────────────────────────────
+
+function SendInvoiceModal({
+  defaultEmail,
+  onClose,
+  onSend,
+  isSending,
+}: {
+  defaultEmail: string;
+  onClose: () => void;
+  onSend: (emails: string[]) => void;
+  isSending: boolean;
+}) {
+  const [email, setEmail] = useState(defaultEmail);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0"
+        style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}
+        onClick={onClose}
+      />
+      <div
+        className="relative w-full max-w-sm rounded-2xl p-6"
+        style={{
+          background: "rgba(255,255,255,0.98)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(0,0,0,0.08)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
+        }}
+      >
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">Send Invoice</h3>
+        <p className="text-xs text-gray-500 mb-4">Enter recipient email addresses (comma-separated)</p>
+        <input
+          type="text"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+          placeholder="client@example.com"
+        />
+        <div className="flex gap-3 mt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 rounded-button text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const emails = email.split(",").map((e) => e.trim()).filter(Boolean);
+              if (emails.length > 0) onSend(emails);
+            }}
+            disabled={isSending || !email.trim()}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-70"
+            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+          >
+            {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+            {isSending ? "Sending..." : "Send"}
+          </button>
         </div>
       </div>
     </div>

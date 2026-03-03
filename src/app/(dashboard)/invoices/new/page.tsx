@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils/cn";
 import { useClients } from "@/lib/hooks/use-clients";
 import { useCreateInvoice } from "@/lib/hooks/use-invoices";
+import { useServices } from "@/lib/hooks/use-services";
 import type { Database } from "@/types/database";
 
 type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
@@ -20,18 +21,6 @@ interface LineItem {
   amount: string;
   quantity: number;
 }
-
-// Matches the services catalogue in Settings
-const SERVICES = [
-  { id: "s1", name: "SEO",                color: "#fd7e14" },
-  { id: "s2", name: "Google My Business", color: "#f59e0b" },
-  { id: "s3", name: "Web Development",    color: "#3b82f6" },
-  { id: "s4", name: "Branding",           color: "#8b5cf6" },
-  { id: "s5", name: "Google Ads",         color: "#22c55e" },
-  { id: "s6", name: "Social Media",       color: "#ec4899" },
-  { id: "s7", name: "UI/UX Design",       color: "#06b6d4" },
-  { id: "s8", name: "Content Marketing",  color: "#84cc16" },
-];
 
 function getInvoiceTypeFromClient(
   client: ClientRow
@@ -45,6 +34,8 @@ export default function NewInvoicePage() {
   const router = useRouter();
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const createInvoice = useCreateInvoice();
+  const { data: servicesData = [] } = useServices();
+  const services = servicesData.map((s) => ({ id: s.id, name: s.name, color: s.color ?? "#888888" }));
 
   const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">("gst");
   const [selectedClientId, setSelectedClientId] = useState("");
@@ -98,7 +89,7 @@ export default function NewInvoicePage() {
   }
 
   function getFormattedDescription(item: LineItem): string {
-    const svc = SERVICES.find((s) => s.id === item.service_id);
+    const svc = services.find((s) => s.id === item.service_id);
     if (svc && item.description.trim()) return `${svc.name}: ${item.description.trim()}`;
     return item.description.trim();
   }
@@ -314,7 +305,7 @@ export default function NewInvoicePage() {
 
           <div className="space-y-3">
             {lineItems.map((item) => {
-              const svc = SERVICES.find((s) => s.id === item.service_id);
+              const svc = services.find((s) => s.id === item.service_id);
               const previewText = getFormattedDescription(item);
               const showPreview = !!svc && !!item.description.trim();
 
@@ -330,7 +321,7 @@ export default function NewInvoicePage() {
                         style={svc ? { borderColor: `${svc.color}40`, color: svc.color } : undefined}
                       >
                         <option value="">-- service --</option>
-                        {SERVICES.map((s) => (
+                        {services.map((s) => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>

@@ -8,6 +8,10 @@ import type { DocumentProps } from "@react-pdf/renderer";
 export type { InvoicePdfProps } from "./invoice-pdf";
 export { InvoicePdf } from "./invoice-pdf";
 
+// Contract PDF exports
+export { ContractPdfDocument, generateContractPdf } from "./contract-pdf";
+export type { ContractWithDetails } from "./contract-pdf";
+
 /**
  * Generate a PDF blob from invoice data.
  * Can be used server-side or client-side.
