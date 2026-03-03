@@ -119,6 +119,19 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+const SERVICE_COLORS: Record<string, string> = {
+  seo:             "#fd7e14",
+  gmb:             "#f59e0b",
+  web_development: "#3b82f6",
+  branding:        "#8b5cf6",
+  google_ads:      "#22c55e",
+  social_media:    "#ec4899",
+  ui_ux_design:    "#06b6d4",
+  content_marketing:"#84cc16",
+  full_service:    "#6366f1",
+  other:           "#9ca3af",
+};
+
 const ACTIVE_STATUSES = ["onboarding","design_phase","development_phase","deployment_qa","setup_strategy","active_execution","maintenance"];
 
 type TrajectoryLabel = "On Track" | "Delayed" | "Completed" | "On Hold";

@@ -11,6 +11,9 @@ import {
   Edit2,
   UserPlus,
   Check,
+  Layers,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
@@ -20,13 +23,14 @@ import { cn } from "@/lib/utils/cn";
 // Types
 // ---------------------------------------------------------------------------
 
-type TabId = "company" | "bank" | "invoice" | "users" | "notifications";
+type TabId = "company" | "bank" | "invoice" | "users" | "notifications" | "services";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "company", label: "Company", icon: Building2 },
-  { id: "bank", label: "Bank Details", icon: CreditCard },
-  { id: "invoice", label: "Invoice", icon: Tag },
-  { id: "users", label: "Users", icon: User },
+  { id: "company",       label: "Company",       icon: Building2 },
+  { id: "bank",          label: "Bank Details",  icon: CreditCard },
+  { id: "invoice",       label: "Invoice",       icon: Tag },
+  { id: "services",      label: "Services",      icon: Layers },
+  { id: "users",         label: "Users",         icon: User },
   { id: "notifications", label: "Notifications", icon: Bell },
 ];
 
@@ -35,18 +39,18 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 // ---------------------------------------------------------------------------
 
 const COMPANY_DEFAULTS = {
-  name: "WODO Digital Private Limited",
-  pan: "AAECW2882M",
-  gstin: "29AAECW2882M1ZW",
+  name:     "WODO Digital Private Limited",
+  pan:      "AAECW2882M",
+  gstin:    "29AAECW2882M1ZW",
   address1: "#1, First Floor, Shree Lakshmi Arcade",
   address2: "BDA Layout, Nagarbhavi",
-  city: "Bangalore",
-  state: "Karnataka",
-  pincode: "560091",
-  country: "India",
-  phone: "+91 63621 80633",
-  email: "accounts@wodo.digital",
-  website: "wodo.digital",
+  city:     "Bangalore",
+  state:    "Karnataka",
+  pincode:  "560091",
+  country:  "India",
+  phone:    "+91 63621 80633",
+  email:    "accounts@wodo.digital",
+  website:  "wodo.digital",
 };
 
 interface BankAccount {
@@ -60,57 +64,88 @@ const BANK_ACCOUNTS: BankAccount[] = [
     id: "gst",
     title: "Indian GST Account",
     fields: [
-      { key: "beneficiary", label: "Beneficiary Name", value: "WODO Digital Pvt Ltd" },
-      { key: "bank", label: "Bank", value: "IDFC FIRST" },
-      { key: "account", label: "Account Number", value: "10213871315", mono: true },
-      { key: "ifsc", label: "IFSC Code", value: "IDFB0081105", mono: true },
+      { key: "beneficiary", label: "Beneficiary Name",  value: "WODO Digital Pvt Ltd" },
+      { key: "bank",        label: "Bank",              value: "IDFC FIRST" },
+      { key: "account",     label: "Account Number",    value: "10213871315",   mono: true },
+      { key: "ifsc",        label: "IFSC Code",         value: "IDFB0081105",   mono: true },
     ],
   },
   {
     id: "usa",
     title: "USA Account (via Skydo)",
     fields: [
-      { key: "beneficiary", label: "Beneficiary Name", value: "WODO Digital Pvt Ltd" },
-      { key: "method", label: "Transfer Method", value: "ACH" },
-      { key: "routing", label: "ACH Routing Number", value: "026015422", mono: true },
-      { key: "account", label: "Account Number", value: "8328215937", mono: true },
+      { key: "beneficiary", label: "Beneficiary Name",  value: "WODO Digital Pvt Ltd" },
+      { key: "method",      label: "Transfer Method",   value: "ACH" },
+      { key: "routing",     label: "ACH Routing Number",value: "026015422",     mono: true },
+      { key: "account",     label: "Account Number",    value: "8328215937",    mono: true },
     ],
   },
   {
     id: "uae",
     title: "UAE Account (via Skydo)",
     fields: [
-      { key: "beneficiary", label: "Beneficiary Name", value: "WODO Digital Pvt Ltd" },
-      { key: "iban", label: "IBAN", value: "AE330860000009668684003", mono: true },
-      { key: "bic", label: "BIC / SWIFT", value: "WIOBAEADXXX", mono: true },
+      { key: "beneficiary", label: "Beneficiary Name",  value: "WODO Digital Pvt Ltd" },
+      { key: "iban",        label: "IBAN",              value: "AE330860000009668684003", mono: true },
+      { key: "bic",         label: "BIC / SWIFT",       value: "WIOBAEADXXX",            mono: true },
     ],
   },
   {
     id: "nongst",
     title: "Non-GST Account",
     fields: [
-      { key: "name", label: "Account Holder", value: "Shyam Singh Bhati" },
-      { key: "bank", label: "Bank", value: "IDFC FIRST" },
-      { key: "account", label: "Account Number", value: "10221086461", mono: true },
-      { key: "ifsc", label: "IFSC Code", value: "IDFB0081105", mono: true },
-      { key: "swift", label: "SWIFT Code", value: "IDFBINBBMUM", mono: true },
-      { key: "branch", label: "Branch", value: "BANGALORE-JP NAGAR 5TH PHASE BRANCH" },
-      { key: "gpay", label: "G-Pay Number", value: "9535743993", mono: true },
+      { key: "name",    label: "Account Holder", value: "Shyam Singh Bhati" },
+      { key: "bank",    label: "Bank",           value: "IDFC FIRST" },
+      { key: "account", label: "Account Number", value: "10221086461",   mono: true },
+      { key: "ifsc",    label: "IFSC Code",      value: "IDFB0081105",   mono: true },
+      { key: "swift",   label: "SWIFT Code",     value: "IDFBINBBMUM",   mono: true },
+      { key: "branch",  label: "Branch",         value: "BANGALORE-JP NAGAR 5TH PHASE BRANCH" },
+      { key: "gpay",    label: "G-Pay Number",   value: "9535743993",    mono: true },
     ],
   },
 ];
 
 const NOTIFICATION_ITEMS = [
-  { id: "invoice_viewed", label: "Email on invoice viewed", desc: "Get notified when a client opens your invoice", default: true },
-  { id: "payment_received", label: "Email on payment received", desc: "Confirmation when a payment is recorded", default: true },
-  { id: "overdue_7", label: "Email on invoice overdue (7 days)", desc: "Alert when an invoice is 7 days past due", default: true },
-  { id: "overdue_30", label: "Email on invoice overdue (30 days)", desc: "Escalation when an invoice is 30 days past due", default: true },
-  { id: "weekly_summary", label: "Weekly financial summary", desc: "A digest of all transactions and outstanding amounts", default: false },
-  { id: "monthly_report", label: "Monthly investor report reminder", desc: "Reminder to generate and send the monthly report", default: true },
+  { id: "invoice_viewed",   label: "Email on invoice viewed",            desc: "Get notified when a client opens your invoice",            default: true  },
+  { id: "payment_received", label: "Email on payment received",          desc: "Confirmation when a payment is recorded",                  default: true  },
+  { id: "overdue_7",        label: "Email on invoice overdue (7 days)",  desc: "Alert when an invoice is 7 days past due",                 default: true  },
+  { id: "overdue_30",       label: "Email on invoice overdue (30 days)", desc: "Escalation when an invoice is 30 days past due",           default: true  },
+  { id: "weekly_summary",   label: "Weekly financial summary",           desc: "A digest of all transactions and outstanding amounts",      default: false },
+  { id: "monthly_report",   label: "Monthly investor report reminder",   desc: "Reminder to generate and send the monthly report",         default: true  },
 ];
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Services data
+// ---------------------------------------------------------------------------
+
+const PRESET_COLORS = [
+  "#fd7e14", "#f59e0b", "#22c55e", "#3b82f6",
+  "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
+  "#f97316", "#6366f1", "#ef4444", "#9ca3af",
+];
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  active: boolean;
+  projects: number;
+  line_items: number;
+}
+
+const INITIAL_SERVICES: Service[] = [
+  { id: "s1", name: "SEO",                description: "Search engine optimisation and organic ranking",    color: "#fd7e14", active: true,  projects: 3, line_items: 12 },
+  { id: "s2", name: "Google My Business", description: "GMB profile setup, posts, and review management",  color: "#f59e0b", active: true,  projects: 1, line_items: 4  },
+  { id: "s3", name: "Web Development",    description: "Website design, development, and deployment",      color: "#3b82f6", active: true,  projects: 2, line_items: 6  },
+  { id: "s4", name: "Branding",           description: "Brand identity, logo design, and brand guidelines",color: "#8b5cf6", active: true,  projects: 1, line_items: 2  },
+  { id: "s5", name: "Google Ads",         description: "Paid search and display advertising management",   color: "#22c55e", active: true,  projects: 1, line_items: 3  },
+  { id: "s6", name: "Social Media",       description: "Social media strategy, content, and management",   color: "#ec4899", active: false, projects: 0, line_items: 0  },
+  { id: "s7", name: "UI/UX Design",       description: "User interface and experience design",             color: "#06b6d4", active: false, projects: 0, line_items: 0  },
+  { id: "s8", name: "Content Marketing",  description: "Content strategy, creation, and distribution",    color: "#84cc16", active: false, projects: 0, line_items: 0  },
+];
+
+// ---------------------------------------------------------------------------
+// Shared sub-components
 // ---------------------------------------------------------------------------
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -150,69 +185,52 @@ function CompanyTab() {
     <GlassCard padding="lg">
       <h3 className="text-sm font-semibold text-text-primary mb-6">Company Information</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full-width: Company Name */}
         <div className="space-y-1.5">
           <FieldLabel>Company Name</FieldLabel>
           <input type="text" defaultValue={COMPANY_DEFAULTS.name} className="glass-input" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* PAN */}
           <div className="space-y-1.5">
             <FieldLabel>PAN</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.pan} className="glass-input font-sans tracking-widest" />
           </div>
-          {/* GSTIN */}
           <div className="space-y-1.5">
             <FieldLabel>GSTIN</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.gstin} className="glass-input font-sans tracking-widest" />
           </div>
-
-          {/* Address Line 1 */}
           <div className="space-y-1.5">
             <FieldLabel>Address Line 1</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.address1} className="glass-input" />
           </div>
-          {/* Address Line 2 */}
           <div className="space-y-1.5">
             <FieldLabel>Address Line 2</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.address2} className="glass-input" />
           </div>
-
-          {/* City */}
           <div className="space-y-1.5">
             <FieldLabel>City</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.city} className="glass-input" />
           </div>
-          {/* State */}
           <div className="space-y-1.5">
             <FieldLabel>State</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.state} className="glass-input" />
           </div>
-
-          {/* Pincode */}
           <div className="space-y-1.5">
             <FieldLabel>Pincode</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.pincode} className="glass-input font-sans" />
           </div>
-          {/* Country */}
           <div className="space-y-1.5">
             <FieldLabel>Country</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.country} className="glass-input" />
           </div>
-
-          {/* Phone */}
           <div className="space-y-1.5">
             <FieldLabel>Phone</FieldLabel>
             <input type="tel" defaultValue={COMPANY_DEFAULTS.phone} className="glass-input font-sans" />
           </div>
-          {/* Email */}
           <div className="space-y-1.5">
             <FieldLabel>Email</FieldLabel>
             <input type="email" defaultValue={COMPANY_DEFAULTS.email} className="glass-input" />
           </div>
-
-          {/* Website */}
           <div className="space-y-1.5 sm:col-span-2">
             <FieldLabel>Website</FieldLabel>
             <input type="text" defaultValue={COMPANY_DEFAULTS.website} className="glass-input" />
@@ -233,7 +251,7 @@ function CompanyTab() {
 
 function BankTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [savedId, setSavedId] = useState<string | null>(null);
+  const [savedId,   setSavedId]   = useState<string | null>(null);
 
   function handleSave(id: string) {
     setSavedId(id);
@@ -245,11 +263,10 @@ function BankTab() {
     <div className="space-y-4">
       {BANK_ACCOUNTS.map((account) => {
         const isEditing = editingId === account.id;
-        const justSaved = savedId === account.id;
+        const justSaved = savedId  === account.id;
 
         return (
           <GlassCard key={account.id} padding="lg">
-            {/* Card header */}
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-semibold text-text-primary">{account.title}</h3>
               <div className="flex items-center gap-2">
@@ -280,7 +297,6 @@ function BankTab() {
               </div>
             </div>
 
-            {/* Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {account.fields.map((field) => (
                 <div key={field.key} className="space-y-1.5">
@@ -323,53 +339,34 @@ function InvoiceTab() {
       <h3 className="text-sm font-semibold text-text-primary mb-6">Invoice Settings</h3>
       <div className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* GST Prefix */}
           <div className="space-y-1.5">
             <FieldLabel>Invoice Prefix - GST</FieldLabel>
             <input type="text" defaultValue="G" className="glass-input font-sans w-24" />
           </div>
-          {/* Non-GST Prefix */}
           <div className="space-y-1.5">
             <FieldLabel>Invoice Prefix - Non-GST</FieldLabel>
             <input type="text" defaultValue="NG" className="glass-input font-sans w-24" />
           </div>
-
-          {/* GST Sequence */}
           <div className="space-y-1.5">
             <FieldLabel>Starting Sequence - GST</FieldLabel>
-            <input
-              type="text"
-              value="G00113"
-              readOnly
-              className="glass-input font-sans tabular-nums opacity-60 cursor-not-allowed"
-            />
+            <input type="text" value="G00113" readOnly className="glass-input font-sans tabular-nums opacity-60 cursor-not-allowed" />
             <p className="text-xs text-text-muted">Read-only - auto-incremented</p>
           </div>
-          {/* Non-GST Sequence */}
           <div className="space-y-1.5">
             <FieldLabel>Starting Sequence - Non-GST</FieldLabel>
-            <input
-              type="text"
-              value="NG00202"
-              readOnly
-              className="glass-input font-sans tabular-nums opacity-60 cursor-not-allowed"
-            />
+            <input type="text" value="NG00202" readOnly className="glass-input font-sans tabular-nums opacity-60 cursor-not-allowed" />
             <p className="text-xs text-text-muted">Read-only - auto-incremented</p>
           </div>
-
-          {/* Default due days */}
           <div className="space-y-1.5">
             <FieldLabel>Default Due Days</FieldLabel>
             <input type="number" defaultValue={30} className="glass-input font-sans tabular-nums" />
           </div>
-          {/* Default GST rate */}
           <div className="space-y-1.5">
             <FieldLabel>Default GST Rate (%)</FieldLabel>
             <input type="number" defaultValue={18} className="glass-input font-sans tabular-nums" />
           </div>
         </div>
 
-        {/* Invoice footer */}
         <div className="space-y-1.5">
           <FieldLabel>Invoice Footer Text</FieldLabel>
           <textarea
@@ -388,34 +385,230 @@ function InvoiceTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab: Services
+// ---------------------------------------------------------------------------
+
+function ServicesTab() {
+  const [services, setServices] = useState<Service[]>(INITIAL_SERVICES);
+  const [adding,   setAdding]   = useState(false);
+  const [newName,  setNewName]  = useState("");
+  const [newDesc,  setNewDesc]  = useState("");
+  const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
+
+  function addService() {
+    if (!newName.trim()) return;
+    setServices((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        name:        newName.trim(),
+        description: newDesc.trim(),
+        color:       newColor,
+        active:      true,
+        projects:    0,
+        line_items:  0,
+      },
+    ]);
+    setNewName("");
+    setNewDesc("");
+    setNewColor(PRESET_COLORS[0]);
+    setAdding(false);
+  }
+
+  function toggleActive(id: string) {
+    setServices((prev) => prev.map((s) => s.id === id ? { ...s, active: !s.active } : s));
+  }
+
+  function removeService(id: string) {
+    setServices((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* List */}
+      <GlassCard padding="lg">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">Service Catalogue</h3>
+            <p className="text-xs text-text-muted mt-0.5">Available in invoice line items and project setup</p>
+          </div>
+          <button
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-button text-xs font-semibold text-white transition-all"
+            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add Service
+          </button>
+        </div>
+
+        <div className="divide-y divide-black/[0.05]">
+          {services.map((svc) => (
+            <div key={svc.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
+              {/* Colour swatch */}
+              <div
+                className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-[11px] font-bold"
+                style={{ background: svc.color }}
+              >
+                {svc.name.charAt(0)}
+              </div>
+
+              {/* Name + description */}
+              <div className="flex-1 min-w-0">
+                <p className={cn("text-sm font-medium", svc.active ? "text-text-primary" : "text-text-muted line-through")}>
+                  {svc.name}
+                </p>
+                {svc.description && (
+                  <p className="text-xs text-text-muted mt-0.5 truncate">{svc.description}</p>
+                )}
+              </div>
+
+              {/* Usage stats */}
+              <div className="hidden sm:flex items-center gap-4 shrink-0">
+                <span className="text-[11px] text-text-muted whitespace-nowrap">
+                  {svc.projects} project{svc.projects !== 1 ? "s" : ""}
+                </span>
+                <span className="text-[11px] text-text-muted whitespace-nowrap">
+                  {svc.line_items} line item{svc.line_items !== 1 ? "s" : ""}
+                </span>
+              </div>
+
+              {/* Active toggle */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={svc.active}
+                onClick={() => toggleActive(svc.id)}
+                className={cn(
+                  "relative w-8 h-5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none",
+                  svc.active ? "bg-accent" : "bg-black/[0.10]"
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
+                    svc.active ? "translate-x-3.5" : "translate-x-0.5"
+                  )}
+                />
+              </button>
+
+              {/* Delete */}
+              <button
+                onClick={() => removeService(svc.id)}
+                disabled={svc.projects > 0 || svc.line_items > 0}
+                title={svc.projects > 0 || svc.line_items > 0 ? "Cannot delete - service is in use" : "Delete service"}
+                className="p-1.5 rounded-button text-text-muted hover:text-red-400 hover:bg-red-400/[0.08] transition-all shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* Add service form */}
+      {adding && (
+        <GlassCard padding="lg">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">New Service</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <FieldLabel>Service Name *</FieldLabel>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addService()}
+                  placeholder="e.g. Performance Marketing"
+                  className="glass-input"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <FieldLabel>Description</FieldLabel>
+                <input
+                  type="text"
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="Short description (optional)"
+                  className="glass-input"
+                />
+              </div>
+            </div>
+
+            {/* Colour picker */}
+            <div className="space-y-2">
+              <FieldLabel>Colour</FieldLabel>
+              <div className="flex items-center gap-2 flex-wrap">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setNewColor(c)}
+                    className={cn(
+                      "w-7 h-7 rounded-full transition-all duration-150",
+                      newColor === c
+                        ? "ring-2 ring-offset-2 ring-black/20 scale-110"
+                        : "opacity-60 hover:opacity-100 hover:scale-105"
+                    )}
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => { setAdding(false); setNewName(""); setNewDesc(""); }}
+                className="px-4 py-2 rounded-button text-sm text-text-secondary hover:text-text-primary border border-black/[0.05] bg-surface-DEFAULT transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={addService}
+                disabled={!newName.trim()}
+                className="px-5 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+              >
+                Add Service
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* How it works */}
+      <GlassCard padding="md">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+            <Tag className="w-4 h-4 text-accent" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-text-primary">How services appear on invoices</p>
+            <p className="text-xs text-text-muted mt-1 leading-relaxed">
+              When a service is selected on a line item, the PDF invoice will format it as
+              <span className="font-sans font-semibold text-text-primary"> "Service: Your description"</span>.
+              {" "}Example:{" "}
+              <span className="font-sans text-accent font-medium">"SEO: Monthly Management - April 2026"</span>
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Tab: Users
 // ---------------------------------------------------------------------------
 
 const ROLE_DEFINITIONS = [
-  {
-    role: "admin",
-    label: "Admin",
-    color: "bg-accent/10 text-accent border-accent/20",
-    description: "Full access to all features, settings, and user management.",
-  },
-  {
-    role: "manager",
-    label: "Manager",
-    color: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    description: "Can manage clients, projects, invoices, and expenses. Cannot manage users or settings.",
-  },
-  {
-    role: "accountant",
-    label: "Accountant",
-    color: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    description: "Read-only access to invoices, payments, and expenses. Can record payments.",
-  },
-  {
-    role: "viewer",
-    label: "Viewer",
-    color: "bg-surface-DEFAULT text-text-muted border-black/[0.08]",
-    description: "Read-only access to all data. Cannot create or modify any records.",
-  },
+  { role: "admin",     label: "Admin",     color: "bg-accent/10 text-accent border-accent/20",                        description: "Full access to all features, settings, and user management." },
+  { role: "manager",   label: "Manager",   color: "bg-blue-500/10 text-blue-400 border-blue-500/20",                  description: "Can manage clients, projects, invoices, and expenses. Cannot manage users or settings." },
+  { role: "accountant",label: "Accountant",color: "bg-purple-500/10 text-purple-400 border-purple-500/20",            description: "Read-only access to invoices, payments, and expenses. Can record payments." },
+  { role: "viewer",    label: "Viewer",    color: "bg-surface-DEFAULT text-text-muted border-black/[0.08]",           description: "Read-only access to all data. Cannot create or modify any records." },
 ];
 
 function UsersTab() {
@@ -487,7 +680,6 @@ function UsersTab() {
         </div>
       </GlassCard>
 
-      {/* Role definitions */}
       <GlassCard padding="lg">
         <h3 className="text-sm font-semibold text-text-primary mb-4">Role Permissions</h3>
         <div className="space-y-3">
@@ -528,7 +720,6 @@ function NotificationsTab() {
               <p className="text-sm font-medium text-text-primary">{item.label}</p>
               <p className="text-xs text-text-muted mt-0.5">{item.desc}</p>
             </div>
-            {/* Toggle */}
             <button
               type="button"
               role="switch"
@@ -591,10 +782,11 @@ export default function SettingsPage() {
 
         {/* Content panel */}
         <div className="flex-1 min-w-0">
-          {activeTab === "company" && <CompanyTab />}
-          {activeTab === "bank" && <BankTab />}
-          {activeTab === "invoice" && <InvoiceTab />}
-          {activeTab === "users" && <UsersTab />}
+          {activeTab === "company"       && <CompanyTab />}
+          {activeTab === "bank"          && <BankTab />}
+          {activeTab === "invoice"       && <InvoiceTab />}
+          {activeTab === "services"      && <ServicesTab />}
+          {activeTab === "users"         && <UsersTab />}
           {activeTab === "notifications" && <NotificationsTab />}
         </div>
       </div>

@@ -159,7 +159,7 @@ export default function ProjectAnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue by type donut */}
         <GlassCard padding="md">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue by Project Type</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue by Service</h3>
           <div className="flex items-center gap-4">
             <div className="h-44 w-44 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
