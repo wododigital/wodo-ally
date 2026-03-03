@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Bell, Settings, LogOut, ChevronLeft, AlertCircle, Clock, Calendar, CheckCircle2, X } from "lucide-react";
+import { Bell, Settings, LogOut, ChevronLeft, AlertCircle, Clock, Calendar, CheckCircle2, X, Menu } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -118,7 +118,8 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="absolute right-0 top-full mt-2 w-80 rounded-2xl overflow-hidden z-50"
+      className="fixed left-3 right-3 top-[68px] rounded-2xl overflow-hidden z-50
+                 md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-80"
       style={{
         background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(20px)",
@@ -209,6 +210,7 @@ export function TopNavV2() {
   const { profile } = useAuth();
   const [scrolled,   setScrolled]   = useState(false);
   const [notifOpen,  setNotifOpen]  = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -261,16 +263,16 @@ export function TopNavV2() {
       }
     >
       {/* ── Row 1: Brand | Centered nav tabs | Icons ── */}
-      <div className="relative flex items-center px-10 h-16">
+      <div className="relative flex items-center px-4 md:px-10 h-16">
 
         {/* Brand */}
         <div className="flex items-center gap-3 shrink-0 z-10">
           <Image src="/black-logo.webp" alt="WODO" width={88} height={28} className="object-contain" style={{ height: 22, width: "auto" }} />
         </div>
 
-        {/* Dark pill - absolutely centered */}
+        {/* Dark pill - absolutely centered - hidden on mobile */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-1.5 rounded-full"
+          className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-0.5 px-1.5 py-1.5 rounded-full"
           style={{ background: "#1e2030" }}
         >
           {NAV_TABS.map((tab) => {
@@ -311,18 +313,18 @@ export function TopNavV2() {
             {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
           </div>
 
-          {/* Settings - links to settings page */}
+          {/* Settings - links to settings page - hidden on mobile */}
           <Link
             href="/settings"
             className={cn(
-              "p-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors",
+              "hidden md:flex p-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors",
               pathname.startsWith("/settings") && "bg-black/5 text-gray-900"
             )}
           >
             <Settings className="w-4 h-4" />
           </Link>
 
-          <div className="flex items-center gap-2 ml-2 pl-3 border-l border-black/10">
+          <div className="hidden md:flex items-center gap-2 ml-2 pl-3 border-l border-black/10">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
               style={{ background: "#fd7e14" }}
@@ -337,12 +339,73 @@ export function TopNavV2() {
               <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            className="md:hidden p-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors ml-1"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
+      {/* ── Mobile menu drawer ── */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden absolute left-0 right-0 z-50 py-4 px-4"
+          style={{
+            background: "rgba(255,255,255,0.96)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
+          }}
+        >
+          <nav className="grid grid-cols-3 gap-2 mb-4">
+            {NAV_TABS.map((tab) => {
+              const active = isActive(tab);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center justify-center px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-all",
+                    active ? "text-white" : "text-gray-600 bg-black/[0.04] hover:bg-black/[0.07]"
+                  )}
+                  style={active ? { background: "#fd7e14" } : undefined}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="flex items-center justify-between pt-3 border-t border-black/[0.06]">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white"
+                style={{ background: "#fd7e14" }}
+              >
+                {profile?.full_name?.charAt(0) ?? "S"}
+              </div>
+              <span className="text-sm font-medium text-gray-800">{profile?.full_name ?? "User"}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full text-gray-500 hover:bg-black/5">
+                <Settings className="w-4 h-4" />
+              </Link>
+              <button onClick={() => { setMobileMenuOpen(false); handleSignOut(); }} className="p-2 rounded-full text-gray-500 hover:bg-black/5">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Row 2: Back + page title (hidden on dashboard) ── */}
       {!isDashboard && (
-        <div className="flex items-center px-10 pb-7 pt-2">
+        <div className="flex items-center px-4 md:px-10 pb-7 pt-2">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
@@ -350,7 +413,7 @@ export function TopNavV2() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-[1.75rem] font-bold text-gray-900 leading-none">{pageTitle}</h1>
+            <h1 className="text-[1.5rem] md:text-[1.75rem] font-bold text-gray-900 leading-none">{pageTitle}</h1>
           </div>
         </div>
       )}

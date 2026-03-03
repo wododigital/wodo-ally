@@ -46,7 +46,7 @@ type TabId = "attention" | "payments" | "targets" | "pipeline";
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[11px] uppercase tracking-widest font-bold mb-5"
-      style={{ color: "rgba(255,255,255,0.3)" }}>
+      style={{ color: "rgba(255,255,255,0.55)" }}>
       {children}
     </p>
   );
@@ -78,19 +78,19 @@ export function DarkSectionTabs({ attentionItems, payments, targets, pipelineIte
   ];
 
   return (
-    <div className="rounded-[24px] p-10" style={{ background: "#1d1f2e" }}>
+    <div className="rounded-[20px] md:rounded-[24px] p-4 md:p-7 lg:p-10" style={{ background: "#1d1f2e" }}>
 
       {/* ── Tab bar ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-5 md:mb-7 lg:mb-10">
         <div
-          className="flex items-center gap-1 p-1.5 rounded-full"
+          className="flex items-center gap-0.5 p-1 md:p-1.5 rounded-full"
           style={{ background: "rgba(255,255,255,0.06)" }}
         >
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActive(tab.id)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold transition-all duration-150 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[11px] md:text-[12px] font-semibold transition-all duration-150 whitespace-nowrap"
               style={
                 active === tab.id
                   ? { background: "#fd7e14", color: "#ffffff" }
@@ -137,10 +137,10 @@ function AttentionTab({ items }: { items: AttentionItem[] }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-7 items-stretch">
       {/* Main list — 2 cols */}
       <div className="lg:col-span-2 flex flex-col">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4 md:mb-5">
           <SectionLabel>Needs Attention</SectionLabel>
           <Link href="/invoices"
             className="text-xs font-semibold flex items-center gap-1 hover:opacity-80"
@@ -151,11 +151,11 @@ function AttentionTab({ items }: { items: AttentionItem[] }) {
         <NeedsAttentionV2 items={items} variant="dark" className="flex-1" />
       </div>
 
-      {/* Summary + at-risk — single card */}
-      <div>
-        <InnerCard className="p-6 h-full">
+      {/* Summary + at-risk — hidden on mobile, shown on lg */}
+      <div className="hidden lg:block">
+        <InnerCard className="p-5 lg:p-6 h-full">
           <p className="text-[11px] uppercase tracking-widest font-bold mb-5"
-            style={{ color: "rgba(255,255,255,0.3)" }}>
+            style={{ color: "rgba(255,255,255,0.55)" }}>
             Summary
           </p>
           <div className="space-y-4 mb-6">
@@ -179,7 +179,7 @@ function AttentionTab({ items }: { items: AttentionItem[] }) {
 
           <div className="pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             <p className="text-[11px] uppercase tracking-widest font-bold mb-3"
-              style={{ color: "rgba(255,255,255,0.3)" }}>
+              style={{ color: "rgba(255,255,255,0.55)" }}>
               Total at risk
             </p>
             <p className="text-3xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
@@ -205,10 +205,10 @@ function AttentionTab({ items }: { items: AttentionItem[] }) {
 
 function PaymentsTab({ payments }: { payments: PaymentItem[] }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-7 items-stretch">
       {/* Payments list — 2 cols */}
       <div className="lg:col-span-2 flex flex-col">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4 md:mb-5">
           <SectionLabel>Recent Payments</SectionLabel>
           <Link href="/payments"
             className="text-xs font-semibold flex items-center gap-1 hover:opacity-80"
@@ -219,17 +219,18 @@ function PaymentsTab({ payments }: { payments: PaymentItem[] }) {
         <InnerCard className="flex-1">
           {payments.map((p, idx) => (
             <div key={idx}
-              className="flex items-center justify-between px-6 py-5"
+              className="flex items-center justify-between px-4 md:px-6 py-3.5 md:py-5"
               style={{ borderBottom: idx < payments.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+              <div className="min-w-0 flex-1 pr-3">
+                <p className="text-sm font-semibold truncate" style={{ color: "rgba(255,255,255,0.9)" }}>
                   {p.client}
                 </p>
-                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+                {/* Hide invoice/date on mobile */}
+                <p className="hidden sm:block text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
                   {p.invoice} &middot; {formatDate(p.date)}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3 shrink-0">
                 <span className="text-sm font-light font-sans" style={{ color: "rgba(255,255,255,0.9)" }}>
                   {p.amount}
                 </span>
@@ -240,11 +241,11 @@ function PaymentsTab({ payments }: { payments: PaymentItem[] }) {
         </InnerCard>
       </div>
 
-      {/* Stats + outstanding — single card */}
-      <div>
-        <InnerCard className="p-6 h-full">
+      {/* Stats + outstanding — hidden on mobile */}
+      <div className="hidden lg:block">
+        <InnerCard className="p-5 lg:p-6 h-full">
           <p className="text-[11px] uppercase tracking-widest font-bold mb-5"
-            style={{ color: "rgba(255,255,255,0.3)" }}>
+            style={{ color: "rgba(255,255,255,0.55)" }}>
             This Month
           </p>
           <div className="space-y-5 mb-6">
@@ -269,7 +270,7 @@ function PaymentsTab({ payments }: { payments: PaymentItem[] }) {
 
           <div className="pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             <p className="text-[11px] uppercase tracking-widest font-bold mb-3"
-              style={{ color: "rgba(255,255,255,0.3)" }}>
+              style={{ color: "rgba(255,255,255,0.55)" }}>
               Still Outstanding
             </p>
             <p className="text-3xl font-light font-sans mb-1" style={{ color: "#ef4444" }}>
@@ -300,10 +301,10 @@ function TargetsTab({ targets }: { targets: TargetItem[] }) {
     : 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-7">
       {/* Targets list — 2 cols */}
       <div className="lg:col-span-2">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4 md:mb-5">
           <SectionLabel>Financial Targets</SectionLabel>
           <Link href="/targets"
             className="text-xs font-semibold hover:opacity-80"
@@ -314,11 +315,11 @@ function TargetsTab({ targets }: { targets: TargetItem[] }) {
         <FinancialTargetsV2 targets={targets} variant="dark" />
       </div>
 
-      {/* Goal summary card — 1 col */}
-      <div className="flex flex-col gap-5">
+      {/* Goal summary card — hidden on mobile */}
+      <div className="hidden lg:flex flex-col gap-5">
         <InnerCard className="p-6">
           <p className="text-[11px] uppercase tracking-widest font-bold mb-5"
-            style={{ color: "rgba(255,255,255,0.3)" }}>
+            style={{ color: "rgba(255,255,255,0.55)" }}>
             Annual Progress
           </p>
 
@@ -385,10 +386,10 @@ function PipelineTab({ items }: { items: PipelineItem[] }) {
   const milestoneCount = items.filter((i) => i.type === "milestone").length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-7 items-stretch">
       {/* Invoice list — 2 cols */}
       <div className="lg:col-span-2 flex flex-col">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4 md:mb-5">
           <SectionLabel>Invoices to Raise - April 2026</SectionLabel>
           <Link href="/pipeline"
             className="text-xs font-semibold flex items-center gap-1 hover:opacity-80"
@@ -400,12 +401,13 @@ function PipelineTab({ items }: { items: PipelineItem[] }) {
           {items.map((item, idx) => (
             <div
               key={item.id}
-              className="flex items-center justify-between px-6 py-4"
+              className="flex items-center justify-between px-4 md:px-6 py-3.5 md:py-4"
               style={{ borderBottom: idx < items.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1 pr-3">
+                {/* Hide icon on mobile */}
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                  className="hidden sm:flex w-8 h-8 rounded-full items-center justify-center shrink-0 mt-0.5"
                   style={{ background: item.type === "retainer" ? "rgba(253,126,20,0.15)" : "rgba(59,130,246,0.15)" }}
                 >
                   <Calendar
@@ -413,19 +415,20 @@ function PipelineTab({ items }: { items: PipelineItem[] }) {
                     style={{ color: item.type === "retainer" ? "#fd7e14" : "#3b82f6" }}
                   />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: "rgba(255,255,255,0.9)" }}>
                     {item.client}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>
+                  {/* Hide description on mobile */}
+                  <p className="hidden sm:block text-xs mt-0.5 truncate" style={{ color: "rgba(255,255,255,0.38)" }}>
                     {item.description}
                   </p>
-                  <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>
-                    Invoice {item.scheduledDate} &middot; Pay by {item.expectedPaymentDate}
+                  <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>
+                    {item.scheduledDate} &middot; Pay {item.expectedPaymentDate}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 md:gap-3 shrink-0">
                 <span className="text-sm font-light font-sans" style={{ color: "rgba(255,255,255,0.9)" }}>
                   {item.amount}
                 </span>
@@ -442,11 +445,11 @@ function PipelineTab({ items }: { items: PipelineItem[] }) {
         </InnerCard>
       </div>
 
-      {/* Summary card — 1 col */}
-      <div>
-        <InnerCard className="p-6 h-full">
+      {/* Summary card — hidden on mobile */}
+      <div className="hidden lg:block">
+        <InnerCard className="p-5 lg:p-6 h-full">
           <p className="text-[11px] uppercase tracking-widest font-bold mb-5"
-            style={{ color: "rgba(255,255,255,0.3)" }}>
+            style={{ color: "rgba(255,255,255,0.55)" }}>
             April Pipeline
           </p>
           <div className="space-y-5 mb-6">
@@ -471,7 +474,7 @@ function PipelineTab({ items }: { items: PipelineItem[] }) {
 
           <div className="pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             <p className="text-[11px] uppercase tracking-widest font-bold mb-3"
-              style={{ color: "rgba(255,255,255,0.3)" }}>
+              style={{ color: "rgba(255,255,255,0.55)" }}>
               May + Jun forecast
             </p>
             <p className="text-3xl font-light font-sans mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>

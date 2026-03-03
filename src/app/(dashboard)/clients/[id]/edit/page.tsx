@@ -13,6 +13,10 @@ import type { Database } from "@/types/database";
 
 type ClientUpdate = Database["public"]["Tables"]["clients"]["Update"];
 
+function phoneOnly(value: string): string {
+  return value.replace(/[^\d+\s\-()]/g, "");
+}
+
 export default function EditClientPage() {
   const params = useParams();
   const router = useRouter();
@@ -24,12 +28,14 @@ export default function EditClientPage() {
   const [clientType, setClientType] = useState<"indian_gst" | "indian_non_gst" | "international">("indian_gst");
   const [engagementType, setEngagementType] = useState<"retainer" | "one_time">("one_time");
   const [billingDay, setBillingDay] = useState<number>(1);
+  const [phone, setPhone] = useState("");
 
   // Populate state once client data loads
   useEffect(() => {
     if (client) {
       setClientType(client.client_type);
       setBillingDay(client.billing_day ?? 1);
+      setPhone(client.phone ?? "");
     }
   }, [client]);
 
@@ -49,7 +55,7 @@ export default function EditClientPage() {
       city: (data.get("city") as string)?.trim() || null,
       country: (data.get("country") as string)?.trim() || "India",
       signing_authority: (data.get("signing_authority") as string)?.trim() || null,
-      phone: (data.get("phone") as string)?.trim() || null,
+      phone: phone.trim() || null,
       website: (data.get("website") as string)?.trim() || null,
       billing_day: engagementType === "retainer" ? billingDay : null,
     };
@@ -197,7 +203,14 @@ export default function EditClientPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Phone</label>
-              <input name="phone" type="tel" defaultValue={client.phone ?? ""} className="glass-input" placeholder="+91 98765 43210" />
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(phoneOnly(e.target.value))}
+                className="glass-input"
+                placeholder="+91 98765 43210"
+                inputMode="tel"
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Website</label>

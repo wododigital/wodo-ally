@@ -89,7 +89,7 @@ export function NeedsAttentionV2({ items, variant = "light", className }: NeedsA
               style={{ background: cfg.borderColor, minHeight: "68px" }}
             />
 
-            <div className="flex-1 flex items-center gap-4 px-6 py-5 min-w-0">
+            <div className="flex-1 flex items-center gap-3 md:gap-4 px-3 md:px-6 py-3.5 md:py-5 min-w-0">
               {/* Dot */}
               <div
                 className="w-2 h-2 rounded-full shrink-0"
@@ -99,13 +99,13 @@ export function NeedsAttentionV2({ items, variant = "light", className }: NeedsA
               {/* Text */}
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-sm font-semibold leading-snug transition-colors"
+                  className="text-sm font-semibold leading-snug transition-colors truncate"
                   style={{ color: isDark ? "rgba(255,255,255,0.9)" : "#1f2937" }}
                 >
                   {item.title}
                 </p>
                 <p
-                  className="text-xs mt-0.5"
+                  className="text-xs mt-0.5 truncate"
                   style={{ color: isDark ? "rgba(255,255,255,0.38)" : "#9ca3af" }}
                 >
                   {item.client}
@@ -120,13 +120,14 @@ export function NeedsAttentionV2({ items, variant = "light", className }: NeedsA
                 >
                   {item.amount}
                 </span>
-                <span className="text-[11px] font-medium" style={{ color: cfg.labelColor }}>
+                {/* Hide due label on mobile */}
+                <span className="hidden sm:block text-[11px] font-medium" style={{ color: cfg.labelColor }}>
                   {item.dueLabel}
                 </span>
               </div>
 
-              {/* Actions */}
-              <div className="ml-1 flex items-center gap-0.5">
+              {/* Actions - hidden on mobile */}
+              <div className="hidden sm:flex ml-1 items-center gap-0.5">
                 <button
                   className="p-1.5 rounded-lg transition-colors"
                   style={{ color: isDark ? "rgba(255,255,255,0.25)" : "#d1d5db" }}

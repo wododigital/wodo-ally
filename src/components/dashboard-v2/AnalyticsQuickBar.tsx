@@ -14,25 +14,32 @@ const QUICK_LINKS = [
 ];
 
 const btnBase =
-  "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full text-xs font-semibold transition-all whitespace-nowrap";
+  "flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap";
 const btnLight =
-  btnBase + " bg-white border border-black/[0.07] text-text-secondary hover:border-black/[0.15] hover:text-text-primary shadow-sm";
+  btnBase + " border text-text-secondary hover:text-text-primary";
+const btnLightStyle = {
+  background: "rgba(255,255,255,0.45)",
+  backdropFilter: "blur(24px)",
+  WebkitBackdropFilter: "blur(24px)",
+  border: "1px solid rgba(255,255,255,0.75)",
+  boxShadow: "0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
+};
 
 export function AnalyticsQuickBar({ period = "Mar 2026" }: { period?: string }) {
   const [pdfOpen, setPdfOpen] = useState(false);
 
   return (
     <>
-      <div className="flex items-center gap-4">
-        {/* Label */}
-        <p className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-text-muted">
+      {/* On mobile: hide label, scroll buttons horizontally */}
+      <div className="flex items-center gap-3">
+        <p className="hidden md:block shrink-0 text-[11px] font-bold uppercase tracking-widest text-text-muted">
           {period} - Analytics
         </p>
 
-        {/* Buttons - flex-1 so they fill remaining width equally */}
-        <div className="flex-1 flex gap-2">
+        <div className="flex-1 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 min-w-max md:min-w-0 md:flex-wrap">
           {QUICK_LINKS.map(({ label, href, Icon, color }) => (
-            <Link key={label} href={href} className={btnLight}>
+            <Link key={label} href={href} className={btnLight} style={btnLightStyle}>
               <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
               {label}
             </Link>
@@ -43,14 +50,18 @@ export function AnalyticsQuickBar({ period = "Mar 2026" }: { period?: string }) 
             onClick={() => setPdfOpen(true)}
             className={btnBase}
             style={{
-              background: "rgba(253,126,20,0.1)",
-              border: "1px solid rgba(253,126,20,0.25)",
+              background: "rgba(255,255,255,0.45)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(253,126,20,0.35)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
               color: "#fd7e14",
             }}
           >
             <BarChart2 className="w-3.5 h-3.5 shrink-0" />
             {period} Investor Report
           </button>
+        </div>
         </div>
       </div>
 

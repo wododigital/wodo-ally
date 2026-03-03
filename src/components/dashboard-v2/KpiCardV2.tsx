@@ -30,14 +30,14 @@ export function KpiCardV2({
 
   return (
     <div
-      className={cn("rounded-2xl p-7", className)}
+      className={cn("rounded-2xl p-4 md:p-6 lg:p-7", className)}
       style={{
         background: "rgba(255, 255, 255, 0.45)",
         border: "1px solid rgba(255, 255, 255, 0.75)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        minHeight: "172px",
+        minHeight: "140px",
       }}
     >
       {/* Header */}

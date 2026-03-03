@@ -166,7 +166,7 @@ export default function DashboardPage() {
       {/* Analytics quick access */}
       <AnalyticsQuickBar period="Mar 2026" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-7">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
               <StatCardSkeleton key={i} />

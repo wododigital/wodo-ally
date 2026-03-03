@@ -12,7 +12,6 @@ import {
   BarChart2,
   AlertCircle,
   CheckCircle2,
-  FileBarChart,
   UserPlus,
 } from "lucide-react";
 import {
@@ -113,7 +112,7 @@ interface Panel {
   title: string;
   summary: string;
   summaryColor: string;
-  rows: PanelRow[]; // max 3
+  rows: PanelRow[];
 }
 
 const PANELS: Panel[] = [
@@ -134,24 +133,9 @@ const PANELS: Panel[] = [
     summary: "64% rate",
     summaryColor: "#fd7e14",
     rows: [
-      {
-        label: "Nandhini Hotel",
-        value: "Paid",
-        color: "#16a34a",
-        icon: <CheckCircle2 className="w-3 h-3" />,
-      },
-      {
-        label: "Maximus OIGA",
-        value: "Overdue",
-        color: "#ef4444",
-        icon: <AlertCircle className="w-3 h-3" />,
-      },
-      {
-        label: "Raj Enterprises",
-        value: "Overdue",
-        color: "#ef4444",
-        icon: <AlertCircle className="w-3 h-3" />,
-      },
+      { label: "Nandhini Hotel",  value: "Paid",    color: "#16a34a", icon: <CheckCircle2 className="w-3 h-3" /> },
+      { label: "Maximus OIGA",    value: "Overdue", color: "#ef4444", icon: <AlertCircle  className="w-3 h-3" /> },
+      { label: "Raj Enterprises", value: "Overdue", color: "#ef4444", icon: <AlertCircle  className="w-3 h-3" /> },
     ],
   },
   {
@@ -160,8 +144,8 @@ const PANELS: Panel[] = [
     summary: "Rs.2.53L",
     summaryColor: "#ef4444",
     rows: [
-      { label: "0–30 days",  value: "Rs.76.7k", color: "#f59e0b" },
-      { label: "31–60 days", value: "Rs.42.0k", color: "#ef4444" },
+      { label: "0-30 days",  value: "Rs.76.7k", color: "#f59e0b" },
+      { label: "31-60 days", value: "Rs.42.0k", color: "#ef4444" },
       { label: "60+ days",   value: "Rs.17.5k", color: "#ef4444" },
     ],
   },
@@ -169,15 +153,16 @@ const PANELS: Panel[] = [
 
 const PANEL_IDS = PANELS.map((p) => p.id);
 
-// ─── Accordion panels with auto-animation ────────────────────────────────────
+// ─── Accordion panels ─────────────────────────────────────────────────────────
+// animated=true: auto-cycles every 3s (desktop)
+// animated=false: static, user-controlled only (mobile)
 
-function AccordionPanels() {
+function AccordionPanels({ animated = true }: { animated?: boolean }) {
   const [openId, setOpenId] = useState<string | null>("revenue");
   const [paused, setPaused] = useState(false);
 
-  // Cycle through panels every 3 s; stop on hover/focus, resume on leave
   useEffect(() => {
-    if (paused) return;
+    if (!animated || paused) return;
     const timer = setInterval(() => {
       setOpenId((current) => {
         const idx = PANEL_IDS.indexOf(current ?? "");
@@ -185,7 +170,7 @@ function AccordionPanels() {
       });
     }, 3000);
     return () => clearInterval(timer);
-  }, [paused]);
+  }, [animated, paused]);
 
   return (
     <div
@@ -210,8 +195,7 @@ function AccordionPanels() {
                 WebkitBackdropFilter: "blur(14px)",
                 border: "1px solid rgba(255,255,255,0.9)",
                 borderRadius: 10,
-                boxShadow:
-                  "0 1px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
+                boxShadow: "0 1px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
                 overflow: "hidden",
               }}
             >
@@ -228,8 +212,12 @@ function AccordionPanels() {
                   </span>
                 </div>
                 <ChevronRight
-                  className="w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0"
-                  style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+                  className="w-3.5 h-3.5 text-gray-400 shrink-0"
+                  style={{
+                    transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+                    // only animate rotation on desktop
+                    transition: animated ? "transform 0.2s ease" : "none",
+                  }}
                 />
               </CollapsibleTrigger>
 
@@ -239,8 +227,10 @@ function AccordionPanels() {
                     overflow: "hidden",
                     maxHeight: isOpen ? "180px" : "0px",
                     opacity: isOpen ? 1 : 0,
-                    transition:
-                      "max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease",
+                    // no transition on mobile
+                    transition: animated
+                      ? "max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease"
+                      : "none",
                   }}
                 >
                   <div
@@ -278,25 +268,17 @@ function AccordionPanels() {
   );
 }
 
-// ─── Right column ─────────────────────────────────────────────────────────────
+// ─── Right column (desktop only) ─────────────────────────────────────────────
 
 function RightColumn() {
   return (
     <div className="relative">
-
-      {/* Semicircle growth chart */}
       <HeroProjectsGrowthChart data={PROJECT_GROWTH} />
-
-      {/*
-        Accordion panels:
-        - Desktop: absolute, right: 0 → flush with right edge of chart
-        - Mobile: normal flow below the chart
-      */}
       <div
         className="mt-4 lg:mt-0 lg:absolute lg:top-4 lg:z-20 lg:w-[36%] space-y-2"
-        style={{ right: 0 }}
+        style={{ right: 20 }}
       >
-        <AccordionPanels />
+        <AccordionPanels animated={true} />
       </div>
     </div>
   );
@@ -306,61 +288,64 @@ function RightColumn() {
 
 export function HeroSectionV2() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-start py-10">
+    <div className="py-6 lg:py-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-14 items-start">
 
-      {/* ── Left: pill → headline → narrative → action row ───────────────── */}
-      <div className="flex flex-col">
-
-        {/* Pill */}
-        <span
-          className="self-start px-4 py-1.5 rounded-full text-[12px] font-medium"
-          style={{
-            background: "rgba(255,255,255,0.65)",
-            border: "1px solid rgba(0,0,0,0.08)",
-            color: "#6b7280",
-          }}
-        >
-          Welcome Back
-        </span>
-
-        {/* Headline */}
-        <h1
-          className="mt-4 text-[2.5rem] font-light text-gray-900 tracking-tight"
-          style={{ lineHeight: 1.1 }}
-        >
-          Your Financial<br />Snapshot
-        </h1>
-
-        {/* Narrative */}
-        <p className="mt-6 text-sm text-gray-500 leading-relaxed max-w-[360px]">
-          You&apos;re{" "}
-          <span className="font-medium text-gray-800">64% toward</span> your Rs.60L
-          annual target. Revenue grew{" "}
-          <span className="font-medium text-green-600">18.4%</span> last month.
-          3 items need attention this week.
-        </p>
-
-        {/* Action row */}
-        <div className="flex items-center gap-3 mt-8 flex-wrap">
-          <Link
-            href="/reports/march-2026"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
+        {/* ── Left: pill → headline → narrative → action row ──────────── */}
+        <div className="flex flex-col">
+          <span
+            className="self-start px-4 py-1.5 rounded-full text-[12px] font-medium"
             style={{
               background: "rgba(255,255,255,0.65)",
-              border: "1px solid rgba(0,0,0,0.1)",
-              color: "#374151",
+              border: "1px solid rgba(0,0,0,0.08)",
+              color: "#6b7280",
             }}
           >
-            <FileBarChart className="w-4 h-4 shrink-0" style={{ color: "#fd7e14" }} />
-            March 2026 report
-          </Link>
+            Welcome Back
+          </span>
 
-          <QuickActionsDropdown />
+          <h1
+            className="mt-4 text-[2rem] md:text-[2.5rem] font-light text-gray-900 tracking-tight"
+            style={{ lineHeight: 1.1 }}
+          >
+            Your Financial<br />Snapshot
+          </h1>
+
+          <p className="mt-4 md:mt-6 text-sm text-gray-500 leading-relaxed max-w-[360px]">
+            You&apos;re{" "}
+            <span className="font-medium text-gray-800">64% toward</span> your Rs.60L
+            annual target. Revenue grew{" "}
+            <span className="font-medium text-green-600">18.4%</span> last month.
+            3 items need attention this week.
+          </p>
+
+          <div className="flex items-center gap-3 mt-6 md:mt-8 flex-wrap">
+            <Link
+              href="/onboard"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
+              style={{
+                background: "rgba(255,255,255,0.65)",
+                border: "1px solid rgba(0,0,0,0.1)",
+                color: "#374151",
+              }}
+            >
+              <UserPlus className="w-4 h-4 shrink-0" style={{ color: "#fd7e14" }} />
+              Onboard Client
+            </Link>
+            <QuickActionsDropdown />
+          </div>
+
+          {/* Mobile-only accordion (no animation, no chart) */}
+          <div className="lg:hidden mt-6">
+            <AccordionPanels animated={false} />
+          </div>
+        </div>
+
+        {/* ── Right: semicircle chart + animated accordion overlay (desktop only) */}
+        <div className="hidden lg:block">
+          <RightColumn />
         </div>
       </div>
-
-      {/* ── Right: semicircle chart + animated accordion overlay ──────────── */}
-      <RightColumn />
     </div>
   );
 }
