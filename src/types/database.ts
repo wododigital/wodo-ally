@@ -709,6 +709,7 @@ export type Database = {
           report_month: number;
           report_year: number;
           financial_year: string;
+          report_type: "monthly" | "quarterly" | "annual";
           report_data: Json;
           status: "draft" | "generated" | "sent";
           pdf_url: string | null;
@@ -722,6 +723,7 @@ export type Database = {
           report_month: number;
           report_year: number;
           financial_year: string;
+          report_type?: "monthly" | "quarterly" | "annual";
           report_data?: Json;
           status?: "draft" | "generated" | "sent";
           pdf_url?: string | null;
@@ -735,6 +737,7 @@ export type Database = {
           report_month?: number;
           report_year?: number;
           financial_year?: string;
+          report_type?: "monthly" | "quarterly" | "annual";
           report_data?: Json;
           status?: "draft" | "generated" | "sent";
           pdf_url?: string | null;

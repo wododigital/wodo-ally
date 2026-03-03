@@ -3,10 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import {
   FileText, Send, Download, TrendingUp, Users,
-  DollarSign, BarChart2, MoreHorizontal, Check, Loader2,
+  DollarSign, BarChart2, MoreHorizontal, Check, Loader2, Eye, X,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
@@ -18,7 +17,6 @@ import {
   useSendReport,
   useDeleteReport,
 } from "@/lib/hooks/use-reports";
-// generateReportPdf is loaded dynamically on demand to avoid bundling @react-pdf/renderer upfront
 import type { Database } from "@/types/database";
 import type { ReportData, InvestorReportWithData } from "@/lib/hooks/use-reports";
 
@@ -32,6 +30,14 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+// Indian FY quarters: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
+const QUARTERS = [
+  { label: "Q1 (Apr - Jun)", startMonth: 4 },
+  { label: "Q2 (Jul - Sep)", startMonth: 7 },
+  { label: "Q3 (Oct - Dec)", startMonth: 10 },
+  { label: "Q4 (Jan - Mar)", startMonth: 1 },
+];
+
 function formatINR(amount: number): string {
   if (amount >= 100000) return `\u20B9${(amount / 100000).toFixed(2)}L`;
   return `\u20B9${(amount / 1000).toFixed(0)}K`;
@@ -42,9 +48,18 @@ function formatGeneratedDate(dateStr: string): string {
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function getMonthYearLabel(report: ReportRow): string {
-  const monthName = MONTH_NAMES[(report.report_month ?? 1) - 1];
-  return `${monthName} ${report.report_year}`;
+function getReportPeriodLabel(report: ReportRow): string {
+  const type = report.report_type ?? "monthly";
+  const month = report.report_month ?? 1;
+  const year = report.report_year;
+  if (type === "quarterly") {
+    const quarters: Record<number, string> = { 4: "Q1", 7: "Q2", 10: "Q3", 1: "Q4" };
+    return `${quarters[month] ?? "Q?"} FY${report.financial_year}`;
+  }
+  if (type === "annual") {
+    return `FY ${report.financial_year}`;
+  }
+  return `${MONTH_NAMES[(month) - 1]} ${year}`;
 }
 
 function getSummaryFromReportData(data: unknown): { revenue: number; expenses: number; netProfit: number; clientCount: number } {
@@ -58,8 +73,6 @@ function getSummaryFromReportData(data: unknown): { revenue: number; expenses: n
   };
 }
 
-// ─── Report type colors ────────────────────────────────────────────────────────
-
 const REPORT_TYPE_LABELS: Record<ReportType, string> = {
   monthly: "Monthly",
   quarterly: "Quarterly",
@@ -67,8 +80,8 @@ const REPORT_TYPE_LABELS: Record<ReportType, string> = {
 };
 
 const REPORT_TYPE_COLORS: Record<ReportType, string> = {
-  monthly: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  quarterly: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  monthly: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+  quarterly: "text-purple-500 bg-purple-500/10 border-purple-500/20",
   annual: "text-accent bg-accent/10 border-accent/20",
 };
 
@@ -134,9 +147,33 @@ interface GenerateModalProps {
 
 function GenerateModal({ onClose, onGenerate, isLoading }: GenerateModalProps) {
   const now = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
+  const currentMonth = now.getMonth() + 1;
+  // default quarter: find which quarter current month belongs to
+  const defaultQuarter = currentMonth >= 4 && currentMonth <= 6 ? 0
+    : currentMonth >= 7 && currentMonth <= 9 ? 1
+    : currentMonth >= 10 && currentMonth <= 12 ? 2 : 3;
+
   const [reportType, setReportType] = useState<ReportType>("monthly");
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [quarterIdx, setQuarterIdx] = useState(defaultQuarter);
+  // For annual, store FY start year (e.g., 2025 for FY 2025-26)
+  const [fyYear, setFyYear] = useState(currentMonth >= 4 ? now.getFullYear() : now.getFullYear() - 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  function handleGenerate() {
+    if (reportType === "monthly") {
+      onGenerate(month, year, "monthly");
+    } else if (reportType === "quarterly") {
+      const q = QUARTERS[quarterIdx];
+      // For Q4 (Jan-Mar), the year stored is the calendar year of January
+      const qYear = q.startMonth === 1 ? fyYear + 1 : fyYear;
+      onGenerate(q.startMonth, qYear, "quarterly");
+    } else {
+      onGenerate(4, fyYear, "annual");
+    }
+  }
+
+  const fyOptions = [2023, 2024, 2025, 2026, 2027].map((y) => ({ start: y, label: `FY ${y}-${String(y + 1).slice(-2)}` }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.35)" }}>
@@ -150,47 +187,114 @@ function GenerateModal({ onClose, onGenerate, isLoading }: GenerateModalProps) {
         }}
       >
         <h3 className="text-sm font-semibold text-gray-900 mb-1">Generate Report</h3>
-        <p className="text-xs text-gray-500 mb-5">Select the period to generate a report for</p>
+        <p className="text-xs text-gray-500 mb-5">Select the period and type</p>
 
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Month</label>
-            <select
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
-            >
-              {MONTH_NAMES.map((name, idx) => (
-                <option key={idx} value={idx + 1}>{name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Year</label>
-            <select
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
-            >
-              {[2024, 2025, 2026, 2027].map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-
+          {/* Report type */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Report Type</label>
-            <select
-              value={reportType}
-              onChange={(e) => setReportType(e.target.value as ReportType)}
-              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="annual">Annual</option>
-            </select>
+            <div className="grid grid-cols-3 gap-2">
+              {(["monthly", "quarterly", "annual"] as ReportType[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setReportType(t)}
+                  className={cn(
+                    "py-2 rounded-lg text-xs font-medium border transition-all",
+                    reportType === t
+                      ? "border-[#fd7e14] text-[#fd7e14] bg-orange-50"
+                      : "border-black/[0.08] text-gray-500 hover:border-black/[0.15]"
+                  )}
+                >
+                  {REPORT_TYPE_LABELS[t]}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Monthly controls */}
+          {reportType === "monthly" && (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Month</label>
+                <select
+                  value={month}
+                  onChange={(e) => setMonth(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+                >
+                  {MONTH_NAMES.map((name, idx) => (
+                    <option key={idx} value={idx + 1}>{name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Year</label>
+                <select
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+                >
+                  {[2024, 2025, 2026, 2027].map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* Quarterly controls */}
+          {reportType === "quarterly" && (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Quarter (Indian FY)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {QUARTERS.map((q, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setQuarterIdx(idx)}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-xs font-medium border transition-all text-left",
+                        quarterIdx === idx
+                          ? "border-[#fd7e14] text-[#fd7e14] bg-orange-50"
+                          : "border-black/[0.08] text-gray-500 hover:border-black/[0.15]"
+                      )}
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Financial Year</label>
+                <select
+                  value={fyYear}
+                  onChange={(e) => setFyYear(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+                >
+                  {fyOptions.map((o) => (
+                    <option key={o.start} value={o.start}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* Annual controls */}
+          {reportType === "annual" && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Financial Year</label>
+              <select
+                value={fyYear}
+                onChange={(e) => setFyYear(Number(e.target.value))}
+                className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+              >
+                {fyOptions.map((o) => (
+                  <option key={o.start} value={o.start}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 mt-5">
@@ -201,7 +305,7 @@ function GenerateModal({ onClose, onGenerate, isLoading }: GenerateModalProps) {
             Cancel
           </button>
           <button
-            onClick={() => onGenerate(month, year, reportType)}
+            onClick={handleGenerate}
             disabled={isLoading}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-70"
             style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
@@ -215,23 +319,32 @@ function GenerateModal({ onClose, onGenerate, isLoading }: GenerateModalProps) {
   );
 }
 
-// ─── Send modal ────────────────────────────────────────────────────────────────
+// ─── Send modal (full compose) ─────────────────────────────────────────────────
 
-function SendModal({
-  onClose,
-  onSend,
-  isSending,
-}: {
+interface SendModalProps {
+  report: ReportRow;
   onClose: () => void;
-  onSend: (emails: string[]) => void;
+  onSend: (to: string[], cc: string[], subject: string) => void;
   isSending: boolean;
-}) {
-  const [email, setEmail] = useState("");
+}
+
+function SendModal({ report, onClose, onSend, isSending }: SendModalProps) {
+  const periodLabel = getReportPeriodLabel(report);
+  const [to, setTo] = useState("");
+  const [cc, setCc] = useState("shyam@wodo.digital, suhas@wodo.digital");
+  const [subject, setSubject] = useState(`Investor Report - ${periodLabel}`);
+
+  function handleSend() {
+    const toEmails = to.split(",").map((e) => e.trim()).filter(Boolean);
+    const ccEmails = cc.split(",").map((e) => e.trim()).filter(Boolean);
+    if (toEmails.length === 0) return;
+    onSend(toEmails, ccEmails, subject);
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.35)" }}>
       <div
-        className="w-full max-w-sm rounded-2xl p-6"
+        className="w-full max-w-md rounded-2xl p-6"
         style={{
           background: "rgba(255,255,255,0.98)",
           backdropFilter: "blur(24px)",
@@ -239,16 +352,49 @@ function SendModal({
           boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
         }}
       >
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">Send Report</h3>
-        <p className="text-xs text-gray-500 mb-4">Enter recipient email addresses (comma-separated)</p>
-        <input
-          type="text"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
-          placeholder="investor@example.com, ceo@wodo.digital"
-        />
-        <div className="flex gap-3 mt-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Send Report</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{periodLabel}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">To <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+              placeholder="investor@example.com, cfo@company.com"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CC</label>
+            <input
+              type="text"
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+              placeholder="cc@example.com"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-5">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 rounded-button text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -256,18 +402,76 @@ function SendModal({
             Cancel
           </button>
           <button
-            onClick={() => {
-              const emails = email.split(",").map((e) => e.trim()).filter(Boolean);
-              if (emails.length > 0) onSend(emails);
-            }}
-            disabled={isSending || !email.trim()}
+            onClick={handleSend}
+            disabled={isSending || !to.trim()}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-70"
             style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
           >
             {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            {isSending ? "Sending..." : "Send"}
+            {isSending ? "Sending..." : "Send Email"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PDF Preview modal ─────────────────────────────────────────────────────────
+
+function PdfPreviewModal({ report, onClose }: { report: ReportRow; onClose: () => void }) {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let objectUrl: string;
+    (async () => {
+      try {
+        const typed: InvestorReportWithData = {
+          ...(report as Omit<ReportRow, "report_data">),
+          report_data: (report.report_data ?? {}) as unknown as ReportData,
+        };
+        const { generateReportPdf } = await import("@/lib/pdf/report-pdf");
+        const bytes = await generateReportPdf(typed);
+        const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+        objectUrl = URL.createObjectURL(blob);
+        setPdfUrl(objectUrl);
+      } catch (err) {
+        setError("Failed to render PDF preview");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [report]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(0,0,0,0.6)" }}>
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ background: "rgba(255,255,255,0.98)", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+        <p className="text-sm font-semibold text-gray-900">{getReportPeriodLabel(report)} - Preview</p>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+          <X className="w-4 h-4 text-gray-500" />
+        </button>
+      </div>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden p-4">
+        {loading && (
+          <div className="h-full flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-white/60" />
+          </div>
+        )}
+        {error && (
+          <div className="h-full flex items-center justify-center text-white/70 text-sm">{error}</div>
+        )}
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            className="w-full h-full rounded-xl"
+            title="Report Preview"
+          />
+        )}
       </div>
     </div>
   );
@@ -278,7 +482,8 @@ function SendModal({
 export default function ReportsPage() {
   const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [sendingReport, setSendingReport] = useState<ReportRow | null>(null);
+  const [previewReport, setPreviewReport] = useState<ReportRow | null>(null);
   const [justSentId, setJustSentId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -308,7 +513,7 @@ export default function ReportsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `WODO-Report-${getMonthYearLabel(report).replace(/ /g, "-")}.pdf`;
+      a.download = `WODO-Report-${getReportPeriodLabel(report).replace(/\s/g, "-")}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -318,22 +523,18 @@ export default function ReportsPage() {
     }
   }
 
-  function handleSend(report: ReportRow, emails: string[]) {
+  function handleSend(report: ReportRow, to: string[], cc: string[], subject: string) {
     const reportData = (report.report_data ?? {}) as unknown as ReportData;
     sendReport.mutate(
-      { id: report.id, to: emails, reportData },
+      { id: report.id, to, cc, subject, reportData },
       {
         onSuccess: () => {
-          setSendingId(null);
+          setSendingReport(null);
           setJustSentId(report.id);
           setTimeout(() => setJustSentId(null), 3000);
         },
       }
     );
-  }
-
-  function handleDelete(id: string) {
-    setConfirmDeleteId(id);
   }
 
   const allTypes: { value: "all" | ReportType; label: string }[] = [
@@ -345,21 +546,12 @@ export default function ReportsPage() {
 
   const filtered = typeFilter === "all"
     ? reports
-    : reports.filter((r) => {
-        // The DB schema doesn't have report_type in the Row type shown,
-        // but we can infer: check report_data for period or just show all from DB
-        return true; // filter server-side if needed; DB Insert has no report_type field per schema
-      });
-
-  const sendingReport = sendingId ? reports.find((r) => r.id === sendingId) : null;
+    : reports.filter((r) => (r.report_type ?? "monthly") === typeFilter);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <PageHeader
-          title="Investor Reports"
-          description="Financial summaries for WODO Digital stakeholders"
-        />
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h1 className="text-xl font-bold text-text-primary">Investor Reports</h1>
         <button
           onClick={() => setShowGenerateModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white transition-all"
@@ -420,7 +612,7 @@ export default function ReportsPage() {
           <EmptyState
             icon={BarChart2}
             title="No reports yet"
-            description="Generate your first monthly investor report to track financial performance"
+            description="Generate your first investor report to track financial performance"
             action={{ label: "Generate Report", onClick: () => setShowGenerateModal(true) }}
           />
         </GlassCard>
@@ -434,8 +626,9 @@ export default function ReportsPage() {
             const isJustSent = justSentId === report.id;
             const sentEmails = report.sent_to ?? [];
             const summary = getSummaryFromReportData(report.report_data);
-            const monthYear = getMonthYearLabel(report);
+            const periodLabel = getReportPeriodLabel(report);
             const isDownloading = downloadingId === report.id;
+            const reportType = (report.report_type ?? "monthly") as ReportType;
 
             return (
               <GlassCard key={report.id} padding="md">
@@ -446,9 +639,9 @@ export default function ReportsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-text-primary leading-tight">{monthYear}</p>
-                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded border", REPORT_TYPE_COLORS.monthly)}>
-                          {REPORT_TYPE_LABELS.monthly}
+                        <p className="font-semibold text-text-primary leading-tight">{periodLabel}</p>
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded border", REPORT_TYPE_COLORS[reportType])}>
+                          {REPORT_TYPE_LABELS[reportType]}
                         </span>
                       </div>
                       <p className="text-xs text-text-muted mt-0.5">
@@ -461,7 +654,7 @@ export default function ReportsPage() {
                         </p>
                       )}
                       {isJustSent && (
-                        <p className="text-xs text-green-400 font-medium mt-0.5 flex items-center gap-1">
+                        <p className="text-xs text-green-500 font-medium mt-0.5 flex items-center gap-1">
                           <Check className="w-3 h-3" />
                           Email sent successfully
                         </p>
@@ -472,6 +665,16 @@ export default function ReportsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <StatusBadge status={report.status} />
 
+                    {/* View PDF */}
+                    <button
+                      onClick={() => setPreviewReport(report)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.10] hover:text-text-primary transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      View
+                    </button>
+
+                    {/* Download PDF */}
                     <button
                       onClick={() => handleDownloadPdf(report)}
                       disabled={isDownloading}
@@ -481,12 +684,12 @@ export default function ReportsPage() {
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         : <Download className="w-3.5 h-3.5" />
                       }
-                      {isDownloading ? "Generating..." : "Download PDF"}
+                      {isDownloading ? "Generating..." : "Download"}
                     </button>
 
                     {!isSent && (
                       <button
-                        onClick={() => setSendingId(report.id)}
+                        onClick={() => setSendingReport(report)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium text-white transition-colors"
                         style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
                       >
@@ -497,18 +700,18 @@ export default function ReportsPage() {
 
                     {isSent && (
                       <OverflowMenu
-                        onResend={() => setSendingId(report.id)}
-                        onDelete={() => handleDelete(report.id)}
+                        onResend={() => setSendingReport(report)}
+                        onDelete={() => setConfirmDeleteId(report.id)}
                       />
                     )}
 
                     {!isSent && (
                       <button
-                        onClick={() => handleDelete(report.id)}
+                        onClick={() => setConfirmDeleteId(report.id)}
                         className="flex items-center justify-center w-8 h-8 rounded-button text-text-muted hover:text-red-400 bg-surface-DEFAULT border border-black/[0.05] hover:border-red-200 transition-all"
                         title="Delete report"
                       >
-                        &times;
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -516,10 +719,10 @@ export default function ReportsPage() {
 
                 {/* Metric pills */}
                 <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-black/[0.05]">
-                  <MetricPill icon={DollarSign}  label="Revenue"    value={formatINR(summary.revenue)}    color="text-green-400 bg-green-500/10 border-green-500/20" />
-                  <MetricPill icon={TrendingUp}  label="Expenses"   value={formatINR(summary.expenses)}   color="text-red-400 bg-red-500/10 border-red-500/20" />
+                  <MetricPill icon={DollarSign}  label="Revenue"    value={formatINR(summary.revenue)}    color="text-green-500 bg-green-500/10 border-green-500/20" />
+                  <MetricPill icon={TrendingUp}  label="Expenses"   value={formatINR(summary.expenses)}   color="text-red-500 bg-red-500/10 border-red-500/20" />
                   <MetricPill icon={BarChart2}   label="Net Profit" value={formatINR(summary.netProfit)}  color="text-accent bg-accent/10 border-accent/20" />
-                  <MetricPill icon={Users}       label="Clients"    value={String(summary.clientCount)}   color="text-blue-400 bg-blue-500/10 border-blue-500/20" />
+                  <MetricPill icon={Users}       label="Clients"    value={String(summary.clientCount)}   color="text-blue-500 bg-blue-500/10 border-blue-500/20" />
                 </div>
               </GlassCard>
             );
@@ -537,11 +740,20 @@ export default function ReportsPage() {
       )}
 
       {/* Send modal */}
-      {sendingId && sendingReport && (
+      {sendingReport && (
         <SendModal
-          onClose={() => setSendingId(null)}
-          onSend={(emails) => handleSend(sendingReport, emails)}
+          report={sendingReport}
+          onClose={() => setSendingReport(null)}
+          onSend={(to, cc, subject) => handleSend(sendingReport, to, cc, subject)}
           isSending={sendReport.isPending}
+        />
+      )}
+
+      {/* PDF preview modal */}
+      {previewReport && (
+        <PdfPreviewModal
+          report={previewReport}
+          onClose={() => setPreviewReport(null)}
         />
       )}
 

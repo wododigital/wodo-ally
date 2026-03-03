@@ -99,13 +99,30 @@ export function useGenerateReport() {
   return useMutation({
     mutationFn: async (payload: GenerateReportPayload): Promise<ReportRow> => {
       const supabase = createClient();
-      const { report_month, report_year } = payload;
+      const { report_month, report_year, report_type } = payload;
 
-      // Date range for the month
-      const monthStart = new Date(report_year, report_month - 1, 1);
-      const monthEnd = new Date(report_year, report_month, 0);
-      const startStr = monthStart.toISOString().split("T")[0];
-      const endStr = monthEnd.toISOString().split("T")[0];
+      // Compute date range based on report type
+      let startStr: string;
+      let endStr: string;
+      if (report_type === "quarterly") {
+        // report_month is the first month of the quarter (4, 7, 10, or 1)
+        const quarterStart = new Date(report_year, report_month - 1, 1);
+        const quarterEnd = new Date(report_year, report_month + 1, 0); // last day of 3rd month
+        startStr = quarterStart.toISOString().split("T")[0];
+        endStr = quarterEnd.toISOString().split("T")[0];
+      } else if (report_type === "annual") {
+        // report_month=4 means April; range is Apr of report_year to Mar of report_year+1
+        const fyStart = new Date(report_year, 3, 1); // April 1
+        const fyEnd = new Date(report_year + 1, 2, 31); // March 31 next year
+        startStr = fyStart.toISOString().split("T")[0];
+        endStr = fyEnd.toISOString().split("T")[0];
+      } else {
+        // monthly
+        const monthStart = new Date(report_year, report_month - 1, 1);
+        const monthEnd = new Date(report_year, report_month, 0);
+        startStr = monthStart.toISOString().split("T")[0];
+        endStr = monthEnd.toISOString().split("T")[0];
+      }
 
       // 1. Revenue this month
       const { data: payments } = await supabase
@@ -207,8 +224,22 @@ export function useGenerateReport() {
       const financialYear = getIndianFY(report_month, report_year);
       const monthName = MONTH_NAMES[report_month - 1];
 
+      // Build human-readable period label
+      function getQuarterLabel(month: number, year: number): string {
+        const quarters: Record<number, string> = { 4: "Q1", 7: "Q2", 10: "Q3", 1: "Q4" };
+        const q = quarters[month] ?? "Q?";
+        const fy = getIndianFY(month, year);
+        return `${q} FY${fy}`;
+      }
+      const periodLabel =
+        report_type === "quarterly"
+          ? getQuarterLabel(report_month, report_year)
+          : report_type === "annual"
+          ? `FY ${financialYear}`
+          : `${monthName} ${report_year}`;
+
       const reportData: ReportData = {
-        month: monthName,
+        month: periodLabel,
         year: report_year,
         financialYear,
         revenue,
@@ -223,12 +254,13 @@ export function useGenerateReport() {
       };
 
       // Create the report row
-      const title = `${monthName} ${report_year} - Investor Report`;
+      const title = `${periodLabel} - Investor Report`;
       const insert: ReportInsert = {
         title,
         report_month,
         report_year,
         financial_year: financialYear,
+        report_type,
         report_data: reportData as unknown as Database["public"]["Tables"]["investor_reports"]["Insert"]["report_data"],
         status: "generated",
       };
@@ -314,6 +346,8 @@ export function useDeleteReport() {
 export interface SendReportPayload {
   id: string;
   to: string[];
+  cc?: string[];
+  subject?: string;
   reportData: ReportData;
 }
 
@@ -321,13 +355,15 @@ export function useSendReport() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, to, reportData }: SendReportPayload): Promise<void> => {
+    mutationFn: async ({ id, to, cc, subject, reportData }: SendReportPayload): Promise<void> => {
       const response = await fetch("/api/email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "investor_report",
           to,
+          cc: cc ?? [],
+          subject,
           month: reportData.month,
           year: reportData.year,
           revenue: `Rs.${reportData.revenue.toLocaleString("en-IN")}`,
