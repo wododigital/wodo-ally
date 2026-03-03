@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,15 +31,17 @@ export function NewInvoiceModal({
   onClose,
   preselectedClientId = "",
   preselectedType = null,
+  preselectedProjectId = "",
 }: {
   onClose: () => void;
   preselectedClientId?: string;
   preselectedType?: string | null;
+  preselectedProjectId?: string;
 }) {
   const router = useRouter();
 
   const [selectedClientId, setSelectedClientId] = useState(preselectedClientId);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState(preselectedProjectId);
   const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">("proforma");
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
   const [dueDate, setDueDate] = useState("");
@@ -55,12 +57,12 @@ export function NewInvoiceModal({
 
   const services = servicesData.map((s) => ({ id: s.id, name: s.name, color: s.color ?? "#888888" }));
 
-  useEffect(() => { setSelectedProjectId(""); }, [selectedClientId]);
 
   const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;
 
   function handleClientChange(clientId: string) {
     setSelectedClientId(clientId);
+    setSelectedProjectId("");
     if (invoiceType !== "proforma") {
       const client = clients.find((c) => c.id === clientId);
       if (client) setInvoiceType(getInvoiceTypeFromClient(client));

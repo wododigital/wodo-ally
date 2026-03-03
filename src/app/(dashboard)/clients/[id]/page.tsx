@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Mail, Phone, Globe, MapPin, Building2,
-  FileText, FolderKanban, Edit, Plus,
-  CheckCircle2, XCircle, Calendar,
+  FileText, FolderKanban, Edit, Plus, Receipt,
+  CheckCircle2, XCircle, Calendar, Upload, X as XIcon, Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -18,6 +20,7 @@ import { formatDate } from "@/lib/utils/format";
 import { useClient, useClientStats, useCloseClient, useReactivateClient } from "@/lib/hooks/use-clients";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { AddProjectModal } from "@/components/shared/add-project-modal";
+import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +42,200 @@ const TYPE_LABELS: Record<string, string> = {
   full_service: "Full Service",
   other: "Other",
 };
+
+// ─── TDS Upload Modal ─────────────────────────────────────────────────────────
+
+interface TdsCertificate {
+  id: string;
+  financial_year: string;
+  quarter: number;
+  amount: number | null;
+  received_date: string | null;
+  notes: string | null;
+  file_url: string | null;
+  created_at: string;
+}
+
+function TdsUploadModal({
+  clientId,
+  onClose,
+  onSuccess,
+}: {
+  clientId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const supabase = createClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
+  const [financialYear, setFinancialYear] = useState("2025-26");
+  const [quarter, setQuarter] = useState(1);
+  const [amount, setAmount] = useState("");
+  const [notes, setNotes] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const fyOptions = [
+    `${currentYear - 1}-${String(currentYear).slice(2)}`,
+    `${currentYear}-${String(currentYear + 1).slice(2)}`,
+    `${currentYear - 2}-${String(currentYear - 1).slice(2)}`,
+  ];
+
+  async function handleSave() {
+    if (!financialYear || !quarter) { toast.error("Financial year and quarter are required"); return; }
+    setUploading(true);
+    try {
+      let fileUrl: string | null = null;
+
+      if (file) {
+        const ext = file.name.split(".").pop();
+        const path = `tds/${clientId}/${financialYear}-Q${quarter}-${Date.now()}.${ext}`;
+        const { error: storageErr } = await supabase.storage
+          .from("documents")
+          .upload(path, file, { upsert: true });
+        if (storageErr) throw new Error(storageErr.message);
+        const { data: urlData } = supabase.storage.from("documents").getPublicUrl(path);
+        fileUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabase.from("tds_certificates").insert({
+        client_id: clientId,
+        financial_year: financialYear,
+        quarter,
+        certificate_received: true,
+        received_date: new Date().toISOString().split("T")[0],
+        amount: amount ? parseFloat(amount) : null,
+        file_url: fileUrl,
+        notes: [title, notes].filter(Boolean).join(" - ") || null,
+      });
+
+      if (error) throw new Error(error.message);
+      toast.success("TDS certificate saved");
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save TDS certificate");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-md rounded-2xl flex flex-col"
+        style={{ maxHeight: "90vh", background: "rgba(255,255,255,0.98)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 24px 64px rgba(0,0,0,0.16)" }}
+      >
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06] shrink-0">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Upload TDS Certificate</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Attach certificate and save details</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full text-gray-400 hover:bg-gray-100 transition-colors">
+            <XIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Title / Description</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Q1 FY25-26 TDS Certificate"
+              className="glass-input"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Financial Year *</label>
+              <select value={financialYear} onChange={(e) => setFinancialYear(e.target.value)} className="glass-input">
+                {fyOptions.map((fy) => <option key={fy} value={fy}>{fy}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Quarter *</label>
+              <select value={quarter} onChange={(e) => setQuarter(Number(e.target.value))} className="glass-input">
+                <option value={1}>Q1 (Apr-Jun)</option>
+                <option value={2}>Q2 (Jul-Sep)</option>
+                <option value={3}>Q3 (Oct-Dec)</option>
+                <option value={4}>Q4 (Jan-Mar)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">TDS Amount (Rs.)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              min="0"
+              className="glass-input font-sans"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Certificate File (PDF)</label>
+            <div
+              className="relative flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-xl border-2 border-dashed cursor-pointer transition-colors"
+              style={{ borderColor: file ? "rgba(253,126,20,0.4)" : "rgba(0,0,0,0.1)" }}
+              onClick={() => fileRef.current?.click()}
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              <Upload className="w-5 h-5 text-gray-400" />
+              {file ? (
+                <p className="text-sm text-accent font-medium truncate max-w-full">{file.name}</p>
+              ) : (
+                <p className="text-sm text-gray-400">Click to upload PDF or image</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes..."
+              className="glass-input"
+            />
+          </div>
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-black/[0.06] shrink-0" style={{ background: "rgba(255,255,255,0.96)" }}>
+          <button onClick={onClose} className="px-4 py-2.5 rounded-button text-sm font-medium text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 transition-all">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={uploading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-button text-sm font-semibold text-white disabled:opacity-70"
+            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+          >
+            {uploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {uploading ? "Saving..." : "Save Certificate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Close Confirmation Modal ─────────────────────────────────────────────────
 
@@ -141,12 +338,35 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+  const [showTdsModal, setShowTdsModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceModalProjectId, setInvoiceModalProjectId] = useState("");
+  const [tdsRefreshKey, setTdsRefreshKey] = useState(0);
+  const [tdsCerts, setTdsCerts] = useState<TdsCertificate[]>([]);
+  const [tdsLoading, setTdsLoading] = useState(false);
 
   const { data: client, isLoading, isError, error } = useClient(id);
   const { data: stats } = useClientStats(id);
   const { data: projects = [] } = useProjects(id);
   const closeClient = useCloseClient(id);
   const reactivateClient = useReactivateClient(id);
+
+  // Fetch TDS certificates for this client
+  useEffect(() => {
+    async function fetchTds() {
+      setTdsLoading(true);
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("tds_certificates")
+        .select("*")
+        .eq("client_id", id)
+        .order("financial_year", { ascending: false })
+        .order("quarter", { ascending: false });
+      setTdsCerts((data as TdsCertificate[]) ?? []);
+      setTdsLoading(false);
+    }
+    fetchTds();
+  }, [id, tdsRefreshKey]);
 
   if (isLoading) return <ClientDetailSkeleton />;
 
@@ -177,6 +397,23 @@ export default function ClientDetailPage() {
     <div className="space-y-6 animate-fade-in">
       {showAddProjectModal && (
         <AddProjectModal onClose={() => setShowAddProjectModal(false)} preselectedClientId={id} />
+      )}
+
+      {showInvoiceModal && (
+        <NewInvoiceModal
+          onClose={() => { setShowInvoiceModal(false); setInvoiceModalProjectId(""); }}
+          preselectedClientId={id}
+          preselectedType="proforma"
+          preselectedProjectId={invoiceModalProjectId}
+        />
+      )}
+
+      {showTdsModal && (
+        <TdsUploadModal
+          clientId={id}
+          onClose={() => setShowTdsModal(false)}
+          onSuccess={() => setTdsRefreshKey((k) => k + 1)}
+        />
       )}
 
       {showCloseModal && (
@@ -299,6 +536,7 @@ export default function ClientDetailPage() {
         <div className="mt-6">
           {/* Overview Tab */}
           {activeTab === "Overview" && (
+            <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <GlassCard padding="md">
                 <h3 className="text-sm font-semibold text-text-primary mb-4">Company Details</h3>
@@ -387,6 +625,77 @@ export default function ClientDetailPage() {
                 )}
               </GlassCard>
             </div>
+
+            {/* TDS Certificates */}
+            <GlassCard padding="md">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-text-primary">TDS Certificates</h3>
+                <button
+                  onClick={() => setShowTdsModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold text-white transition-all"
+                  style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Upload TDS
+                </button>
+              </div>
+
+              {tdsLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => <div key={i} className="h-10 bg-black/[0.04] rounded animate-pulse" />)}
+                </div>
+              ) : tdsCerts.length === 0 ? (
+                <div className="py-6 text-center">
+                  <FileText className="w-7 h-7 text-text-muted mx-auto mb-2" />
+                  <p className="text-sm text-text-muted">No TDS certificates uploaded yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {tdsCerts.map((cert) => (
+                    <div
+                      key={cert.id}
+                      className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                      style={{ background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.04)" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ background: "rgba(253,126,20,0.1)" }}
+                        >
+                          <FileText className="w-4 h-4 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-text-primary">
+                            FY {cert.financial_year} - Q{cert.quarter}
+                          </p>
+                          {cert.notes && <p className="text-xs text-text-muted truncate max-w-xs">{cert.notes}</p>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {cert.amount !== null && (
+                          <span className="text-sm font-sans font-semibold text-text-primary">
+                            Rs.{cert.amount.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                        {cert.file_url ? (
+                          <a
+                            href={cert.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-accent hover:text-accent-hover font-medium"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-xs text-text-muted">No file</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </GlassCard>
+            </div>
           )}
 
           {/* Projects Tab */}
@@ -405,11 +714,11 @@ export default function ClientDetailPage() {
                 <div className="text-center py-12 text-text-muted text-sm">No projects yet</div>
               ) : (
                 projects.map((project) => (
-                  <GlassCard key={project.id} padding="md" className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FolderKanban className="w-4 h-4 text-text-muted" />
-                      <div>
-                        <p className="text-sm font-medium text-text-primary">{project.name}</p>
+                  <GlassCard key={project.id} padding="md" className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FolderKanban className="w-4 h-4 text-text-muted shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-text-primary truncate">{project.name}</p>
                         <p className="text-xs text-text-muted">
                           {TYPE_LABELS[project.project_type] ?? project.project_type}
                           {project.retainer_amount !== null && (
@@ -418,7 +727,17 @@ export default function ClientDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <StatusBadge status={project.status} />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => { setInvoiceModalProjectId(project.id); setShowInvoiceModal(true); }}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-button text-xs font-medium transition-all"
+                        style={{ color: "#fd7e14", background: "rgba(253,126,20,0.08)", border: "1px solid rgba(253,126,20,0.18)" }}
+                      >
+                        <Receipt className="w-3 h-3" />
+                        Invoice
+                      </button>
+                      <StatusBadge status={project.status} />
+                    </div>
                   </GlassCard>
                 ))
               )}
@@ -448,13 +767,13 @@ export default function ClientDetailPage() {
               <GlassCard padding="md">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-text-primary">Invoices</h3>
-                  <Link
-                    href={`/invoices/new?client=${id}&type=proforma`}
+                  <button
+                    onClick={() => { setInvoiceModalProjectId(""); setShowInvoiceModal(true); }}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-button text-xs font-medium text-white bg-accent hover:bg-accent-hover transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     New Invoice
-                  </Link>
+                  </button>
                 </div>
                 <div className="flex flex-col items-center py-8 text-center">
                   <FileText className="w-7 h-7 text-text-muted mb-2" />
