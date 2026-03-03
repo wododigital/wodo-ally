@@ -564,33 +564,32 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-end flex-wrap gap-4">
+      {/* Filter tabs + Generate button */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex gap-1.5">
+          {allTypes.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTypeFilter(t.value)}
+              className={cn(
+                "px-3 py-1.5 rounded-button text-xs font-medium transition-all",
+                typeFilter === t.value
+                  ? "bg-accent-muted text-accent border border-accent-light"
+                  : "bg-surface-DEFAULT text-text-muted border border-black/[0.05] hover:border-black/[0.08]"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setShowGenerateModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-button text-xs font-semibold text-white transition-all shrink-0"
           style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
         >
-          <FileText className="w-4 h-4" />
+          <FileText className="w-3.5 h-3.5" />
           Generate Report
         </button>
-      </div>
-
-      {/* Report type filter tabs */}
-      <div className="flex gap-1.5">
-        {allTypes.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setTypeFilter(t.value)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all",
-              typeFilter === t.value
-                ? "bg-accent-muted text-accent border border-accent-light"
-                : "bg-surface-DEFAULT text-text-muted border border-black/[0.05] hover:border-black/[0.08]"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
       </div>
 
       {/* Loading skeletons */}
