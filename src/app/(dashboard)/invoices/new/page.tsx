@@ -24,10 +24,35 @@ const CLIENTS = [
   { id: "66666666-0000-0000-0000-000000000006", name: "Raj Enterprises", type: "indian_non_gst", currency: "INR" },
 ];
 
+const PROJECTS_BY_CLIENT: Record<string, Array<{ id: string; name: string }>> = {
+  "11111111-0000-0000-0000-000000000001": [
+    { id: "proj-1a", name: "SEO Management" },
+    { id: "proj-1b", name: "Google My Business" },
+  ],
+  "22222222-0000-0000-0000-000000000002": [
+    { id: "proj-2a", name: "Performance Marketing" },
+    { id: "proj-2b", name: "Social Media Management" },
+  ],
+  "33333333-0000-0000-0000-000000000003": [
+    { id: "proj-3a", name: "Digital PR" },
+  ],
+  "44444444-0000-0000-0000-000000000004": [
+    { id: "proj-4a", name: "Website Redesign" },
+    { id: "proj-4b", name: "SEO Consulting" },
+  ],
+  "55555555-0000-0000-0000-000000000005": [
+    { id: "proj-5a", name: "Content Strategy" },
+  ],
+  "66666666-0000-0000-0000-000000000006": [
+    { id: "proj-6a", name: "Local SEO" },
+  ],
+};
+
 export default function NewInvoicePage() {
   const router = useRouter();
   const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">("gst");
   const [selectedClient, setSelectedClient] = useState("");
+  const [selectedProject, setSelectedProject] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: "1", description: "", amount: "", quantity: 1 },
   ]);
@@ -37,6 +62,15 @@ export default function NewInvoicePage() {
   const taxRate = invoiceType === "gst" ? 18 : 0;
   const tax = subtotal * (taxRate / 100);
   const total = subtotal + tax;
+
+  const invoiceNumber =
+    invoiceType === "proforma"
+      ? `PF-${new Date().toISOString().split("T")[0].replace(/-/g, "")}`
+      : invoiceType === "non_gst"
+      ? "NG00202"
+      : "G00114";
+
+  const clientProjects = selectedClient ? (PROJECTS_BY_CLIENT[selectedClient] ?? []) : [];
 
   function addLineItem() {
     setLineItems((prev) => [
@@ -74,9 +108,9 @@ export default function NewInvoicePage() {
           <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { value: "gst", label: "GST Invoice", desc: "G00001 series, 18% GST" },
-              { value: "international", label: "International", desc: "G00001 series, 0% tax" },
-              { value: "non_gst", label: "Non-GST", desc: "NG00001 series, 0% tax" },
+              { value: "gst", label: "GST Invoice", desc: "G-series, 18% GST" },
+              { value: "international", label: "International", desc: "G-series, 0% tax" },
+              { value: "non_gst", label: "Non-GST", desc: "NG-series, 0% tax" },
               { value: "proforma", label: "Pro Forma", desc: "PF-YYYYMMDD, no serial" },
             ].map((type) => (
               <button
@@ -99,16 +133,28 @@ export default function NewInvoicePage() {
           </div>
         </GlassCard>
 
-        {/* Client + dates */}
+        {/* Invoice details */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5 sm:col-span-2">
+            {/* Auto-generated invoice number */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Invoice Number</label>
+              <input
+                type="text"
+                readOnly
+                value={invoiceNumber}
+                className="glass-input font-sans opacity-60 cursor-default"
+              />
+            </div>
+
+            {/* Client */}
+            <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Client *</label>
               <select
                 className="glass-input"
                 value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
+                onChange={(e) => { setSelectedClient(e.target.value); setSelectedProject(""); }}
                 required
               >
                 <option value="">Select client...</option>
@@ -117,6 +163,24 @@ export default function NewInvoicePage() {
                 ))}
               </select>
             </div>
+
+            {/* Project - shown only after client selected */}
+            {clientProjects.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Project</label>
+                <select
+                  className="glass-input"
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                >
+                  <option value="">Select project (optional)...</option>
+                  {clientProjects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Invoice Date *</label>
               <input type="date" required className="glass-input" defaultValue={new Date().toISOString().split("T")[0]} />
@@ -125,18 +189,6 @@ export default function NewInvoicePage() {
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Due Date</label>
               <input type="date" className="glass-input" />
             </div>
-            {invoiceType === "gst" || invoiceType === "non_gst" ? (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Period Start</label>
-                  <input type="date" className="glass-input" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Billing Period End</label>
-                  <input type="date" className="glass-input" />
-                </div>
-              </>
-            ) : null}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Notes (shown on invoice)</label>
               <textarea rows={2} className="glass-input resize-none" placeholder="Payment terms, bank details will be added automatically..." />
@@ -217,7 +269,7 @@ export default function NewInvoicePage() {
                 <div className="flex items-center justify-between w-56">
                   <span className="text-sm text-text-muted">GST ({taxRate}%)</span>
                   <span className="text-sm font-sans text-text-secondary">
-                    {client?.currency === "USD" ? "$" : "Rs."}{tax.toLocaleString("en-IN")}
+                    Rs.{tax.toLocaleString("en-IN")}
                   </span>
                 </div>
               )}

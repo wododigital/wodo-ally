@@ -28,12 +28,12 @@ export default function NewClientPage() {
       <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); router.push("/clients"); }}>
         {/* Client type */}
         <GlassCard padding="md">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Client Type</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { value: "indian_gst", label: "Indian GST", desc: "GST registered Indian client" },
-              { value: "indian_non_gst", label: "Non-GST", desc: "Unregistered Indian client" },
-              { value: "international", label: "International", desc: "Foreign client (USD/AED/GBP)" },
+              { value: "indian_gst", label: "GST Invoices", desc: "G-series, 18% GST - Indian registered" },
+              { value: "indian_non_gst", label: "Non-GST", desc: "NG-series, 0% tax - Unregistered Indian" },
+              { value: "international", label: "International", desc: "G-series, 0% tax - Foreign clients" },
             ].map((type) => (
               <button
                 key={type.value}

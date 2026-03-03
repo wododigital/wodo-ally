@@ -1,14 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Download, Plus, CheckCircle2,
-  Calendar, Building2, Hash
+  Calendar, Building2, Hash, X, Pencil
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 
 const INVOICE_DATA: Record<string, {
@@ -65,9 +67,200 @@ const INVOICE_DATA: Record<string, {
   },
 };
 
+interface RecordPaymentForm {
+  payment_date: string;
+  amount_received: string;
+  payment_method: string;
+  reference: string;
+  tds_amount: string;
+  notes: string;
+}
+
+function RecordPaymentModal({
+  invoiceTotal,
+  balanceDue,
+  currency,
+  onClose,
+  onSave,
+}: {
+  invoiceTotal: number;
+  balanceDue: number;
+  currency: "INR" | "USD" | "AED";
+  onClose: () => void;
+  onSave: (form: RecordPaymentForm) => void;
+}) {
+  const today = new Date().toISOString().split("T")[0];
+  const [form, setForm] = useState<RecordPaymentForm>({
+    payment_date: today,
+    amount_received: String(balanceDue),
+    payment_method: "bank_transfer",
+    reference: "",
+    tds_amount: "0",
+    notes: "",
+  });
+
+  function update(field: keyof RecordPaymentForm, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSave(form);
+  }
+
+  const currencySymbol = currency === "USD" ? "$" : currency === "AED" ? "AED " : "Rs.";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(4px)" }}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div
+        className="relative w-full max-w-lg rounded-2xl p-6 space-y-5"
+        style={{
+          background: "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(0,0,0,0.08)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.12)",
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-text-primary">Record Payment</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-full text-text-muted hover:bg-black/5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Balance info */}
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-xl"
+          style={{ background: "rgba(253,126,20,0.06)", border: "1px solid rgba(253,126,20,0.15)" }}
+        >
+          <span className="text-sm text-text-secondary">Balance due</span>
+          <span className="text-base font-bold font-sans text-accent">
+            {currencySymbol}{balanceDue.toLocaleString("en-IN")}
+          </span>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Payment Date *</label>
+              <input
+                type="date"
+                required
+                value={form.payment_date}
+                onChange={(e) => update("payment_date", e.target.value)}
+                className="glass-input"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Amount Received *</label>
+              <input
+                type="number"
+                required
+                min="0.01"
+                step="0.01"
+                value={form.amount_received}
+                onChange={(e) => update("amount_received", e.target.value)}
+                className="glass-input font-sans"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Payment Method *</label>
+            <select
+              required
+              value={form.payment_method}
+              onChange={(e) => update("payment_method", e.target.value)}
+              className="glass-input"
+            >
+              <option value="bank_transfer">Bank Transfer (NEFT/RTGS/IMPS)</option>
+              <option value="upi">UPI</option>
+              <option value="skydo_usd">Skydo (USD)</option>
+              <option value="skydo_aed">Skydo (AED)</option>
+              <option value="skydo_gbp">Skydo (GBP)</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Transaction Reference</label>
+            <input
+              type="text"
+              value={form.reference}
+              onChange={(e) => update("reference", e.target.value)}
+              className="glass-input font-sans"
+              placeholder="UTR / SKYDO-ID / UPI Ref"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">TDS Deducted (if any)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.tds_amount}
+              onChange={(e) => update("tds_amount", e.target.value)}
+              className="glass-input font-sans"
+              placeholder="0"
+            />
+            <p className="text-xs text-text-muted">Leave as 0 if no TDS was deducted</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Notes</label>
+            <textarea
+              rows={2}
+              value={form.notes}
+              onChange={(e) => update("notes", e.target.value)}
+              className="glass-input resize-none"
+              placeholder="e.g. Full payment received / partial payment"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary hover:text-text-primary bg-surface-DEFAULT border border-black/[0.05] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-button text-sm font-semibold text-white transition-all duration-200"
+              style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+            >
+              Record Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function InvoiceDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [localPayments, setLocalPayments] = useState<Array<{
+    date: string; amount: number; method: string; reference: string; tds: number; notes: string;
+  }>>([]);
+
   const invoice = INVOICE_DATA[id] ?? {
     id,
     invoice_number: "G00111",
@@ -89,10 +282,43 @@ export default function InvoiceDetailPage() {
     payments: [],
   };
 
-  const balance = invoice.total_amount - invoice.payments.reduce((s, p) => s + p.amount, 0);
+  const allPayments = [...invoice.payments, ...localPayments];
+  const balance = invoice.total_amount - allPayments.reduce((s, p) => s + p.amount, 0);
+
+  function handleSavePayment(form: RecordPaymentForm) {
+    const METHOD_LABELS: Record<string, string> = {
+      bank_transfer: "Bank Transfer (NEFT)",
+      upi: "UPI",
+      skydo_usd: "Skydo (USD)",
+      skydo_aed: "Skydo (AED)",
+      skydo_gbp: "Skydo (GBP)",
+      other: "Other",
+    };
+    setLocalPayments((prev) => [
+      ...prev,
+      {
+        date: form.payment_date,
+        amount: parseFloat(form.amount_received) || 0,
+        method: METHOD_LABELS[form.payment_method] ?? form.payment_method,
+        reference: form.reference,
+        tds: parseFloat(form.tds_amount) || 0,
+        notes: form.notes,
+      },
+    ]);
+    setShowPaymentModal(false);
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
+      {showPaymentModal && (
+        <RecordPaymentModal
+          invoiceTotal={invoice.total_amount}
+          balanceDue={Math.max(0, balance)}
+          currency={invoice.currency}
+          onClose={() => setShowPaymentModal(false)}
+          onSave={handleSavePayment}
+        />
+      )}
       <div>
         <Link
           href="/invoices"
@@ -110,6 +336,13 @@ export default function InvoiceDetailPage() {
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={invoice.status} />
+            <Link
+              href={`/invoices/${id}/edit`}
+              className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] hover:text-accent transition-all"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </Link>
             {invoice.status === "draft" || invoice.status === "sent" ? (
               <>
                 <button className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all">
@@ -238,7 +471,7 @@ export default function InvoiceDetailPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-text-muted">Received</span>
                 <CurrencyDisplay
-                  amount={invoice.payments.reduce((s, p) => s + p.amount, 0)}
+                  amount={allPayments.reduce((s, p) => s + p.amount, 0)}
                   currency={invoice.currency}
                   size="sm"
                   className="text-green-400"
@@ -254,8 +487,9 @@ export default function InvoiceDetailPage() {
                 />
               </div>
             </div>
-            {invoice.status !== "paid" && invoice.status !== "cancelled" && (
+            {balance > 0 && invoice.status !== "cancelled" && (
               <button
+                onClick={() => setShowPaymentModal(true)}
                 className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white"
                 style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
               >
@@ -266,11 +500,11 @@ export default function InvoiceDetailPage() {
           </GlassCard>
 
           {/* Payment history */}
-          {invoice.payments.length > 0 && (
+          {allPayments.length > 0 && (
             <GlassCard padding="md">
               <h3 className="text-sm font-semibold text-text-primary mb-4">Payment History</h3>
               <div className="space-y-3">
-                {invoice.payments.map((payment, idx) => (
+                {allPayments.map((payment, idx) => (
                   <div key={idx} className="flex items-start gap-3">
                     <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">

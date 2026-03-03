@@ -13,6 +13,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FileBarChart,
+  UserPlus,
 } from "lucide-react";
 import {
   Collapsible as CollapsibleRoot,
@@ -35,7 +36,7 @@ const PROJECT_GROWTH: MonthlyGrowth[] = [
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { href: "/clients/new",     label: "Add new client",           icon: Users     },
+  { href: "/onboard",         label: "Onboard new client",       icon: UserPlus  },
   { href: "/invoices/new",    label: "Create invoice",           icon: FileText  },
   { href: "/expenses/upload", label: "Upload bank statement",    icon: Upload    },
   { href: "/reports",         label: "Generate investor report", icon: BarChart2 },

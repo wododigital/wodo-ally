@@ -22,8 +22,8 @@
 - Deployed on Railway
 
 ## Current Status
-- [ ] Phase 1: Foundation & Design System
-- [ ] Phase 2: Core Pages (UI Only)
+- [x] Phase 1: Foundation & Design System
+- [x] Phase 2: Core Pages (UI Only)
 - [ ] Phase 3: Core Backend Logic
 - [ ] Phase 4: Advanced Features
 - [ ] Phase 5: Polish & Deploy
@@ -33,27 +33,32 @@
 
 | Module | Status | Date | Notes |
 |--------|--------|------|-------|
-| Project Setup | Pending | - | - |
-| Design System | Pending | - | - |
-| Layout & Auth | Pending | - | - |
-| Database Schema | Pending | - | - |
-| Dashboard UI | Pending | - | - |
-| Clients UI | Pending | - | - |
-| Invoices UI | Pending | - | - |
-| Payments UI | Pending | - | - |
-| Expenses UI | Pending | - | - |
-| Analytics UI | Pending | - | - |
-| Client CRUD | Pending | - | - |
-| Invoice Engine | Pending | - | - |
-| PDF Generation | Pending | - | - |
-| Payment Logic | Pending | - | - |
-| Expense Parser | Pending | - | - |
-| Analytics Queries | Pending | - | - |
-| Investor Reports | Pending | - | - |
-| Contract Gen | Pending | - | - |
-| Email System | Pending | - | - |
-| Financial Targets | Pending | - | - |
-| Deployment | Pending | - | - |
+| Project Setup | Complete | 2026-03-03 | Next.js 14, Tailwind, Supabase configured |
+| Design System | Complete | 2026-03-03 | GlassCard, StatCard, StatusBadge, CurrencyDisplay, PageHeader, EmptyState, LoadingSkeleton |
+| Layout & Auth | Complete | 2026-03-03 | TopNavV2 dark pill nav, dashboard layout, login page with Supabase auth |
+| Database Schema | Complete | 2026-03-03 | supabase/migrations/001_schema.sql + seed.sql |
+| Dashboard UI | Complete | 2026-03-03 | KPI cards, attention items, targets, recent payments |
+| Clients UI | Complete | 2026-03-03 | List (search/filter/grid), detail (4 tabs), new form, edit form |
+| Invoices UI | Complete | 2026-03-03 | List (tabs/search/table), new form (line items, real-time totals), detail (payment sidebar + record modal) |
+| Payments UI | Complete | 2026-03-03 | Stats, payment list with TDS/Skydo callouts, overdue sidebar, monthly summary |
+| Expenses UI | Complete | 2026-03-03 | Category breakdown, transaction list, bank statement upload with drag/drop |
+| Analytics UI | Complete | 2026-03-03 | Recharts area/pie/bar charts, P&L table |
+| Projects UI | Complete | 2026-03-03 | Search, engagement filter, list view |
+| Reports UI | Complete | 2026-03-03 | Investor reports list with generate/send/resend actions |
+| Contracts UI | Complete | 2026-03-03 | Search, status filter dropdown, contract cards |
+| Targets UI | Complete | 2026-03-03 | Progress cards with bars, inline add form |
+| Settings UI | Complete | 2026-03-03 | 5 tabs: Company, Bank Details, Invoice settings, Users, Notifications |
+| Client CRUD | Pending | - | Phase 3 |
+| Invoice Engine | Pending | - | Phase 3 |
+| PDF Generation | Pending | - | Phase 3 |
+| Payment Logic | Pending | - | Phase 3 |
+| Expense Parser | Pending | - | Phase 3 |
+| Analytics Queries | Pending | - | Phase 4 |
+| Investor Reports | Pending | - | Phase 4 |
+| Contract Gen | Pending | - | Phase 4 |
+| Email System | Pending | - | Phase 4 |
+| Financial Targets | Pending | - | Phase 4 |
+| Deployment | Pending | - | Phase 5 |
 
 ## Environment Setup
 - Supabase URL: (to be filled)
