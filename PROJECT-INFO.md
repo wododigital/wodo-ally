@@ -26,7 +26,7 @@
 - [x] Phase 2: Core Pages (UI Only)
 - [x] Phase 3: Core Backend Logic
 - [x] Phase 4: Advanced Features
-- [ ] Phase 5: Polish & Deploy
+- [x] Phase 5: Polish & Deploy
 
 ## Completed Modules
 (Update as modules are completed)
@@ -62,15 +62,20 @@
 | Financial Targets | Complete | 2026-03-03 | use-targets.ts - CRUD + useRefreshTargetProgress (live calculations) |
 | Dashboard KPIs | Complete | 2026-03-03 | useDashboardKPIs - real revenue/outstanding/clients/overdue/MRR |
 | Payments Page | Complete | 2026-03-03 | usePaymentsList - wired to real invoice_payments table |
-| Deployment | Pending | - | Phase 5 |
+| UX Polish | Complete | 2026-03-03 | ConfirmDialog component; destructive action dialogs on contracts/targets/settings/reports; Zod+RHF on clients/new and targets form |
+| Mobile + Perf | Complete | 2026-03-03 | Responsive fixes (375px) on expenses/invoices/pipeline; dynamic PDF imports on contracts/reports/invoices/[id]; viewport meta |
+| TDS Certificates | Complete | 2026-03-03 | migration 007, use-tds.ts, /tds page with CRUD + FY filter + KPI; TopNavV2 link added |
+| Invoice CSV Export | Complete | 2026-03-03 | Download CSV button on invoices list page (client-side, all columns incl. TDS) |
+| Sentry | Complete | 2026-03-03 | @sentry/nextjs installed; sentry.client.config.ts + sentry.server.config.ts; withSentryConfig in next.config.mjs; NEXT_PUBLIC_SENTRY_DSN in .env.example |
+| Deployment | Complete | 2026-03-03 | Railway connected to GitHub (main branch auto-deploy). Run migrations 005-007 in Supabase SQL Editor. Set SMTP_PASS + NEXT_PUBLIC_SENTRY_DSN in Railway env vars. |
 
 ## Environment Setup
 - Supabase URL: (to be filled)
 - Supabase Region: ap-south-1 (Mumbai)
 - SMTP Host: smtp.office365.com port 587 (STARTTLS)
 - SMTP User: accounts@wodo.digital - add SMTP_PASS to .env
-- Sentry: (to be configured - Phase 5)
-- Railway: (to be configured - Phase 5)
+- Sentry: set NEXT_PUBLIC_SENTRY_DSN in Railway env vars (create project at sentry.io first)
+- Railway: connected to GitHub wododigital/wodo-ally, auto-deploys on push to main
 
 ## Known Issues / Decisions Log
 
