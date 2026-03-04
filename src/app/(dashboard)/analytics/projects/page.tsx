@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Briefcase, TrendingUp, CheckCircle2, Clock, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
 import {
   PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { cn } from "@/lib/utils/cn";
 import {
   useProjectRevenueByType,
   useMonthlyPL,
@@ -37,16 +37,10 @@ function formatProjectType(t: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-type Period = "month" | "ytd" | "q4" | "fy";
-
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function ProjectAnalyticsPage() {
-  const [period, setPeriod] = useState<Period>("ytd");
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("period");
-    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
-  }, []);
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
 
   const { data: revenueByType, isLoading: typeLoading } = useProjectRevenueByType();
   const { data: plRows, isLoading: plLoading } = useMonthlyPL();
@@ -54,20 +48,15 @@ export default function ProjectAnalyticsPage() {
 
   const isLoading = typeLoading || plLoading || kpisLoading;
 
-  // MRR trend from PL view (use total_revenue as proxy)
-  const allMrrData = (plRows ?? []).map((row) => ({
-    month: row.month_label.slice(0, 3),
-    mrr: row.total_revenue,
-  }));
-
-  const mrrData = (() => {
-    const n = allMrrData.length;
-    if (!n) return [];
-    if (period === "month") return allMrrData.slice(-1);
-    if (period === "q4")    return allMrrData.slice(-3);
-    if (period === "ytd")   return allMrrData.slice(0, Math.max(n - 1, 1));
-    return allMrrData;
-  })();
+  const mrrData = useMemo(() => {
+    const range = resolveDateRange(filterState);
+    const rows = (plRows ?? []).filter((row) => {
+      if (!range) return true;
+      const dt = new Date(row.month_start);
+      return dt >= range.start && dt <= range.end;
+    });
+    return rows.map((row) => ({ month: row.month_label.slice(0, 3), mrr: row.total_revenue }));
+  }, [plRows, filterState]);
 
   // Revenue by type for donut
   const typeDonutData = (revenueByType ?? [])
@@ -82,32 +71,14 @@ export default function ProjectAnalyticsPage() {
   const totalRevenue = typeDonutData.reduce((s, r) => s + r.value, 0);
   const totalProjects = typeDonutData.reduce((s, r) => s + r.count, 0);
 
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "month", label: "This Month" },
-    { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd",   label: "YTD" },
-    { key: "fy",    label: "Full Year" },
-  ];
-
   return (
     <div className="space-y-6">
 
       {/* Project Performance */}
       <DarkSection>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Project Performance</p>
-          <div className="flex items-center gap-2">
-            {PERIODS.map((p) => (
-              <button key={p.key} onClick={() => setPeriod(p.key)}
-                className={cn(
-                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
-                  period === p.key
-                    ? "bg-white/[0.12] text-white border-white/[0.2]"
-                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
-                )}>{p.label}
-              </button>
-            ))}
-          </div>
+          <DateFilter value={filterState} onChange={setFilterState} />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {isLoading

@@ -32,19 +32,27 @@ export function NewInvoiceModal({
   preselectedClientId = "",
   preselectedType = null,
   preselectedProjectId = "",
+  forcedType,
+  onCreated,
 }: {
   onClose: () => void;
   preselectedClientId?: string;
   preselectedType?: string | null;
   preselectedProjectId?: string;
+  forcedType?: "proforma";
+  onCreated?: () => void;
 }) {
   const router = useRouter();
 
   const [selectedClientId, setSelectedClientId] = useState(preselectedClientId);
   const [selectedProjectId, setSelectedProjectId] = useState(preselectedProjectId);
-  const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">("proforma");
+  const [invoiceType, setInvoiceType] = useState<"gst" | "international" | "non_gst" | "proforma">(forcedType ?? "proforma");
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split("T")[0];
+  });
   const [notes, setNotes] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: "1", service_id: "", description: "", amount: "", quantity: 1 },
@@ -117,7 +125,7 @@ export function NewInvoiceModal({
         },
         lineItems: finalLineItems,
       },
-      { onSuccess: (newInvoice) => { onClose(); router.push(`/invoices/${newInvoice.id}`); } }
+      { onSuccess: (newInvoice) => { onCreated?.(); onClose(); router.push(`/invoices/${newInvoice.id}`); } }
     );
   }
 
@@ -150,8 +158,8 @@ export function NewInvoiceModal({
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Invoice type */}
-          <div>
+          {/* Invoice type - hidden when forcedType is set */}
+          {!forcedType && <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice Type</p>
               {invoiceType === "proforma" && (
@@ -190,7 +198,7 @@ export function NewInvoiceModal({
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Invoice details */}
           <div>
@@ -230,7 +238,17 @@ export function NewInvoiceModal({
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-500">Invoice Date *</label>
-                <input type="date" className="glass-input" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
+                <input
+                  type="date"
+                  className="glass-input"
+                  value={invoiceDate}
+                  onChange={(e) => {
+                    setInvoiceDate(e.target.value);
+                    const d = new Date(e.target.value);
+                    d.setDate(d.getDate() + 30);
+                    setDueDate(d.toISOString().split("T")[0]);
+                  }}
+                />
               </div>
 
               <div className="space-y-1.5">

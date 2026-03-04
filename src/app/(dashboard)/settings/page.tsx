@@ -2073,6 +2073,31 @@ function NotificationsTab() {
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("company");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row gap-6">
+          <div className="sm:w-48 shrink-0 space-y-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-xl bg-black/[0.04] animate-pulse" />
+            ))}
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="glass-card p-6 space-y-4">
+              <div className="h-5 w-40 rounded bg-black/[0.04] animate-pulse" />
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-10 rounded-lg bg-black/[0.04] animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

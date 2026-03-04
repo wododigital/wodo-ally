@@ -105,34 +105,41 @@ function getBankDetails(
     ];
   }
 
-  // International - Skydo based on currency
+  // International - based on currency
   if (currency === "USD") {
     return [
-      { label: "Platform", value: "Skydo Inc. (ACH / Wire Transfer)" },
-      { label: "Beneficiary", value: "WODO Digital Private Limited" },
-      { label: "Note", value: "USD transfer details - contact accounts@wodo.digital" },
+      { label: "Account Holder", value: "WODO DIGITAL PRIVATE LIMITED" },
+      { label: "Payment Method", value: "ACH" },
+      { label: "ACH Routing No.", value: "026073150" },
+      { label: "Account Number", value: "8335312671" },
+      { label: "Bank Name", value: "Community Federal Savings Bank" },
+      { label: "Bank Address", value: "5 Penn Plaza, 14th Floor, New York, NY 10001, US" },
+      { label: "Account Currency", value: "USD" },
     ];
   }
 
   if (currency === "AED") {
     return [
-      { label: "Platform", value: "Skydo UAE (IBAN Transfer)" },
-      { label: "Beneficiary", value: "WODO Digital Private Limited" },
-      { label: "Note", value: "AED transfer details - contact accounts@wodo.digital" },
+      { label: "Account Holder", value: "WODO DIGITAL PRIVATE LIMITED" },
+      { label: "Payment Method", value: "IPP / FTS" },
+      { label: "IBAN", value: "AE190960000691060009302" },
+      { label: "BIC / SWIFT", value: "ZANDAEAAXXX" },
+      { label: "Bank Name", value: "Zand Bank PJSC" },
+      { label: "Bank Address", value: "1st Floor, Emaar Square, Building 6, Dubai, UAE" },
+      { label: "Account Currency", value: "AED" },
     ];
   }
 
   if (currency === "GBP") {
     return [
-      { label: "Platform", value: "Skydo UK (BACS / SWIFT)" },
-      { label: "Beneficiary", value: "WODO Digital Private Limited" },
+      { label: "Beneficiary", value: "WODO DIGITAL PRIVATE LIMITED" },
+      { label: "Payment Method", value: "BACS / SWIFT" },
       { label: "Note", value: "GBP transfer details - contact accounts@wodo.digital" },
     ];
   }
 
   return [
-    { label: "Platform", value: "Skydo International Transfer" },
-    { label: "Beneficiary", value: "WODO Digital Private Limited" },
+    { label: "Beneficiary", value: "WODO DIGITAL PRIVATE LIMITED" },
     { label: "Note", value: "Transfer details - contact accounts@wodo.digital" },
   ];
 }
@@ -474,6 +481,7 @@ export function InvoicePdf({ invoice, client, lineItems }: InvoicePdfProps) {
         {/* Header row: logo + company info | invoice title + ref */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image
               src="/public/wodo-logo.png"
               style={styles.logo}
@@ -627,6 +635,7 @@ export function InvoicePdf({ invoice, client, lineItems }: InvoicePdfProps) {
         {/* Stamp and signature */}
         <View style={styles.stampSection}>
           <View style={styles.stampBox}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image
               src="/public/wodo-stamp.png"
               style={styles.stampImage}

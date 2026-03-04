@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Target, Plus, TrendingUp, Users, IndianRupee, TrendingDown, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { Target, Plus, TrendingUp, Users, IndianRupee, TrendingDown, Trash2, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils/cn";
@@ -23,20 +22,15 @@ type PeriodType = TargetRow["period_type"];
 
 const CURRENT_FY = "2025-26";
 
-/**
- * Computes what fraction of the target period has elapsed (0 to 1).
- * Indian FY: Apr 1 2025 - Mar 31 2026 for '2025-26'
- */
 function computeElapsedPct(target: TargetRow): number {
   const now = new Date();
-
   const [startYearStr] = (target.financial_year ?? CURRENT_FY).split("-");
   const fyStartYear = parseInt(startYearStr, 10);
 
   if (target.period_type === "annual") {
-    const periodStart = new Date(fyStartYear, 3, 1); // Apr 1
-    const periodEnd = new Date(fyStartYear + 1, 2, 31); // Mar 31
-    const total = periodEnd.getTime() - periodStart.getTime();
+    const periodStart = new Date(fyStartYear, 3, 1);
+    const periodEnd   = new Date(fyStartYear + 1, 2, 31);
+    const total   = periodEnd.getTime() - periodStart.getTime();
     const elapsed = Math.min(now.getTime() - periodStart.getTime(), total);
     return Math.max(0, Math.min(1, elapsed / total));
   }
@@ -50,17 +44,16 @@ function computeElapsedPct(target: TargetRow): number {
     };
     const bounds = quarterBounds[target.quarter];
     if (!bounds) return 0;
-    const total = bounds.end.getTime() - bounds.start.getTime();
+    const total   = bounds.end.getTime() - bounds.start.getTime();
     const elapsed = Math.min(now.getTime() - bounds.start.getTime(), total);
     return Math.max(0, Math.min(1, elapsed / total));
   }
 
   if (target.period_type === "monthly" && target.month) {
-    // Calendar year for this month in the FY
-    const calYear = target.month >= 4 ? fyStartYear : fyStartYear + 1;
+    const calYear    = target.month >= 4 ? fyStartYear : fyStartYear + 1;
     const periodStart = new Date(calYear, target.month - 1, 1);
-    const periodEnd = new Date(calYear, target.month, 0); // last day
-    const total = periodEnd.getTime() - periodStart.getTime();
+    const periodEnd   = new Date(calYear, target.month, 0);
+    const total   = periodEnd.getTime() - periodStart.getTime();
     const elapsed = Math.min(now.getTime() - periodStart.getTime(), total);
     return Math.max(0, Math.min(1, elapsed / total));
   }
@@ -87,7 +80,7 @@ function getDeadlineLabel(target: TargetRow): string {
   if (target.period_type === "monthly" && target.month) {
     const calYear = target.month >= 4 ? fyStartYear : fyStartYear + 1;
     const lastDay = new Date(calYear, target.month, 0).getDate();
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     return `${monthNames[target.month - 1]} ${lastDay}, ${calYear}`;
   }
 
@@ -97,34 +90,34 @@ function getDeadlineLabel(target: TargetRow): string {
 // ─── Display helpers ──────────────────────────────────────────────────────────
 
 const TYPE_ICONS: Record<TargetType, React.ElementType> = {
-  revenue: IndianRupee,
-  mrr: TrendingUp,
-  new_clients: Users,
+  revenue:           IndianRupee,
+  mrr:               TrendingUp,
+  new_clients:       Users,
   expense_reduction: TrendingDown,
-  custom: Target,
+  custom:            Target,
 };
 
 const TYPE_COLORS: Record<TargetType, string> = {
-  revenue: "#fd7e14",
-  mrr: "#3b82f6",
-  new_clients: "#16a34a",
+  revenue:           "#fd7e14",
+  mrr:               "#3b82f6",
+  new_clients:       "#16a34a",
   expense_reduction: "#ef4444",
-  custom: "#8b5cf6",
+  custom:            "#8b5cf6",
 };
 
 type Trajectory = "On Track" | "Behind" | "Ahead";
 
 function getTrajectory(pct: number, elapsed: number): Trajectory {
   const delta = pct / 100 - elapsed;
-  if (delta >= 0.05) return "Ahead";
+  if (delta >= 0.05)  return "Ahead";
   if (delta <= -0.08) return "Behind";
   return "On Track";
 }
 
 const TRAJECTORY_STYLES: Record<Trajectory, { label: string; bg: string; color: string }> = {
-  Ahead:    { label: "Ahead",    bg: "rgba(22,163,74,0.10)",  color: "#16a34a" },
+  Ahead:      { label: "Ahead",    bg: "rgba(22,163,74,0.10)",  color: "#16a34a" },
   "On Track": { label: "On Track", bg: "rgba(59,130,246,0.10)", color: "#3b82f6" },
-  Behind:   { label: "Behind",   bg: "rgba(239,68,68,0.10)",  color: "#ef4444" },
+  Behind:     { label: "Behind",   bg: "rgba(239,68,68,0.10)",  color: "#ef4444" },
 };
 
 function getProjectedLabel(target: TargetRow, elapsedPct: number): string | null {
@@ -147,9 +140,9 @@ function getProjectedLabel(target: TargetRow, elapsedPct: number): string | null
   return `Projected: ${months[today.getMonth()]} ${today.getFullYear()} at current pace`;
 }
 
-// ─── New Target form state ─────────────────────────────────────────────────────
+// ─── Form ────────────────────────────────────────────────────────────────────
 
-interface TargetFormState {
+interface GoalFormState {
   title: string;
   target_type: TargetType;
   period_type: PeriodType;
@@ -157,7 +150,7 @@ interface TargetFormState {
   notes: string;
 }
 
-const INITIAL_FORM: TargetFormState = {
+const INITIAL_FORM: GoalFormState = {
   title: "",
   target_type: "revenue",
   period_type: "annual",
@@ -165,39 +158,39 @@ const INITIAL_FORM: TargetFormState = {
   notes: "",
 };
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-// ─── Form validation errors ────────────────────────────────────────────────────
-
-interface TargetFormErrors {
+interface GoalFormErrors {
   title?: string;
   target_amount?: string;
 }
 
-export default function TargetsPage() {
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function GoalsPage() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<TargetFormState>(INITIAL_FORM);
-  const [formErrors, setFormErrors] = useState<TargetFormErrors>({});
+  const [form, setForm] = useState<GoalFormState>(INITIAL_FORM);
+  const [formErrors, setFormErrors] = useState<GoalFormErrors>({});
   const [confirmTarget, setConfirmTarget] = useState<TargetRow | null>(null);
 
   const { data: targets = [], isLoading } = useTargets(CURRENT_FY);
-  const createTarget = useCreateTarget();
-  const deleteTarget = useDeleteTarget();
+  const createTarget  = useCreateTarget();
+  const deleteTarget  = useDeleteTarget();
   const refreshProgress = useRefreshTargetProgress();
 
-  function updateForm(field: keyof TargetFormState, value: string) {
+  // Sort by created_at descending - latest goal first
+  const sortedTargets = [...targets].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  function updateForm(field: keyof GoalFormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    // Clear error on change
     if (field === "title" || field === "target_amount") {
       setFormErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   }
 
-  function validateForm(): TargetFormErrors {
-    const errors: TargetFormErrors = {};
-    if (!form.title.trim()) {
-      errors.title = "Title is required";
-    }
+  function validateForm(): GoalFormErrors {
+    const errors: GoalFormErrors = {};
+    if (!form.title.trim()) errors.title = "Title is required";
     const amount = parseFloat(form.target_amount);
     if (!form.target_amount || isNaN(amount) || amount <= 0) {
       errors.target_amount = "Enter a valid target value greater than 0";
@@ -212,7 +205,6 @@ export default function TargetsPage() {
       setFormErrors(errors);
       return;
     }
-
     const amount = parseFloat(form.target_amount);
     createTarget.mutate(
       {
@@ -234,77 +226,85 @@ export default function TargetsPage() {
     );
   }
 
-  function handleDelete(target: TargetRow) {
-    setConfirmTarget(target);
-  }
-
   const isCount = (t: TargetRow) => t.target_type === "new_clients";
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Financial Targets"
-        description="Set and track your business goals"
-        action={
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => refreshProgress.mutate(CURRENT_FY)}
-              disabled={refreshProgress.isPending}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all disabled:opacity-60"
-            >
-              {refreshProgress.isPending
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <RefreshCw className="w-4 h-4" />
-              }
-              Refresh Progress
-            </button>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-            >
-              <Plus className="w-4 h-4" />
-              New Target
-            </button>
-          </div>
-        }
-      />
 
-      {/* New Target Modal */}
+      {/* Header row - no PageHeader, just action buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={() => refreshProgress.mutate(CURRENT_FY)}
+          disabled={refreshProgress.isPending}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] transition-all disabled:opacity-60"
+        >
+          {refreshProgress.isPending
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <Target className="w-4 h-4" />
+          }
+          Refresh
+        </button>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-button text-sm font-semibold text-white"
+          style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
+        >
+          <Plus className="w-4 h-4" />
+          New Goal
+        </button>
+      </div>
+
+      {/* New Goal Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => { setShowForm(false); setFormErrors({}); }}
           />
-          <div className="relative w-full max-w-lg glass-card rounded-card shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between p-5 border-b border-black/[0.06]">
-              <h3 className="text-sm font-semibold text-text-primary">New Target</h3>
+          <div className="relative w-full max-w-lg rounded-card shadow-2xl animate-fade-in"
+            style={{
+              background: "rgba(255,255,255,0.98)",
+              border: "1px solid rgba(0,0,0,0.08)",
+            }}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06]">
+              <h3 className="text-base font-semibold text-gray-900">New Goal</h3>
               <button
                 onClick={() => { setShowForm(false); setFormErrors({}); }}
-                className="text-text-muted hover:text-text-primary transition-colors text-lg leading-none"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-black/5 transition-colors text-lg leading-none"
               >
                 &times;
               </button>
             </div>
+
             <form onSubmit={handleSubmit}>
-              <div className="p-5 space-y-4">
+              <div className="px-6 py-5 space-y-4">
+
+                {/* Title */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Title</label>
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Goal Title <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    className={`glass-input ${formErrors.title ? "border-red-400 focus:border-red-400" : ""}`}
-                    placeholder="e.g. Annual Revenue Target FY 2026-27"
+                    className={cn(
+                      "glass-input",
+                      formErrors.title && "border-red-400 focus:border-red-400"
+                    )}
+                    placeholder="e.g. Annual Revenue Goal FY 2025-26"
                     value={form.title}
                     onChange={(e) => updateForm("title", e.target.value)}
                   />
                   {formErrors.title && (
-                    <p className="text-xs text-red-500 mt-0.5">{formErrors.title}</p>
+                    <p className="text-xs text-red-500">{formErrors.title}</p>
                   )}
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Type */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Type</label>
+                    <label className="block text-sm font-semibold text-gray-700">Goal Type</label>
                     <select
                       className="glass-input"
                       value={form.target_type}
@@ -317,8 +317,10 @@ export default function TargetsPage() {
                       <option value="custom">Custom</option>
                     </select>
                   </div>
+
+                  {/* Period */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Period</label>
+                    <label className="block text-sm font-semibold text-gray-700">Period</label>
                     <select
                       className="glass-input"
                       value={form.period_type}
@@ -329,47 +331,59 @@ export default function TargetsPage() {
                       <option value="monthly">Monthly</option>
                     </select>
                   </div>
+
+                  {/* Financial Year */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Financial Year</label>
+                    <label className="block text-sm font-semibold text-gray-700">Financial Year</label>
                     <select className="glass-input" value={CURRENT_FY} disabled>
-                      <option value="2025-26">2025-26</option>
-                      <option value="2026-27">2026-27</option>
+                      <option value="2025-26">FY 2025-26</option>
+                      <option value="2026-27">FY 2026-27</option>
                     </select>
                   </div>
+
+                  {/* Target Amount */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-muted uppercase tracking-wider">
-                      Target {form.target_type === "new_clients" ? "(Count)" : "(Amount)"}
+                    <label className="block text-sm font-semibold text-gray-700">
+                      {form.target_type === "new_clients" ? "Target Count" : "Target Amount"}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
-                      className={`glass-input font-sans ${formErrors.target_amount ? "border-red-400 focus:border-red-400" : ""}`}
-                      placeholder="0"
+                      className={cn(
+                        "glass-input font-sans",
+                        formErrors.target_amount && "border-red-400 focus:border-red-400"
+                      )}
+                      placeholder={form.target_type === "new_clients" ? "e.g. 10" : "e.g. 2500000"}
                       min="1"
                       step={form.target_type === "new_clients" ? "1" : "0.01"}
                       value={form.target_amount}
                       onChange={(e) => updateForm("target_amount", e.target.value)}
                     />
                     {formErrors.target_amount && (
-                      <p className="text-xs text-red-500 mt-0.5">{formErrors.target_amount}</p>
+                      <p className="text-xs text-red-500">{formErrors.target_amount}</p>
                     )}
                   </div>
                 </div>
+
+                {/* Notes */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Notes (optional)</label>
+                  <label className="block text-sm font-semibold text-gray-700">Notes (optional)</label>
                   <input
                     type="text"
                     className="glass-input"
-                    placeholder="e.g. Target set at board meeting"
+                    placeholder="e.g. Set at board meeting"
                     value={form.notes}
                     onChange={(e) => updateForm("notes", e.target.value)}
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-3 p-5 border-t border-black/[0.06]">
+
+              {/* Modal footer */}
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setFormErrors({}); }}
-                  className="px-4 py-2 rounded-button text-sm text-text-secondary bg-surface-DEFAULT border border-black/[0.05]"
+                  className="px-4 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08]"
                 >
                   Cancel
                 </button>
@@ -380,7 +394,7 @@ export default function TargetsPage() {
                   style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
                 >
                   {createTarget.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Save Target
+                  Save Goal
                 </button>
               </div>
             </form>
@@ -413,25 +427,26 @@ export default function TargetsPage() {
         </div>
       )}
 
-      {/* Targets grid */}
+      {/* Empty state */}
       {!isLoading && targets.length === 0 && (
         <GlassCard padding="md">
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
               <Target className="w-7 h-7 text-text-muted" />
             </div>
-            <h3 className="text-base font-semibold text-text-primary mb-1">No targets yet</h3>
-            <p className="text-sm text-text-secondary">Add a financial target to start tracking progress</p>
+            <h3 className="text-base font-semibold text-text-primary mb-1">No goals yet</h3>
+            <p className="text-sm text-text-secondary">Add a goal to start tracking progress toward your targets.</p>
           </div>
         </GlassCard>
       )}
 
-      {/* Confirm delete dialog */}
+      {/* Confirm delete */}
       <ConfirmDialog
         open={confirmTarget !== null}
         onOpenChange={(open) => { if (!open) setConfirmTarget(null); }}
-        title="Delete Target"
-        description={confirmTarget ? `Are you sure you want to delete "${confirmTarget.title}"? This action cannot be undone.` : ""}
+        title="Delete Goal"
+        description={confirmTarget ? `Are you sure you want to delete "${confirmTarget.title}"? This cannot be undone.` : ""}
         confirmLabel="Delete"
         loading={deleteTarget.isPending}
         onConfirm={() => {
@@ -443,25 +458,25 @@ export default function TargetsPage() {
         }}
       />
 
-      {!isLoading && targets.length > 0 && (
+      {/* Goals grid - latest first */}
+      {!isLoading && sortedTargets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {targets.map((target) => {
-            const pct = Math.min(Math.round((target.current_amount / target.target_amount) * 100), 100);
+          {sortedTargets.map((target) => {
+            const pct         = Math.min(Math.round((target.current_amount / target.target_amount) * 100), 100);
             const countTarget = isCount(target);
-            const Icon = TYPE_ICONS[target.target_type] ?? Target;
-            const color = TYPE_COLORS[target.target_type] ?? "#fd7e14";
-            const remaining = target.target_amount - target.current_amount;
-            const elapsedPct = computeElapsedPct(target);
-            const trajectory = getTrajectory(pct, elapsedPct);
+            const Icon        = TYPE_ICONS[target.target_type] ?? Target;
+            const color       = TYPE_COLORS[target.target_type] ?? "#fd7e14";
+            const remaining   = target.target_amount - target.current_amount;
+            const elapsedPct  = computeElapsedPct(target);
+            const trajectory  = getTrajectory(pct, elapsedPct);
             const { bg: tBg, color: tColor, label: tLabel } = TRAJECTORY_STYLES[trajectory];
-            const projected = getProjectedLabel(target, elapsedPct);
+            const projected     = getProjectedLabel(target, elapsedPct);
             const deadlineLabel = getDeadlineLabel(target);
-            const periodLabel = target.period_type.charAt(0).toUpperCase() + target.period_type.slice(1);
+            const periodLabel   = target.period_type.charAt(0).toUpperCase() + target.period_type.slice(1);
 
-            // Monthly pace breakdown
-            const periodMonths = target.period_type === "annual" ? 12 : target.period_type === "quarterly" ? 3 : 1;
-            const monthsElapsed = Math.round(elapsedPct * periodMonths);
-            const avgPerMonth = monthsElapsed > 0 ? target.current_amount / monthsElapsed : 0;
+            const periodMonths   = target.period_type === "annual" ? 12 : target.period_type === "quarterly" ? 3 : 1;
+            const monthsElapsed  = Math.round(elapsedPct * periodMonths);
+            const avgPerMonth    = monthsElapsed > 0 ? target.current_amount / monthsElapsed : 0;
             const neededPerMonth = monthsElapsed < periodMonths
               ? remaining / (periodMonths - monthsElapsed)
               : 0;
@@ -482,59 +497,45 @@ export default function TargetsPage() {
                     <span className="text-lg font-bold font-sans" style={{ color: pct >= 80 ? "#16a34a" : pct >= 50 ? color : "#3b82f6" }}>
                       {pct}%
                     </span>
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: tBg, color: tColor }}
-                    >
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: tBg, color: tColor }}>
                       {tLabel}
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {/* Progress bar */}
                   <div className="relative h-2 bg-black/[0.04] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{ width: `${pct}%`, backgroundColor: pct >= 80 ? "#16a34a" : pct >= 50 ? color : "#3b82f6" }}
                     />
-                    {/* Time elapsed marker */}
                     <div
                       className="absolute top-0 bottom-0 w-0.5 bg-black/20 rounded-full"
                       style={{ left: `${elapsedPct * 100}%` }}
                       title={`${Math.round(elapsedPct * 100)}% of period elapsed`}
                     />
                   </div>
-                  <p className="text-[10px] text-text-muted">
-                    {Math.round(elapsedPct * 100)}% of period elapsed
-                  </p>
+                  <p className="text-[10px] text-text-muted">{Math.round(elapsedPct * 100)}% of period elapsed</p>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 rounded-card" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.05)" }}>
                       <p className="text-xs text-text-muted">Current</p>
                       <p className="text-base font-bold font-sans text-text-primary mt-0.5">
-                        {countTarget
-                          ? target.current_amount
-                          : `Rs.${(target.current_amount / 100000).toFixed(1)}L`}
+                        {countTarget ? target.current_amount : `Rs.${(target.current_amount / 100000).toFixed(1)}L`}
                       </p>
                     </div>
                     <div className="p-3 rounded-card" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.05)" }}>
-                      <p className="text-xs text-text-muted">Target</p>
+                      <p className="text-xs text-text-muted">Goal</p>
                       <p className="text-base font-bold font-sans text-text-primary mt-0.5">
-                        {countTarget
-                          ? target.target_amount
-                          : `Rs.${(target.target_amount / 100000).toFixed(1)}L`}
+                        {countTarget ? target.target_amount : `Rs.${(target.target_amount / 100000).toFixed(1)}L`}
                       </p>
                     </div>
                   </div>
 
-                  {/* Monthly pace */}
                   {!countTarget && avgPerMonth > 0 && (
                     <div className="flex items-center justify-between text-xs text-text-muted border-t border-black/[0.05] pt-2.5">
                       <span>Avg/month so far</span>
-                      <span className="font-sans font-medium text-text-secondary">
-                        Rs.{(avgPerMonth / 1000).toFixed(0)}K
-                      </span>
+                      <span className="font-sans font-medium text-text-secondary">Rs.{(avgPerMonth / 1000).toFixed(0)}K</span>
                     </div>
                   )}
                   {!countTarget && neededPerMonth > 0 && (
@@ -546,27 +547,24 @@ export default function TargetsPage() {
                     </div>
                   )}
 
-                  {/* Projected label */}
                   {projected && (
                     <p className="text-xs text-text-muted italic">{projected}</p>
                   )}
 
-                  {/* Remaining */}
                   <p className="text-xs text-text-muted border-t border-black/[0.05] pt-2">
                     {countTarget
                       ? `${Math.max(0, remaining)} more ${remaining === 1 ? "client" : "clients"} to go`
-                      : `Rs.${(Math.max(0, remaining) / 100000).toFixed(1)}L remaining to reach goal`}
+                      : `Rs.${(Math.max(0, remaining) / 100000).toFixed(1)}L remaining`}
                   </p>
 
                   {target.notes && (
                     <p className="text-xs text-text-muted italic">{target.notes}</p>
                   )}
 
-                  {/* Actions */}
                   <div className="flex items-center justify-between pt-1 border-t border-black/[0.04]">
                     <span className="text-[10px] text-text-muted">Deadline: {deadlineLabel}</span>
                     <button
-                      onClick={() => handleDelete(target)}
+                      onClick={() => setConfirmTarget(target)}
                       disabled={deleteTarget.isPending}
                       className="flex items-center gap-1 text-[11px] text-text-muted hover:text-red-400 transition-colors disabled:opacity-50"
                     >
@@ -574,7 +572,6 @@ export default function TargetsPage() {
                       Delete
                     </button>
                   </div>
-
                 </div>
               </GlassCard>
             );

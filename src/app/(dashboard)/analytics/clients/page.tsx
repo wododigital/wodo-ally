@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Users, TrendingUp, Clock, Star, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState } from "@/components/shared/date-filter";
 import {
   BarChart, Bar, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { cn } from "@/lib/utils/cn";
 import {
   useClientHealthScores,
   useRevenueByClient,
@@ -43,28 +43,15 @@ function healthLabel(score: number): string {
   return "At Risk";
 }
 
-type Period = "month" | "ytd" | "q4" | "fy";
-
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function ClientAnalyticsPage() {
-  const [period, setPeriod] = useState<Period>("ytd");
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("period");
-    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
-  }, []);
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
 
   const { data: healthScores, isLoading: healthLoading } = useClientHealthScores();
   const { data: clientRevenue, isLoading: revenueLoading } = useRevenueByClient();
 
   const isLoading = healthLoading || revenueLoading;
-
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "month", label: "This Month" },
-    { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd",   label: "YTD" },
-    { key: "fy",    label: "Full Year" },
-  ];
 
   // Summary stats
   const totalClients = (healthScores ?? []).length;
@@ -108,20 +95,9 @@ export default function ClientAnalyticsPage() {
 
       {/* Client Health Summary */}
       <DarkSection>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Client Health Summary</p>
-          <div className="flex items-center gap-2">
-            {PERIODS.map((p) => (
-              <button key={p.key} onClick={() => setPeriod(p.key)}
-                className={cn(
-                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
-                  period === p.key
-                    ? "bg-white/[0.12] text-white border-white/[0.2]"
-                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
-                )}>{p.label}
-              </button>
-            ))}
-          </div>
+          <DateFilter value={filterState} onChange={setFilterState} />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {isLoading

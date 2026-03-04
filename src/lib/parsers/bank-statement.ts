@@ -55,6 +55,19 @@ function convertDate(raw: unknown): string | null {
     return `${yyyy}-${mm}-${dd}`;
   }
 
+  // DD-MMM-YYYY (e.g. "01-Feb-2026", "15-Jan-2025")
+  const MONTHS: Record<string, string> = {
+    jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+    jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+  };
+  const namedMatch = s.match(/^(\d{1,2})[\/\-]([A-Za-z]{3})[\/\-](\d{4})$/);
+  if (namedMatch) {
+    const dd = namedMatch[1].padStart(2, "0");
+    const mm = MONTHS[namedMatch[2].toLowerCase()];
+    const yyyy = namedMatch[3];
+    if (mm) return `${yyyy}-${mm}-${dd}`;
+  }
+
   // Try ISO format that might already be present
   const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) {
@@ -145,6 +158,27 @@ export function parseIDFCStatement(file: File): Promise<ParsedStatement> {
           raw: true,
         }) as unknown[][];
 
+        // ── Find opening/closing balance from IDFC summary row ───────────────
+        // IDFC has a summary row: ["Opening Balance","Total Debit","Total Credit","Closing Balance"]
+        // followed by the values row. Find and extract.
+        let idfc_opening: number | null = null;
+        let idfc_closing: number | null = null;
+        for (let r = 0; r < rawData.length; r++) {
+          const row = rawData[r];
+          const labels = row.map((c) => normalizeHeader(c));
+          if (labels.includes("opening balance") && labels.includes("closing balance")) {
+            // Values are in the next row
+            const nextRow = rawData[r + 1];
+            if (nextRow) {
+              const obIdx = labels.indexOf("opening balance");
+              const cbIdx = labels.indexOf("closing balance");
+              idfc_opening = parseAmount(nextRow[obIdx]);
+              idfc_closing = parseAmount(nextRow[cbIdx]);
+            }
+            break;
+          }
+        }
+
         // ── Find the header row ──────────────────────────────────────────────
         // Look for the row containing "Transaction Date" or "Txn Date"
         let headerRowIdx = -1;
@@ -219,9 +253,9 @@ export function parseIDFCStatement(file: File): Promise<ParsedStatement> {
         for (const row of preHeaderRows) {
           for (const cell of row) {
             const s = String(cell ?? "");
-            // "01/01/2026 to 28/02/2026" or "From: DD/MM/YYYY To: DD/MM/YYYY"
+            // "01-Feb-2026 TO 28-Feb-2026" or "01/01/2026 to 28/02/2026"
             const range = s.match(
-              /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})\s*(?:to|[-])\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/i
+              /(\d{1,2}[\/\-][A-Za-z0-9]{2,3}[\/\-]\d{4})\s*(?:to|[-])\s*(\d{1,2}[\/\-][A-Za-z0-9]{2,3}[\/\-]\d{4})/i
             );
             if (range) {
               periodStart = convertDate(range[1]);
@@ -300,8 +334,8 @@ export function parseIDFCStatement(file: File): Promise<ParsedStatement> {
           account_number: accountNumber,
           statement_period_start: periodStart,
           statement_period_end: periodEnd,
-          opening_balance: openingBalance,
-          closing_balance: closingBalance,
+          opening_balance: idfc_opening ?? openingBalance,
+          closing_balance: idfc_closing ?? closingBalance,
           total_debit: Math.round(totalDebit * 100) / 100,
           total_credit: Math.round(totalCredit * 100) / 100,
           transactions,

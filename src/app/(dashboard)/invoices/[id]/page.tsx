@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Send, Download, Plus, CheckCircle2,
-  Calendar, Building2, Hash, X, Pencil, Eye, Loader2, Mail
+  Send, Download, Plus, CheckCircle2,
+  Calendar, Building2, Hash, X, Pencil, Eye, Loader2, Mail, Clock, AlertCircle, Bell
 } from "lucide-react";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
@@ -287,6 +287,7 @@ export default function InvoiceDetailPage() {
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailLog, setEmailLog] = useState<{ label: string; sentAt: string }[]>([]);
 
   const { data: invoice, isLoading } = useInvoice(id);
   const { data: payments = [] } = useInvoicePayments(id);
@@ -374,6 +375,10 @@ export default function InvoiceDetailPage() {
       }
 
       toast.success(`Invoice sent to ${emails.join(", ")}`);
+      setEmailLog((prev) => [
+        { label: "Invoice sent", sentAt: new Date().toISOString() },
+        ...prev,
+      ]);
       setShowSendModal(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send invoice");
@@ -428,13 +433,6 @@ export default function InvoiceDetailPage() {
       )}
 
       <div>
-        <Link
-          href="/invoices"
-          className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Invoices
-        </Link>
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-text-primary font-sans">
@@ -674,6 +672,88 @@ export default function InvoiceDetailPage() {
               </div>
             </GlassCard>
           )}
+
+          {/* Email activity + reminders */}
+          <GlassCard padding="md">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-text-primary">Email Activity</h3>
+              {invoice.sent_at && (
+                <span className="text-[10px] text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full font-medium">Sent</span>
+              )}
+            </div>
+
+            {/* Timeline */}
+            <div className="space-y-2 mb-3">
+              {invoice.sent_at && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-text-secondary">Invoice sent</p>
+                    <p className="text-[11px] text-text-muted font-sans">{formatDate(invoice.sent_at.slice(0, 10))}</p>
+                  </div>
+                </div>
+              )}
+              {invoice.viewed_at && (
+                <div className="flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-text-secondary">Viewed by client</p>
+                    <p className="text-[11px] text-text-muted font-sans">{formatDate(invoice.viewed_at.slice(0, 10))}</p>
+                  </div>
+                </div>
+              )}
+              {invoice.paid_at && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-text-secondary">Payment received</p>
+                    <p className="text-[11px] text-text-muted font-sans">{formatDate(invoice.paid_at.slice(0, 10))}</p>
+                  </div>
+                </div>
+              )}
+              {emailLog.map((entry, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Bell className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-text-secondary">{entry.label}</p>
+                    <p className="text-[11px] text-text-muted font-sans">{formatDate(entry.sentAt.slice(0, 10))}</p>
+                  </div>
+                </div>
+              ))}
+              {!invoice.sent_at && emailLog.length === 0 && (
+                <p className="text-xs text-text-muted text-center py-2">No emails sent yet</p>
+              )}
+            </div>
+
+            {/* Past due reminder buttons */}
+            {balance > 0 && invoice.status !== "cancelled" && invoice.status !== "draft" && (
+              <div className="space-y-2 pt-3 border-t border-black/[0.05]">
+                <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-2">Send Reminder</p>
+                <button
+                  onClick={() => setShowSendModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-button text-xs font-medium text-white"
+                  style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Send Reminder
+                </button>
+                {invoice.status === "overdue" && (
+                  <button
+                    onClick={() => setShowSendModal(true)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-button text-xs font-medium"
+                    style={{
+                      background: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                      color: "#ef4444",
+                    }}
+                  >
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Overdue Follow-up
+                  </button>
+                )}
+              </div>
+            )}
+          </GlassCard>
         </div>
       </div>
     </div>

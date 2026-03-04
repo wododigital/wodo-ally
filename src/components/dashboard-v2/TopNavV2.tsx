@@ -29,25 +29,43 @@ const NAV_TABS: NavTab[] = [
     ],
   },
   { href: "/expenses",  label: "Expenses"  },
-  { href: "/analytics", label: "Analytics" },
+  {
+    href: "/analytics",
+    label: "Analytics",
+    dropdown: [
+      { href: "/analytics",          label: "Overview"      },
+      { href: "/analytics/invoices", label: "Invoices"      },
+      { href: "/analytics/expenses", label: "Expenses"      },
+      { href: "/analytics/clients",  label: "Clients"       },
+      { href: "/analytics/projects", label: "Projects"      },
+      { href: "/analytics/pl",       label: "P&L"           },
+      { href: "/analytics/balance",  label: "Balance Sheet" },
+    ],
+  },
   { href: "/pipeline",  label: "Pipeline"  },
-  { href: "/targets",   label: "Targets"   },
+  { href: "/targets",   label: "Goals"     },
   { href: "/reports",   label: "Reports",  exact: true },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard":  "Dashboard",
-  "/clients":    "Clients",
-  "/invoices":   "Invoices",
-  "/analytics":  "Analytics",
-  "/pipeline":   "Pipeline",
-  "/targets":    "Targets",
-  "/reports":    "Reports",
-  "/projects":   "Projects",
-  "/settings":   "Settings",
-  "/contracts":  "Contracts",
-  "/payments":   "Payments",
-  "/expenses":   "Expenses",
+  "/dashboard":           "Dashboard",
+  "/clients":             "Clients",
+  "/invoices":            "Invoices",
+  "/analytics/invoices":  "Invoice Analytics",
+  "/analytics/expenses":  "Expense Analytics",
+  "/analytics/clients":   "Client Analytics",
+  "/analytics/projects":  "Project Analytics",
+  "/analytics/pl":        "P&L Analytics",
+  "/analytics/balance":   "Balance Sheet",
+  "/analytics":           "Analytics",
+  "/pipeline":            "Pipeline",
+  "/targets":             "Goals",
+  "/reports":             "Reports",
+  "/projects":            "Projects",
+  "/settings":            "Settings",
+  "/contracts":           "Contracts",
+  "/payments":            "Payments",
+  "/expenses":            "Expenses",
 };
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -248,9 +266,15 @@ export function TopNavV2() {
 
   function isActive(tab: NavTab) {
     if (tab.dropdown) {
-      return tab.dropdown.some((d) => pathname.startsWith(d.href));
+      return pathname.startsWith(tab.href);
     }
     return tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
+  }
+
+  function isDropdownItemActive(item: { href: string; label: string }) {
+    // Overview is exact - /analytics should only match /analytics exactly
+    if (item.href === "/analytics") return pathname === "/analytics";
+    return pathname.startsWith(item.href);
   }
 
   const pageKey = Object.keys(PAGE_TITLES).find((k) =>
@@ -329,7 +353,7 @@ export function TopNavV2() {
                           onClick={() => setOpenDropdown(null)}
                           className={cn(
                             "block px-4 py-2 text-sm font-medium transition-colors",
-                            pathname.startsWith(item.href)
+                            isDropdownItemActive(item)
                               ? "text-accent bg-accent-muted"
                               : "text-text-secondary hover:text-text-primary hover:bg-black/[0.03]"
                           )}

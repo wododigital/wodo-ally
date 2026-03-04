@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { TrendingDown, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { cn } from "@/lib/utils/cn";
 import { useExpensesByCategory } from "@/lib/hooks/use-analytics";
 
 const CHART_TOOLTIP = {
@@ -21,74 +21,60 @@ const CHART_TOOLTIP = {
   color: "#111827",
 };
 
-// Palette for dynamic categories
 const CATEGORY_PALETTE = [
   "#ec4899", "#8b5cf6", "#3b82f6", "#16a34a", "#9ca3af",
   "#f59e0b", "#06b6d4", "#ef4444", "#84cc16", "#6366f1",
 ];
 
-type Period = "month" | "ytd" | "q4" | "fy";
-
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function ExpenseAnalyticsPage() {
-  const [period, setPeriod] = useState<Period>("ytd");
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("period");
-    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
-  }, []);
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
 
-  // Always fetch last 12 months; then filter client-side by period
   const { data: expenseRows, isLoading } = useExpensesByCategory(12);
 
-  // Build unique categories list
-  const allCategories = Array.from(
-    new Set((expenseRows ?? []).map((r) => r.category))
-  );
-
+  const allCategories = Array.from(new Set((expenseRows ?? []).map((r) => r.category)));
   const categoryColorMap = Object.fromEntries(
     allCategories.map((cat, i) => [cat, CATEGORY_PALETTE[i % CATEGORY_PALETTE.length]])
   );
 
-  // Build category key mappings (normalize category name -> safe JS key)
   const categoryKeys = allCategories.map((cat) => ({
     key: cat.toLowerCase().replace(/[^a-z0-9]/g, "_"),
     label: cat,
     color: categoryColorMap[cat] ?? "#9ca3af",
   }));
 
-  // Aggregate by month for stacked bar - pivot categories into object keys
+  // Build per-month aggregated rows
   type MonthRow = Record<string, string | number>;
-  const monthMap: Record<string, MonthRow> = {};
-  for (const row of expenseRows ?? []) {
-    if (!monthMap[row.month_start]) {
-      monthMap[row.month_start] = { month_label: row.month_label, month_start: row.month_start };
+  const allMonthData: MonthRow[] = useMemo(() => {
+    const monthMap: Record<string, MonthRow> = {};
+    for (const row of expenseRows ?? []) {
+      if (!monthMap[row.month_start]) {
+        monthMap[row.month_start] = { month_label: row.month_label, month_start: row.month_start };
+      }
+      const key = row.category.toLowerCase().replace(/[^a-z0-9]/g, "_");
+      const prev = monthMap[row.month_start][key];
+      monthMap[row.month_start][key] = (typeof prev === "number" ? prev : 0) + row.total_amount;
     }
-    const key = row.category.toLowerCase().replace(/[^a-z0-9]/g, "_");
-    const prev = monthMap[row.month_start][key];
-    monthMap[row.month_start][key] = (typeof prev === "number" ? prev : 0) + row.total_amount;
-  }
+    return Object.entries(monthMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v);
+  }, [expenseRows]);
 
-  const allMonthData: MonthRow[] = Object.entries(monthMap)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, v]) => v);
+  // Filter by selected period
+  const chartData = useMemo(() => {
+    const range = resolveDateRange(filterState);
+    if (!range) return allMonthData;
+    return allMonthData.filter((row) => {
+      const dt = new Date(String(row.month_start));
+      return dt >= range.start && dt <= range.end;
+    });
+  }, [allMonthData, filterState]);
 
-  // Filter by period
-  const chartData = (() => {
-    if (!allMonthData.length) return [];
-    const n = allMonthData.length;
-    if (period === "month") return allMonthData.slice(-1);
-    if (period === "q4")    return allMonthData.slice(-3);
-    if (period === "ytd")   return allMonthData.slice(0, Math.max(n - 1, 1));
-    return allMonthData; // fy
-  })();
-
-  // Total expenses in selected period
   const totalExpenses = chartData.reduce((sum, row) => {
     return sum + categoryKeys.reduce((s, ck) => s + Number(row[ck.key] ?? 0), 0);
   }, 0);
 
-  // Pie data - aggregate by category across selected period
   const pieData = categoryKeys
     .map((ck) => ({
       name: ck.label,
@@ -98,38 +84,19 @@ export default function ExpenseAnalyticsPage() {
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  // Burn rate
-  const burnRate = chartData.length > 0 ? Math.round(totalExpenses / chartData.length) : 0;
-
-  // Top category
+  const burnRate   = chartData.length > 0 ? Math.round(totalExpenses / chartData.length) : 0;
   const topCategory = pieData[0];
-
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "month", label: "This Month" },
-    { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd",   label: "YTD" },
-    { key: "fy",    label: "Full Year" },
-  ];
 
   return (
     <div className="space-y-6">
 
-      {/* Cost Analysis */}
+      {/* Cost Analysis with filter inside */}
       <DarkSection>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Cost Analysis</p>
-          <div className="flex items-center gap-2">
-            {PERIODS.map((p) => (
-              <button key={p.key} onClick={() => setPeriod(p.key)}
-                className={cn(
-                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
-                  period === p.key
-                    ? "bg-white/[0.12] text-white border-white/[0.2]"
-                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
-                )}>{p.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Cost Analysis
+          </p>
+          <DateFilter value={filterState} onChange={setFilterState} />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {isLoading
@@ -161,7 +128,7 @@ export default function ExpenseAnalyticsPage() {
                   icon: TrendingDown,
                   label: "Burn rate (avg)",
                   value: `Rs.${(burnRate / 1000).toFixed(1)}K`,
-                  sub: `Per month, ${period.toUpperCase()}`,
+                  sub: "Per month",
                   color: "#f59e0b",
                 },
                 {
@@ -193,7 +160,7 @@ export default function ExpenseAnalyticsPage() {
         {isLoading ? (
           <Skeleton className="h-52 w-full" />
         ) : chartData.length === 0 ? (
-          <EmptyState icon={BarChart2} title="No expense data" description="Upload bank statements to see expense trends." />
+          <EmptyState icon={BarChart2} title="No expense data" description="Upload bank statements or select a different period." />
         ) : (
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
@@ -267,7 +234,7 @@ export default function ExpenseAnalyticsPage() {
           )}
         </GlassCard>
 
-        {/* Cost Centers table */}
+        {/* Cost Centers */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Cost Centers</h3>
           {isLoading ? (

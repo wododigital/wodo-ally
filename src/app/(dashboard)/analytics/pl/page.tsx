@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, IndianRupee, Percent, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
@@ -20,37 +21,31 @@ const CHART_TOOLTIP = {
   color: "#111827",
 };
 
-type Period = "month" | "ytd" | "q4" | "fy";
-
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function PLPage() {
-  const [period, setPeriod] = useState<Period>("ytd");
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("period");
-    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
-  }, []);
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
 
   const { data: plRows, isLoading } = useMonthlyPL();
 
-  // Build table data from view rows
   const allTableData = (plRows ?? []).map((row) => ({
     month: row.month_label,
     month_short: row.month_label.slice(0, 3),
+    month_start: row.month_start,
     revenue: row.total_revenue,
     expenses: row.total_expenses,
     gross_profit: row.total_revenue - row.total_expenses,
     net_profit: row.net_profit,
   }));
 
-  const tableData = (() => {
-    const n = allTableData.length;
-    if (!n) return [];
-    if (period === "month") return allTableData.slice(-1);
-    if (period === "q4")    return allTableData.slice(-3);
-    if (period === "ytd")   return allTableData.slice(0, Math.max(n - 1, 1));
-    return allTableData;
-  })();
+  const tableData = useMemo(() => {
+    const range = resolveDateRange(filterState);
+    if (!range) return allTableData;
+    return allTableData.filter((row) => {
+      const dt = new Date(row.month_start);
+      return dt >= range.start && dt <= range.end;
+    });
+  }, [allTableData, filterState]);
 
   const chartSlice = tableData.map((row) => ({
     ...row,
@@ -62,32 +57,16 @@ export default function PLPage() {
   const totProfit   = tableData.reduce((s, m) => s + m.net_profit, 0);
   const avgMargin   = totRevenue > 0 ? Math.round((totProfit / totRevenue) * 100) : 0;
 
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "month", label: "This Month" },
-    { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd",   label: "YTD" },
-    { key: "fy",    label: "Full Year" },
-  ];
-
   return (
     <div className="space-y-6">
 
-      {/* Profit Summary */}
+      {/* Profit Summary with filter */}
       <DarkSection>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Profit Summary</p>
-          <div className="flex items-center gap-2">
-            {PERIODS.map((p) => (
-              <button key={p.key} onClick={() => setPeriod(p.key)}
-                className={cn(
-                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
-                  period === p.key
-                    ? "bg-white/[0.12] text-white border-white/[0.2]"
-                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
-                )}>{p.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Profit Summary
+          </p>
+          <DateFilter value={filterState} onChange={setFilterState} />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {isLoading
@@ -103,7 +82,7 @@ export default function PLPage() {
                   icon: IndianRupee,
                   label: "Total revenue",
                   value: `Rs.${(totRevenue / 100000).toFixed(2)}L`,
-                  sub: "FY 2025-26",
+                  sub: "Selected period",
                   color: "#fd7e14",
                 },
                 {

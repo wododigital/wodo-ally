@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowRight, TrendingUp, TrendingDown, IndianRupee, BarChart2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { TrendingUp, TrendingDown, IndianRupee, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { cn } from "@/lib/utils/cn";
 import {
   useMonthlyPL,
   useRevenueByService,
@@ -32,32 +31,10 @@ const CHART_TOOLTIP = {
 const GRID = { stroke: "rgba(0,0,0,0.06)" };
 const AXIS  = { fill: "#9ca3af", fontSize: 11 };
 
-type Period = "month" | "q4" | "q3" | "ytd" | "fy" | "custom";
-
-const PERIODS: { key: Period; label: string }[] = [
-  { key: "month", label: "Month" },
-  { key: "q3",    label: "Q3 (Oct-Dec)" },
-  { key: "q4",    label: "Q4 (Jan-Mar)" },
-  { key: "ytd",   label: "YTD" },
-  { key: "fy",    label: "Full Year" },
-  { key: "custom",label: "Custom" },
-];
-
-// Map month labels to fiscal quarter (Apr=Q1 ... Mar=Q4 in FY Apr-Mar)
-function isQ3Month(label: string) {
-  return ["Oct", "Nov", "Dec"].some((m) => label.startsWith(m));
-}
-function isQ4Month(label: string) {
-  return ["Jan", "Feb", "Mar"].some((m) => label.startsWith(m));
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const [period, setPeriod]         = useState<Period>("fy");
-  const [showProjection, setShowProjection] = useState(false);
-  const [customFrom] = useState("2025-04-01");
-  const [customTo]   = useState("2026-03-31");
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
 
   const { data: plRows, isLoading: plLoading } = useMonthlyPL();
   const { data: serviceRows, isLoading: serviceLoading } = useRevenueByService();
@@ -75,18 +52,18 @@ export default function AnalyticsPage() {
     expenses: row.total_expenses,
   }));
 
-  // Filter by period
-  const chartData = (() => {
-    if (!allChartData.length) return [];
-    if (period === "month")  return allChartData.slice(-1);
-    if (period === "q3")     return allChartData.filter((d) => isQ3Month(d.month));
-    if (period === "q4")     return allChartData.filter((d) => isQ4Month(d.month));
-    if (period === "ytd")    return allChartData.slice(0, -1);
-    return allChartData; // fy + custom
-  })();
+  // Filter by selected period
+  const chartData = useMemo(() => {
+    const range = resolveDateRange(filterState);
+    if (!range) return allChartData;
+    return allChartData.filter((d) => {
+      const dt = new Date(d.month_start);
+      return dt >= range.start && dt <= range.end;
+    });
+  }, [allChartData, filterState]);
 
-  const revenue  = chartData.reduce((s, m) => s + m.revenue, 0);
-  const expenses = chartData.reduce((s, m) => s + m.expenses, 0);
+  const revenue   = chartData.reduce((s, m) => s + m.revenue, 0);
+  const expenses  = chartData.reduce((s, m) => s + m.expenses, 0);
   const netProfit = revenue - expenses;
   const margin    = revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0;
 
@@ -102,7 +79,7 @@ export default function AnalyticsPage() {
     color: s.color || "#fd7e14",
   }));
 
-  // Revenue by client - top 5
+  // Revenue by client - top 6
   const topClients = (clientRows ?? [])
     .filter((c) => c.total_collected > 0)
     .slice(0, 6)
@@ -111,43 +88,64 @@ export default function AnalyticsPage() {
       revenue: c.total_collected,
     }));
 
+  // ─── Forecast calculations ────────────────────────────────────────────────
+  // Use last 3 months of actual data to compute growth rate + MRR
+  const forecastData = useMemo(() => {
+    const history = allChartData.filter((d) => d.revenue > 0);
+    if (history.length < 2) return [];
+
+    // Avg monthly revenue from last 3 months
+    const recent = history.slice(-3);
+    const avgRev = recent.reduce((s, r) => s + r.revenue, 0) / recent.length;
+
+    // Month-over-month growth rate
+    const growthRates: number[] = [];
+    for (let i = 1; i < recent.length; i++) {
+      if (recent[i - 1].revenue > 0) {
+        growthRates.push(recent[i].revenue / recent[i - 1].revenue - 1);
+      }
+    }
+    const avgGrowth = growthRates.length > 0
+      ? growthRates.reduce((s, r) => s + r, 0) / growthRates.length
+      : 0.03; // default 3% growth if no data
+
+    // Cap growth at +15% per month to avoid wild projections
+    const clampedGrowth = Math.min(Math.max(avgGrowth, -0.05), 0.15);
+
+    // MRR as the certain floor (retainer)
+    const mrr = kpis?.mrr ?? avgRev * 0.6;
+
+    // Project 12 months forward
+    const today = new Date();
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth() + i + 1, 1);
+      const projected = avgRev * Math.pow(1 + clampedGrowth, i + 1);
+      const retainer = Math.min(mrr, projected);
+      const variable = Math.max(0, projected - retainer);
+      return {
+        month: d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" }),
+        retainer: Math.round(retainer),
+        variable: Math.round(variable),
+        total: Math.round(projected),
+      };
+    });
+  }, [allChartData, kpis]);
+
+  const forecast3m  = forecastData.slice(0, 3).reduce((s, m) => s + m.total, 0);
+  const forecast6m  = forecastData.slice(0, 6).reduce((s, m) => s + m.total, 0);
+  const forecast12m = forecastData.reduce((s, m) => s + m.total, 0);
+
   return (
     <div className="space-y-6">
 
-      {/* Date filter toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
-              period === p.key
-                ? "bg-accent-muted text-accent border-accent-light"
-                : "bg-surface-DEFAULT text-text-muted border-black/[0.05] hover:border-black/[0.08]"
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-        {period === "fy" && (
-          <button
-            onClick={() => setShowProjection((v) => !v)}
-            className={cn(
-              "px-3 py-1.5 rounded-button text-xs font-medium transition-all border",
-              showProjection
-                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                : "bg-surface-DEFAULT text-text-muted border-black/[0.05]"
-            )}
-          >
-            {showProjection ? "Hide" : "Show"} Projection
-          </button>
-        )}
-      </div>
-
-      {/* Dark Financial Snapshot */}
+      {/* Dark Financial Snapshot with filter inside */}
       <DarkSection>
-        <DarkLabel>Financial Snapshot</DarkLabel>
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Financial Snapshot
+          </p>
+          <DateFilter value={filterState} onChange={setFilterState} />
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (
@@ -161,7 +159,7 @@ export default function AnalyticsPage() {
                 {
                   label: "Total Revenue",
                   value: `Rs.${(revenue / 100000).toFixed(2)}L`,
-                  sub: period === "fy" ? "FY 2025-26" : "Selected period",
+                  sub: filterState.mode === "fy" ? "FY 2025-26" : "Selected period",
                   icon: IndianRupee,
                   color: "#fd7e14",
                 },
@@ -175,7 +173,7 @@ export default function AnalyticsPage() {
                 {
                   label: "Net Profit",
                   value: `Rs.${(netProfit / 100000).toFixed(2)}L`,
-                  sub: period === "fy" ? "After all expenses" : "For period",
+                  sub: "After all expenses",
                   icon: TrendingUp,
                   color: "#22c55e",
                 },
@@ -255,9 +253,6 @@ export default function AnalyticsPage() {
         <GlassCard padding="md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-text-primary">Revenue by Service</h3>
-            <Link href="/analytics/invoices" className="text-xs text-accent flex items-center gap-1 hover:opacity-80">
-              Detail <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
           {serviceLoading ? (
             <div className="flex items-center gap-4">
@@ -308,9 +303,6 @@ export default function AnalyticsPage() {
         <GlassCard padding="md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-text-primary">Revenue by Client</h3>
-            <Link href="/analytics/clients" className="text-xs text-accent flex items-center gap-1 hover:opacity-80">
-              Detail <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
           {clientLoading ? (
             <Skeleton className="h-44 w-full" />
@@ -331,23 +323,75 @@ export default function AnalyticsPage() {
         </GlassCard>
       </div>
 
-      {/* Sub-page quick links */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {[
-          { href: "/analytics/expenses", label: "Expenses",    sub: "Cost breakdown"     },
-          { href: "/analytics/projects", label: "Projects",    sub: "By type & status"   },
-          { href: "/analytics/pl",       label: "P&L",         sub: "Profit & loss"      },
-          { href: "/analytics/balance",  label: "Balance",     sub: "Balance sheet"      },
-          { href: "/reports",            label: "Reports",     sub: "Investor reports"   },
-        ].map((link) => (
-          <Link key={link.href} href={link.href}
-            className="p-4 rounded-card border border-black/[0.05] bg-surface-DEFAULT hover:border-black/[0.08] hover:bg-surface-hover transition-all group"
-          >
-            <p className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">{link.label}</p>
-            <p className="text-xs text-text-muted mt-0.5">{link.sub}</p>
-          </Link>
-        ))}
-      </div>
+      {/* ── Forecast Section ─────────────────────────────────────────────────── */}
+      {!plLoading && forecastData.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-text-primary">Revenue Forecast</h2>
+            <p className="text-xs text-text-muted mt-0.5">
+              Based on trailing growth rate and MRR - retainer revenue is certain, variable is projected
+            </p>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: "Next 3 Months", value: forecast3m,  sub: "Short-term outlook",  color: "#3b82f6" },
+              { label: "Next 6 Months", value: forecast6m,  sub: "Mid-term forecast",   color: "#8b5cf6" },
+              { label: "Next 12 Months", value: forecast12m, sub: "Annual projection",   color: "#fd7e14" },
+            ].map((item) => (
+              <GlassCard key={item.label} padding="md">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-text-secondary">{item.label}</p>
+                    <p className="text-2xl font-light font-sans mt-1 text-text-primary">
+                      Rs.{(item.value / 100000).toFixed(2)}L
+                    </p>
+                    <p className="text-xs text-text-muted mt-0.5">{item.sub}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: `${item.color}15` }}>
+                    <TrendingUp className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+
+          {/* Forecast bar chart */}
+          <GlassCard padding="md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-text-primary">Monthly Projections</h3>
+              <div className="flex items-center gap-4 text-xs text-text-muted">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-2 rounded-sm inline-block bg-[#fd7e14]" /> Retainer (certain)
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-2 rounded-sm inline-block bg-[#3b82f6]" /> Variable (projected)
+                </span>
+              </div>
+            </div>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={forecastData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barSize={18}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis dataKey="month" tick={AXIS} axisLine={false} tickLine={false} />
+                  <YAxis tick={AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                  <Tooltip
+                    contentStyle={CHART_TOOLTIP}
+                    formatter={(v: number, name: string) => [
+                      `Rs.${v.toLocaleString("en-IN")}`,
+                      name === "retainer" ? "Retainer" : "Variable",
+                    ]}
+                  />
+                  <Bar dataKey="retainer" name="retainer" stackId="a" fill="#fd7e14" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="variable" name="variable" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </GlassCard>
+        </div>
+      )}
 
     </div>
   );

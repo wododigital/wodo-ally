@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { cn } from "@/lib/utils/cn";
@@ -61,7 +62,10 @@ export default function EditClientPage() {
 
     updateClient.mutate(
       { id, data: updateData },
-      { onSuccess: () => router.push(`/clients/${id}`) }
+      {
+        onSuccess: () => router.push(`/clients/${id}`),
+        onError: () => toast.error("Failed to save changes. Please try again."),
+      }
     );
   }
 

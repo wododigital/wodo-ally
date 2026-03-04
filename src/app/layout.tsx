@@ -18,6 +18,7 @@ export const viewport = {
 export const metadata: Metadata = {
   title: "WODO Ally - Internal Management Platform",
   description: "Internal accounting and financial management platform for WODO Digital",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({

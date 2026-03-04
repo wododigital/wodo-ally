@@ -11,6 +11,7 @@ export interface Service {
   name: string;
   description: string | null;
   color: string | null;
+  hsn_code: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -21,6 +22,7 @@ export interface ServiceInsert {
   name: string;
   description?: string | null;
   color?: string | null;
+  hsn_code?: string | null;
   is_active?: boolean;
   sort_order?: number;
 }
@@ -29,6 +31,7 @@ export interface ServiceUpdate {
   name?: string;
   description?: string | null;
   color?: string | null;
+  hsn_code?: string | null;
   is_active?: boolean;
   sort_order?: number;
 }

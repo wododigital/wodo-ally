@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { FileText, Clock, CheckCircle2, AlertCircle, TrendingUp, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { cn } from "@/lib/utils/cn";
 import {
   useInvoiceStatusSummary,
   useRevenueByClient,
   useDashboardKPIs,
+  useMonthlyPL,
 } from "@/lib/hooks/use-analytics";
 
 const CHART_TOOLTIP = {
@@ -26,41 +27,49 @@ const CHART_TOOLTIP = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  paid:          "#22c55e",
-  sent:          "#3b82f6",
-  overdue:       "#ef4444",
-  draft:         "#9ca3af",
-  viewed:        "#8b5cf6",
-  partially_paid:"#f59e0b",
-  cancelled:     "#6b7280",
+  paid:           "#22c55e",
+  sent:           "#3b82f6",
+  overdue:        "#ef4444",
+  draft:          "#9ca3af",
+  viewed:         "#8b5cf6",
+  partially_paid: "#f59e0b",
+  cancelled:      "#6b7280",
 };
-
-type Period = "month" | "ytd" | "q4" | "fy";
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function InvoiceAnalyticsPage() {
-  const [period, setPeriod] = useState<Period>("ytd");
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("period");
-    if (p === "month" || p === "q4" || p === "ytd" || p === "fy") setPeriod(p as Period);
-  }, []);
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
 
   const { data: statusRows, isLoading: statusLoading } = useInvoiceStatusSummary();
   const { data: clientRows, isLoading: clientLoading } = useRevenueByClient();
   const { data: kpis, isLoading: kpisLoading } = useDashboardKPIs();
+  const { data: plRows, isLoading: plLoading } = useMonthlyPL();
 
-  const isLoading = statusLoading || clientLoading || kpisLoading;
+  const isLoading = statusLoading || clientLoading || kpisLoading || plLoading;
+
+  // Monthly revenue bar chart filtered by period
+  const monthlyBarData = useMemo(() => {
+    const range = resolveDateRange(filterState);
+    const rows = (plRows ?? []).filter((row) => {
+      if (!range) return true;
+      const dt = new Date(row.month_start);
+      return dt >= range.start && dt <= range.end;
+    });
+    return rows.map((row) => ({
+      month: row.month_label.slice(0, 3),
+      invoiced: row.total_revenue,
+    }));
+  }, [plRows, filterState]);
 
   // Derived invoice stats from status summary
   const totalInvoices = (statusRows ?? []).reduce((s, r) => s + Number(r.invoice_count), 0);
-  const paidCount     = (statusRows ?? []).find((r) => r.status === "paid")?.invoice_count ?? 0;
-  const overdueCount  = (statusRows ?? []).find((r) => r.status === "overdue")?.invoice_count ?? 0;
-  const overdueValue  = (statusRows ?? []).find((r) => r.status === "overdue")?.total_value ?? 0;
+  const paidCount    = (statusRows ?? []).find((r) => r.status === "paid")?.invoice_count ?? 0;
+  const overdueCount = (statusRows ?? []).find((r) => r.status === "overdue")?.invoice_count ?? 0;
+  const overdueValue = (statusRows ?? []).find((r) => r.status === "overdue")?.total_value ?? 0;
 
   const collectionRate = totalInvoices > 0 ? Math.round((Number(paidCount) / totalInvoices) * 100) : 0;
 
-  // Avg settlement - from client health scores avg_days_to_payment weighted
   const avgSettlement = (() => {
     const rows = clientRows ?? [];
     const weighted = rows.filter((r) => r.avg_days_to_payment != null);
@@ -69,7 +78,6 @@ export default function InvoiceAnalyticsPage() {
     return (sum / weighted.length).toFixed(1);
   })();
 
-  // Donut data for status distribution
   const statusDonutData = (statusRows ?? [])
     .filter((r) => Number(r.invoice_count) > 0)
     .map((r) => ({
@@ -78,7 +86,6 @@ export default function InvoiceAnalyticsPage() {
       color: STATUS_COLORS[r.status] ?? "#9ca3af",
     }));
 
-  // Avg days to payment by client bar
   const clientPaymentDays = (clientRows ?? [])
     .filter((r) => r.avg_days_to_payment != null)
     .sort((a, b) => (a.avg_days_to_payment ?? 0) - (b.avg_days_to_payment ?? 0))
@@ -88,32 +95,16 @@ export default function InvoiceAnalyticsPage() {
       days: r.avg_days_to_payment ?? 0,
     }));
 
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "month", label: "This Month" },
-    { key: "q4",    label: "Q4 (Jan-Mar)" },
-    { key: "ytd",   label: "YTD" },
-    { key: "fy",    label: "Full Year" },
-  ];
-
   return (
     <div className="space-y-6">
 
-      {/* Invoice Health */}
+      {/* Invoice Health with filter inside */}
       <DarkSection>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Health</p>
-          <div className="flex items-center gap-2">
-            {PERIODS.map((p) => (
-              <button key={p.key} onClick={() => setPeriod(p.key)}
-                className={cn(
-                  "px-2.5 py-1 rounded-button text-xs font-medium transition-all border",
-                  period === p.key
-                    ? "bg-white/[0.12] text-white border-white/[0.2]"
-                    : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/[0.14]"
-                )}>{p.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Invoice Health
+          </p>
+          <DateFilter value={filterState} onChange={setFilterState} />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {isLoading
@@ -169,7 +160,29 @@ export default function InvoiceAnalyticsPage() {
         </div>
       </DarkSection>
 
-      {/* Revenue mix: retainer vs one-time via client bar chart */}
+      {/* Monthly Revenue Bar Chart */}
+      <GlassCard padding="md">
+        <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Revenue</h3>
+        {plLoading ? (
+          <Skeleton className="h-52 w-full" />
+        ) : monthlyBarData.length === 0 ? (
+          <EmptyState icon={BarChart2} title="No data for this period" description="Select a different period or add invoices." />
+        ) : (
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyBarData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barSize={24}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                <XAxis dataKey="month" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, "Revenue"]} />
+                <Bar dataKey="invoiced" name="Revenue" fill="#fd7e14" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </GlassCard>
+
+      {/* Revenue collected by client */}
       <GlassCard padding="md">
         <h3 className="text-sm font-semibold text-text-primary mb-4">Revenue Collected by Client</h3>
         {clientLoading ? (
@@ -192,8 +205,8 @@ export default function InvoiceAnalyticsPage() {
                 <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`Rs.${v.toLocaleString("en-IN")}`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-                <Bar dataKey="invoiced"  name="Invoiced"   fill="#fd7e14" opacity={0.4} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="collected" name="Collected"  fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="invoiced"  name="Invoiced"  fill="#fd7e14" opacity={0.4} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="collected" name="Collected" fill="#22c55e" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -257,8 +270,7 @@ export default function InvoiceAnalyticsPage() {
                   <XAxis type="number" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}d`} />
                   <YAxis type="category" dataKey="client" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} width={72} />
                   <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v: number) => [`${v} days`, ""]} />
-                  <Bar dataKey="days" radius={[0, 4, 4, 0]}
-                    fill="#fd7e14"
+                  <Bar dataKey="days" radius={[0, 4, 4, 0]} fill="#fd7e14"
                     label={{ position: "right", fontSize: 11, fill: "#9ca3af", formatter: (v: number) => `${v}d` }}
                   />
                 </BarChart>

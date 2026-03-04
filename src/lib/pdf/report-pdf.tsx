@@ -29,13 +29,14 @@ export interface InvestorReportWithData {
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatINR(amount: number): string {
-  if (amount >= 10000000) {
-    return `Rs.${(amount / 10000000).toFixed(2)}Cr`;
+  const safe = Number.isFinite(amount) ? amount : 0;
+  if (safe >= 10000000) {
+    return `Rs.${(safe / 10000000).toFixed(2)}Cr`;
   }
-  if (amount >= 100000) {
-    return `Rs.${(amount / 100000).toFixed(2)}L`;
+  if (safe >= 100000) {
+    return `Rs.${(safe / 100000).toFixed(2)}L`;
   }
-  return `Rs.${amount.toLocaleString("en-IN")}`;
+  return `Rs.${safe.toLocaleString("en-IN")}`;
 }
 
 function getProfitMargin(revenue: number, netProfit: number): string {
@@ -322,11 +323,11 @@ export function ReportPdfDocument({ report }: { report: InvestorReportWithData }
   const isProfitable = d.netProfit >= 0;
 
   const financialRows = [
-    { label: "Total Revenue", value: formatINR(d.revenue), isPositive: true },
-    { label: "Total Expenses", value: formatINR(d.expenses), isPositive: false },
-    { label: "Net Profit / Loss", value: formatINR(d.netProfit), isPositive: isProfitable },
+    { label: "Total Revenue", value: formatINR(d.revenue ?? 0), isPositive: true },
+    { label: "Total Expenses", value: formatINR(d.expenses ?? 0), isPositive: false },
+    { label: "Net Profit / Loss", value: formatINR(d.netProfit ?? 0), isPositive: isProfitable },
     { label: "Profit Margin", value: profitMargin, isPositive: isProfitable },
-    { label: "Outstanding Receivables", value: formatINR(d.outstandingInvoices), isPositive: false },
+    { label: "Outstanding Receivables", value: formatINR(d.outstandingInvoices ?? 0), isPositive: false },
   ];
 
   return (

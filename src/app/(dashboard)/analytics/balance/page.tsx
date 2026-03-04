@@ -1,15 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { Landmark, ShieldCheck, TrendingUp, CreditCard } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
-import { DarkSection, DarkLabel, DarkCard } from "@/components/shared/dark-section";
+import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { DateFilter, DateFilterState } from "@/components/shared/date-filter";
 import { cn } from "@/lib/utils/cn";
 import { useMonthlyPL, useDashboardKPIs } from "@/lib/hooks/use-analytics";
 
-// ─── Static balance sheet items (to be replaced with DB when a balance sheet
-//     table is added). Dynamic items derive from real data below.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Static balance sheet items ───────────────────────────────────────────────
 
 const FIXED_ASSETS = [
   { name: "Laptops & Equipment (net)", amount: 85000 },
@@ -38,20 +38,19 @@ function sectionTotal(items: { name: string; amount: number }[]) {
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function BalancePage() {
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
+
   const { data: plRows, isLoading: plLoading } = useMonthlyPL();
   const { data: kpis, isLoading: kpisLoading } = useDashboardKPIs();
 
   const isLoading = plLoading || kpisLoading;
 
-  // Derive dynamic values from real data
-  const totalRevenue = (plRows ?? []).reduce((s, r) => s + r.total_revenue, 0);
+  const totalRevenue  = (plRows ?? []).reduce((s, r) => s + r.total_revenue, 0);
   const totalExpenses = (plRows ?? []).reduce((s, r) => s + r.total_expenses, 0);
-  const outstanding = kpis?.outstanding ?? 0;
+  const outstanding   = kpis?.outstanding ?? 0;
 
-  // Use YTD revenue minus expenses as proxy for bank balance (simplified)
   const estimatedBankBalance = Math.max(0, totalRevenue - totalExpenses);
 
-  // Build dynamic asset sections
   const currentAssets = [
     { name: "Accounts Receivable (outstanding)", amount: outstanding },
     { name: "Security Deposits",                 amount: 30000 },
@@ -59,63 +58,53 @@ export default function BalancePage() {
   ];
 
   const ASSETS = [
-    {
-      category: "Current Assets",
-      items: currentAssets,
-    },
-    {
-      category: "Fixed Assets",
-      items: FIXED_ASSETS,
-    },
-    {
-      category: "Intangible Assets",
-      items: INTANGIBLE_ASSETS,
-    },
+    { category: "Current Assets",    items: currentAssets     },
+    { category: "Fixed Assets",      items: FIXED_ASSETS      },
+    { category: "Intangible Assets", items: INTANGIBLE_ASSETS },
   ];
 
   const LIABILITIES = [
-    {
-      category: "Current Liabilities",
-      items: STATIC_LIABILITIES,
-    },
-    {
-      category: "Long-Term Liabilities",
-      items: LONG_TERM_LIABILITIES,
-    },
+    { category: "Current Liabilities",   items: STATIC_LIABILITIES    },
+    { category: "Long-Term Liabilities", items: LONG_TERM_LIABILITIES },
   ];
 
   const totalAssets      = ASSETS.flatMap((a) => a.items).reduce((s, i) => s + i.amount, 0);
   const totalLiabilities = LIABILITIES.flatMap((a) => a.items).reduce((s, i) => s + i.amount, 0);
   const netWorth         = totalAssets - totalLiabilities;
 
-  const currentRatioCurrent = outstanding + 30000 + 15000; // current assets
+  const currentRatioCurrent = outstanding + 30000 + 15000;
   const currentRatioLiab    = sectionTotal(STATIC_LIABILITIES);
   const currentRatio        = currentRatioLiab > 0 ? (currentRatioCurrent / currentRatioLiab).toFixed(1) : "N/A";
 
-  const EQUITY = [
-    { name: "Retained Earnings (FY 25-26)", amount: netWorth },
-  ];
+  const EQUITY = [{ name: "Retained Earnings (FY 25-26)", amount: netWorth }];
 
   const asOfDate = new Date().toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+    day: "numeric", month: "short", year: "numeric",
   });
 
   return (
     <div className="space-y-6">
 
-      {/* As of banner */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-text-muted">Balance Sheet as of</span>
-        <span className="text-xs font-semibold text-text-primary bg-accent-muted text-accent border border-accent-light px-2 py-0.5 rounded-button">
-          {isLoading ? "..." : asOfDate}
-        </span>
-      </div>
-
-      {/* Financial Position */}
+      {/* Financial Position - date + filter inside */}
       <DarkSection>
-        <DarkLabel>Financial Position</DarkLabel>
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Financial Position
+            </p>
+            <span
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-button"
+              style={{
+                background: "rgba(253,126,20,0.18)",
+                color: "#fd7e14",
+                border: "1px solid rgba(253,126,20,0.25)",
+              }}
+            >
+              {isLoading ? "..." : `As of ${asOfDate}`}
+            </span>
+          </div>
+          <DateFilter value={filterState} onChange={setFilterState} />
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (

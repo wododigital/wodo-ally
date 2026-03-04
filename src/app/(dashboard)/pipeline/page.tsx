@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
+import Link from "next/link"; // used for invoices link + client links
 import {
   FileText, Clock, AlertCircle, CheckCircle2, Calendar,
   TrendingUp, ArrowRight, Plus, Loader2,
@@ -50,6 +50,7 @@ export default function PipelinePage() {
   const updateScheduled = useUpdateScheduledInvoice();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceClientId, setInvoiceClientId] = useState("");
+  const [scheduledItemId, setScheduledItemId] = useState<string | null>(null);
 
   // Derive billing months from real data (sorted unique)
   const billingMonths = useMemo(() => {
@@ -114,8 +115,12 @@ export default function PipelinePage() {
     <div className="space-y-8 animate-fade-in">
       {showInvoiceModal && (
         <NewInvoiceModal
-          onClose={() => setShowInvoiceModal(false)}
+          onClose={() => { setShowInvoiceModal(false); setScheduledItemId(null); }}
           preselectedClientId={invoiceClientId}
+          forcedType={scheduledItemId ? "proforma" : undefined}
+          onCreated={scheduledItemId ? () => {
+            updateScheduled.mutate({ id: scheduledItemId, status: "generated" });
+          } : undefined}
         />
       )}
 
@@ -123,19 +128,13 @@ export default function PipelinePage() {
       <DarkSection>
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Pipeline Overview</p>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <Link href="/analytics/invoices"
-              className="px-2.5 py-1 rounded-button text-xs font-medium transition-all border bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-white/[0.14] hover:text-white/70">
-              Analytics
-            </Link>
-            <button
-              onClick={() => { setInvoiceClientId(""); setShowInvoiceModal(true); }}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "rgba(253,126,20,0.85)" }}>
-              <Plus className="w-3 h-3" />
-              New Invoice
-            </button>
-          </div>
+          <button
+            onClick={() => { setInvoiceClientId(""); setShowInvoiceModal(true); }}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-button text-xs font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: "rgba(253,126,20,0.85)" }}>
+            <Plus className="w-3 h-3" />
+            New Invoice
+          </button>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
@@ -305,7 +304,7 @@ export default function PipelinePage() {
                       ) : (
                         <button
                           onClick={() => {
-                            updateScheduled.mutate({ id: item.id, status: "generated" });
+                            setScheduledItemId(item.id);
                             setInvoiceClientId(item.client_id);
                             setShowInvoiceModal(true);
                           }}
@@ -427,6 +426,52 @@ export default function PipelinePage() {
           </Link>
         </div>
       </div>
+
+      {/* ── Forecast period summary ─────────────────────────────────────────── */}
+      {forecastData.length > 0 && (
+        <div>
+          <h2 className="text-sm font-bold text-text-primary mb-4">Pipeline Forecasts</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                label: "Next Month",
+                value: forecastData[0] ? forecastData[0].retainer + forecastData[0].one_time : 0,
+                sub: forecastData[0]?.month ?? "",
+                color: "#fd7e14",
+              },
+              {
+                label: "Next Quarter",
+                value: forecastData.slice(0, 3).reduce((s, m) => s + m.retainer + m.one_time, 0),
+                sub: `${forecastData[0]?.month ?? ""} - ${forecastData[2]?.month ?? ""}`,
+                color: "#3b82f6",
+              },
+              {
+                label: "Next 6 Months",
+                value: forecastData.slice(0, 6).reduce((s, m) => s + m.retainer + m.one_time, 0),
+                sub: "Combined pipeline",
+                color: "#8b5cf6",
+              },
+              {
+                label: "Next 12 Months",
+                value: forecastData.reduce((s, m) => s + m.retainer + m.one_time, 0),
+                sub: "Annual pipeline",
+                color: "#22c55e",
+              },
+            ].map((item) => (
+              <GlassCard key={item.label} padding="md">
+                <p className="text-xs font-semibold text-text-secondary mb-1">{item.label}</p>
+                <p className="text-xl font-light font-sans text-text-primary">
+                  Rs.{(item.value / 100000).toFixed(2)}L
+                </p>
+                <p className="text-xs text-text-muted mt-0.5">{item.sub}</p>
+                <div className="mt-2 h-0.5 rounded-full" style={{ background: `${item.color}40` }}>
+                  <div className="h-full rounded-full w-full" style={{ background: item.color, opacity: 0.7 }} />
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── 6-month income forecast ─────────────────────────────────────────── */}
       {forecastData.length > 0 && (

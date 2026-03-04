@@ -4,20 +4,21 @@ export function formatCurrency(
   amount: number,
   currency: "INR" | "USD" | "AED" | "GBP" | "EUR" = "INR"
 ): string {
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
   if (currency === "INR") {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(safeAmount);
   }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
 export function formatDate(date: string | Date): string {
@@ -33,10 +34,11 @@ export function formatRelativeTime(date: string | Date): string {
 }
 
 export function formatNumber(n: number): string {
-  return new Intl.NumberFormat("en-IN").format(n);
+  return new Intl.NumberFormat("en-IN").format(Number.isFinite(n) ? n : 0);
 }
 
 export function formatPercentage(n: number, decimals = 1): string {
+  if (!Number.isFinite(n)) return "0.0%";
   return `${n >= 0 ? "+" : ""}${n.toFixed(decimals)}%`;
 }
 
