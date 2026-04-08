@@ -16,6 +16,7 @@ export interface InvestorReportWithData {
   title: string;
   report_month: number;
   report_year: number;
+  report_type?: "monthly" | "quarterly" | "annual";
   financial_year: string;
   report_data: ReportData;
   status: "draft" | "generated" | "sent";
@@ -332,7 +333,7 @@ export function ReportPdfDocument({ report }: { report: InvestorReportWithData }
 
   return (
     <Document
-      title={`Monthly Investor Report - ${monthYear}`}
+      title={`${report.report_type === "quarterly" ? "Quarterly" : report.report_type === "annual" ? "Annual" : "Monthly"} Investor Report - ${monthYear}`}
       author="WODO Digital Private Limited"
     >
       <Page size="A4" style={styles.page}>
@@ -342,7 +343,7 @@ export function ReportPdfDocument({ report }: { report: InvestorReportWithData }
           <Text style={styles.coverTagline}>
             DESIGN  |  DEVELOPMENT  |  DIGITAL GROWTH
           </Text>
-          <Text style={styles.coverTitle}>Monthly Performance Report</Text>
+          <Text style={styles.coverTitle}>{report.report_type === "quarterly" ? "Quarterly" : report.report_type === "annual" ? "Annual" : "Monthly"} Performance Report</Text>
           <Text style={styles.coverSubtitle}>
             {monthYear}  -  FY {d.financialYear}  -  WODO Digital Private Limited
           </Text>

@@ -41,6 +41,9 @@ export interface InvoicePdfProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Local formatCurrency for PDF context - @react-pdf/renderer runs in a
+// restricted environment where Intl.NumberFormat may not behave consistently.
+// See also: src/lib/utils/format.ts for the app-wide version.
 function formatCurrency(amount: number, currency: string): string {
   if (!Number.isFinite(amount)) amount = 0;
   const sym =
@@ -139,9 +142,15 @@ function getBankDetails(
 
   if (currency === "GBP") {
     return [
-      { label: "Beneficiary", value: "WODO DIGITAL PRIVATE LIMITED" },
+      { label: "Account Holder", value: "WODO DIGITAL PRIVATE LIMITED" },
       { label: "Payment Method", value: "BACS / SWIFT" },
-      { label: "Note", value: "GBP transfer details - contact accounts@wodo.digital" },
+      { label: "Sort Code", value: "23-14-70" },
+      { label: "Account Number", value: "46260709" },
+      { label: "IBAN", value: "GB07TRWI23147046260709" },
+      { label: "BIC / SWIFT", value: "TRWIGB2LXXX" },
+      { label: "Bank Name", value: "Wise Payments Ltd" },
+      { label: "Bank Address", value: "56 Shoreditch High Street, London, E1 6JJ, UK" },
+      { label: "Account Currency", value: "GBP" },
     ];
   }
 
@@ -601,16 +610,43 @@ export function InvoicePdf({ invoice, client, lineItems }: InvoicePdfProps) {
             </Text>
           </View>
 
-          {invoice.invoice_type === "gst" && invoice.tax_rate > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>
-                GST @ {invoice.tax_rate}%
-              </Text>
-              <Text style={styles.totalValue}>
-                {formatCurrency(invoice.tax_amount, invoice.currency)}
-              </Text>
-            </View>
-          )}
+          {invoice.invoice_type === "gst" && invoice.tax_rate > 0 && (() => {
+            // Determine intra-state vs inter-state based on GSTIN state codes
+            // WODO Digital GSTIN starts with "29" (Karnataka)
+            const companyStateCode = "29";
+            const clientStateCode = client.gstin?.substring(0, 2) ?? "";
+            const isIntraState = clientStateCode === companyStateCode;
+            const halfRate = invoice.tax_rate / 2;
+            const halfAmount = Math.round(invoice.tax_amount / 2 * 100) / 100;
+            const remainderAmount = Math.round((invoice.tax_amount - halfAmount) * 100) / 100;
+
+            if (isIntraState) {
+              return (
+                <>
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>CGST @ {halfRate}%</Text>
+                    <Text style={styles.totalValue}>
+                      {formatCurrency(halfAmount, invoice.currency)}
+                    </Text>
+                  </View>
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>SGST @ {halfRate}%</Text>
+                    <Text style={styles.totalValue}>
+                      {formatCurrency(remainderAmount, invoice.currency)}
+                    </Text>
+                  </View>
+                </>
+              );
+            }
+            return (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>IGST @ {invoice.tax_rate}%</Text>
+                <Text style={styles.totalValue}>
+                  {formatCurrency(invoice.tax_amount, invoice.currency)}
+                </Text>
+              </View>
+            );
+          })()}
 
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>GRAND TOTAL</Text>

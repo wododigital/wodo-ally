@@ -35,8 +35,20 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Public paths - allow through
-  if (path === "/login" || path.startsWith("/api/")) {
+  // Public paths - allow through without auth check
+  if (path === "/login") {
+    return supabaseResponse;
+  }
+
+  // API routes - enforce authentication at middleware level
+  // Individual routes may still check role-based authorization
+  if (path.startsWith("/api/")) {
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     return supabaseResponse;
   }
 

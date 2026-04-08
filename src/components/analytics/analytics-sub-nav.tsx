@@ -23,7 +23,7 @@ export function AnalyticsSubNav() {
 
   return (
     <div className="overflow-x-auto -mx-1 pb-0.5">
-      <div className="flex items-center gap-1.5 min-w-max px-1">
+      <div className="flex items-center gap-1.5 flex-wrap px-1">
         {TABS.map((tab) => {
           const active = isActive(tab);
           return (

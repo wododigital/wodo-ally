@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/client";
+import { getUserRole, isRoleAllowed } from "@/lib/auth/check-role";
 import {
   invoiceSentTemplate,
   paymentReminderTemplate,
@@ -37,6 +38,12 @@ export async function POST(
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Role check - only admin, manager, and accountant can send invoice emails
+    const role = await getUserRole(supabase, user.id);
+    if (!isRoleAllowed(role, ["admin", "manager", "accountant"])) {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
     }
 
     const invoiceId = params.id;

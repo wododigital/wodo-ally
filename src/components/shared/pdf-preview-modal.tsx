@@ -15,6 +15,9 @@ export function PdfPreviewModal({ isOpen, onClose, title, pdfUrl, onDownload }: 
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -49,6 +52,7 @@ export function PdfPreviewModal({ isOpen, onClose, title, pdfUrl, onDownload }: 
               onClick={onClose}
               className="p-2 rounded-full transition-all hover:opacity-80"
               style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
+              aria-label="Close preview"
             >
               <X className="w-4 h-4" />
             </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, Search, Users, FileText, TrendingUp, Star, CheckCircle2,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
@@ -360,6 +361,8 @@ export default function ClientsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceClientId, setInvoiceClientId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 18;
 
   const { data: clients = [], isLoading, isError, error } = useClients();
   const { data: contractStatusMap = {} } = useClientContractSummaries();
@@ -372,6 +375,11 @@ export default function ClientsPage() {
     const matchStatus = statusFilter === "all" || c.status === statusFilter;
     return matchSearch && matchFilter && matchStatus;
   });
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, filter, statusFilter]);
+
+  const { paged: pagedClients, total: totalFiltered } = paginateArray(filtered, currentPage, PAGE_SIZE);
 
   const counts = INVOICE_FILTERS.reduce<Record<FilterType, number>>((acc, f) => {
     acc[f.value] = f.value === "all"
@@ -519,8 +527,9 @@ export default function ClientsPage() {
           action={{ label: "Add Client", onClick: () => setShowAddModal(true) }}
         />
       ) : (
+        <>
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filtered.map((client) => {
+          {pagedClients.map((client) => {
             const hl = healthLabel(client.health_score);
             const avgDays = client.avg_days_to_pay ?? 0;
             const onTimePct = client.on_time_payment_pct ?? 0;
@@ -610,6 +619,13 @@ export default function ClientsPage() {
             );
           })}
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalFiltered}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+        />
+        </>
       )}
     </div>
   );

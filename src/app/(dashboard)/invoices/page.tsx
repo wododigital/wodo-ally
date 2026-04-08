@@ -14,6 +14,7 @@ import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
 import { CsvExportModal } from "@/components/invoices/csv-export-modal";
 import { TypeFilterDropdown } from "@/components/invoices/type-filter-dropdown";
@@ -149,6 +150,8 @@ function InvoicesContent() {
   const [modalClientId, setModalClientId] = useState("");
   const [modalType, setModalType] = useState<string | null>(null);
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const { data: invoices = [], isLoading } = useInvoices();
   const updateInvoice = useUpdateInvoice();
@@ -227,6 +230,11 @@ function InvoicesContent() {
     });
     return arr;
   }, [filtered, sortField, sortDir]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, typeFilter, search, sortField, sortDir]);
+
+  const { paged: pagedInvoices, total: totalFiltered } = paginateArray(sorted, currentPage, PAGE_SIZE);
 
   const totals = {
     outstanding: invoices.filter((i) => ["sent", "overdue"].includes(i.status)).reduce((s, i) => s + (i.balance_due ?? 0), 0),
@@ -391,7 +399,7 @@ function InvoicesContent() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((invoice, idx) => {
+                {pagedInvoices.map((invoice, idx) => {
                   const isIntl = invoice.invoice_type === "international";
                   const inrAmount = invoice.total_amount_inr ?? null;
                   const isArchived = (invoice.status as string) === "archived";
@@ -454,6 +462,12 @@ function InvoicesContent() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalFiltered}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </GlassCard>
       )}
     </div>

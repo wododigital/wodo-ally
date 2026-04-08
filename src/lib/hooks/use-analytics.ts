@@ -391,26 +391,26 @@ export function useDashboardKPIs() {
       // Revenue this month
       const { data: thisMonthPayments } = await supabase
         .from("invoice_payments")
-        .select("amount_received_inr, amount_received")
+        .select("amount_received_inr, amount_received, currency")
         .gte("payment_date", thisMonthStart)
         .lte("payment_date", thisMonthEnd);
 
       const revenue_this_month = (thisMonthPayments ?? []).reduce(
         (sum, p) =>
-          sum + Number(p.amount_received_inr ?? p.amount_received ?? 0),
+          sum + Number(p.amount_received_inr ?? (p.currency === "INR" || !p.currency ? p.amount_received ?? 0 : 0)),
         0
       );
 
       // Revenue last month
       const { data: lastMonthPayments } = await supabase
         .from("invoice_payments")
-        .select("amount_received_inr, amount_received")
+        .select("amount_received_inr, amount_received, currency")
         .gte("payment_date", lastMonthStart)
         .lte("payment_date", lastMonthEnd);
 
       const revenue_last_month = (lastMonthPayments ?? []).reduce(
         (sum, p) =>
-          sum + Number(p.amount_received_inr ?? p.amount_received ?? 0),
+          sum + Number(p.amount_received_inr ?? (p.currency === "INR" || !p.currency ? p.amount_received ?? 0 : 0)),
         0
       );
 

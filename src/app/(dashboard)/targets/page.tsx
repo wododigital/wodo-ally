@@ -12,15 +12,15 @@ import {
   useDeleteTarget,
   useRefreshTargetProgress,
 } from "@/lib/hooks/use-targets";
+import { getFinancialYear } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
 
 type TargetRow = Database["public"]["Tables"]["financial_targets"]["Row"];
 type TargetType = TargetRow["target_type"];
 type PeriodType = TargetRow["period_type"];
 
-// ─── FY helpers ───────────────────────────────────────────────────────────────
-
-const CURRENT_FY = "2025-26";
+// Use centralized FY helper from format.ts
+const CURRENT_FY = getFinancialYear();
 
 function computeElapsedPct(target: TargetRow): number {
   const now = new Date();

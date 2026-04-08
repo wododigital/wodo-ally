@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Check, ChevronUp, ChevronDown, Search, X } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
@@ -32,6 +33,8 @@ export default function TransactionsPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCategoryId, setEditCategoryId] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const dateRange = useMemo(() => resolveDateRange(dateFilter), [dateFilter]);
 
@@ -72,6 +75,11 @@ export default function TransactionsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [transactions, dateRange, sortField, sortDir]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, dateFilter, sortField, sortDir]);
+
+  const { paged: pagedTransactions, total: totalFiltered } = paginateArray(filtered, currentPage, PAGE_SIZE);
 
   const totalDebit = filtered.reduce((s, t) => s + (t.debit ?? 0), 0);
 
@@ -168,7 +176,7 @@ export default function TransactionsPage() {
               : "No transactions match your filters."}
           </div>
         ) : (
-          filtered.map((txn, idx) => {
+          pagedTransactions.map((txn, idx) => {
             const isEditing = editingId === txn.id;
             const catColor = txn.category_id
               ? (colorMap.get(txn.category_id) ?? FALLBACK_COLOR)
@@ -260,6 +268,12 @@ export default function TransactionsPage() {
             );
           })
         )}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalFiltered}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+        />
       </GlassCard>
     </div>
   );

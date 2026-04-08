@@ -15,6 +15,8 @@ import { PdfPreviewModal } from "@/components/shared/pdf-preview-modal";
 import { SendInvoiceEmailModal } from "@/components/invoices/send-invoice-email-modal";
 import { StatusChangeDropdown } from "@/components/invoices/status-change-dropdown";
 import { SendInvoiceDropdown } from "@/components/invoices/send-invoice-dropdown";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { paymentSchema } from "@/lib/validations/invoice";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import {
@@ -79,14 +81,32 @@ function RecordPaymentModal({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    const amountReceived = parseFloat(form.amount_received) || 0;
+    const tdsAmount = parseFloat(form.tds_amount) || 0;
+
+    // Validate with Zod schema
+    const validation = paymentSchema.safeParse({
+      amount_received: amountReceived,
+      payment_date: form.payment_date,
+      payment_method: form.payment_method,
+      tds_deducted: tdsAmount,
+      notes: form.notes || null,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     recordPayment.mutate(
       {
         payment: {
           invoice_id: invoiceId,
           payment_date: form.payment_date,
-          amount_received: parseFloat(form.amount_received) || 0,
+          amount_received: amountReceived,
           currency,
-          tds_amount: parseFloat(form.tds_amount) || 0,
+          tds_amount: tdsAmount,
           payment_method: form.payment_method as PaymentMethod,
           reference_number: form.reference || null,
           notes: form.notes || null,
@@ -380,6 +400,11 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
+      <Breadcrumbs items={[
+        { label: "Invoices", href: "/invoices" },
+        { label: displayRef },
+      ]} />
+
       <PdfPreviewModal
         isOpen={showPdfModal}
         onClose={handleClosePdfModal}

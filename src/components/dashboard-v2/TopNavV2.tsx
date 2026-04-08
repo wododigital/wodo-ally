@@ -42,6 +42,8 @@ const NAV_TABS: NavTab[] = [
       { href: "/analytics/balance",  label: "Balance Sheet" },
     ],
   },
+  { href: "/projects",  label: "Projects"  },
+  { href: "/contracts", label: "Contracts" },
   { href: "/pipeline",  label: "Pipeline"  },
   { href: "/targets",   label: "Goals"     },
   { href: "/reports",   label: "Reports",  exact: true },
@@ -72,6 +74,8 @@ const PAGE_TITLES: Record<string, string> = {
 
 type NotifType = "overdue" | "due_soon" | "upcoming" | "payment";
 
+// Notifications are empty until a real notification backend is implemented.
+// Previously this contained hardcoded fake data which was misleading.
 const NOTIFICATIONS: {
   id: string;
   type: NotifType;
@@ -80,53 +84,7 @@ const NOTIFICATIONS: {
   time: string;
   read: boolean;
   href: string;
-}[] = [
-  {
-    id: "1",
-    type: "overdue",
-    title: "Invoice overdue",
-    body: "NG00201 - Raj Enterprises · Rs.17,500",
-    time: "8 days ago",
-    read: false,
-    href: "/invoices/bbbbbbbb-0000-0000-0000-000000000007",
-  },
-  {
-    id: "2",
-    type: "due_soon",
-    title: "Invoice due in 5 days",
-    body: "G00111 - Nandhini Hotel · Rs.76,700",
-    time: "Today",
-    read: false,
-    href: "/invoices/bbbbbbbb-0000-0000-0000-000000000002",
-  },
-  {
-    id: "3",
-    type: "upcoming",
-    title: "Retainer invoice due Apr 1",
-    body: "Maximus OIGA · Rs.59,000 - Draft before Apr 1",
-    time: "In 28 days",
-    read: false,
-    href: "/invoices",
-  },
-  {
-    id: "4",
-    type: "upcoming",
-    title: "Retainer invoice due Apr 1",
-    body: "Nandhini Hotel · Rs.76,700 - Draft before Apr 1",
-    time: "In 28 days",
-    read: true,
-    href: "/invoices",
-  },
-  {
-    id: "5",
-    type: "payment",
-    title: "Payment received",
-    body: "Sea Wonders Tourism · Rs.89,600",
-    time: "3 days ago",
-    read: true,
-    href: "/payments",
-  },
-];
+}[] = [];
 
 const NOTIF_CONFIG: Record<NotifType, { icon: React.ElementType; color: string; bg: string }> = {
   overdue:  { icon: AlertCircle,   color: "#ef4444", bg: "rgba(239,68,68,0.10)"   },
@@ -147,6 +105,8 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      role="menu"
+      aria-label="Notifications"
       className="fixed left-3 right-3 top-[68px] rounded-2xl overflow-hidden z-50
                  md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-80"
       style={{
@@ -173,7 +133,7 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
               Mark all read
             </button>
           )}
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-black/5 transition-colors text-gray-400">
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-black/5 transition-colors text-gray-400" aria-label="Close notifications">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -314,10 +274,11 @@ export function TopNavV2() {
         </div>
 
         {/* Dark pill - absolutely centered - hidden on mobile */}
-        <div
+        <nav
           ref={dropdownRef}
           className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-0.5 px-1.5 py-1.5 rounded-full"
           style={{ background: "#1e2030" }}
+          aria-label="Main navigation"
         >
           {NAV_TABS.map((tab) => {
             const active = isActive(tab);
@@ -332,6 +293,8 @@ export function TopNavV2() {
                       active ? "text-white" : "text-gray-400 hover:text-gray-200"
                     )}
                     style={active ? { background: "#fd7e14" } : undefined}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
                   >
                     {tab.label}
                     <ChevronDown className="w-3 h-3 opacity-70" />
@@ -380,7 +343,7 @@ export function TopNavV2() {
               </Link>
             );
           })}
-        </div>
+        </nav>
 
         {/* Right controls */}
         <div className="flex items-center gap-1 shrink-0 ml-auto z-10">
@@ -390,6 +353,9 @@ export function TopNavV2() {
             <button
               onClick={() => setNotifOpen((v) => !v)}
               className="relative p-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors"
+              aria-label="Notifications"
+              aria-expanded={notifOpen}
+              aria-haspopup="true"
             >
               <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
@@ -409,6 +375,7 @@ export function TopNavV2() {
               "hidden md:flex p-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors",
               pathname.startsWith("/settings") && "bg-black/5 text-gray-900"
             )}
+            aria-label="Settings"
           >
             <Settings className="w-4 h-4" />
           </Link>
@@ -424,6 +391,7 @@ export function TopNavV2() {
               onClick={handleSignOut}
               className="p-1.5 rounded-full text-gray-400 hover:bg-black/5 transition-colors"
               title="Sign out"
+              aria-label="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -433,6 +401,9 @@ export function TopNavV2() {
           <button
             onClick={() => setMobileMenuOpen((v) => !v)}
             className="md:hidden p-2 rounded-full text-gray-600 hover:bg-black/5 transition-colors ml-1"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -442,6 +413,8 @@ export function TopNavV2() {
       {/* ── Mobile menu drawer ── */}
       {mobileMenuOpen && (
         <div
+          id="mobile-nav-menu"
+          role="menu"
           className="md:hidden absolute left-0 right-0 z-50 py-4 px-4"
           style={{
             background: "rgba(255,255,255,0.96)",
@@ -500,10 +473,10 @@ export function TopNavV2() {
               <span className="text-sm font-medium text-gray-800">{profile?.full_name ?? "User"}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full text-gray-500 hover:bg-black/5">
+              <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full text-gray-500 hover:bg-black/5" aria-label="Settings">
                 <Settings className="w-4 h-4" />
               </Link>
-              <button onClick={() => { setMobileMenuOpen(false); handleSignOut(); }} className="p-2 rounded-full text-gray-500 hover:bg-black/5">
+              <button onClick={() => { setMobileMenuOpen(false); handleSignOut(); }} className="p-2 rounded-full text-gray-500 hover:bg-black/5" aria-label="Sign out">
                 <LogOut className="w-4 h-4" />
               </button>
             </div>

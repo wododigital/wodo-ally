@@ -24,16 +24,17 @@ export function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => !loading && onOpenChange(false)}
+        aria-hidden="true"
       />
 
       {/* Dialog card */}
       <div className="relative z-10 w-full max-w-sm glass-card p-6 shadow-xl">
-        <h2 className="text-base font-semibold text-text-primary mb-2">{title}</h2>
+        <h2 id="confirm-dialog-title" className="text-base font-semibold text-text-primary mb-2">{title}</h2>
         <p className="text-sm text-text-secondary mb-6">{description}</p>
 
         <div className="flex items-center justify-end gap-3">

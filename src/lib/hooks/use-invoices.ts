@@ -84,10 +84,36 @@ export function useInvoices(filters?: { status?: string; clientId?: string }) {
         (clientData ?? []).map((c) => [c.id, c])
       );
 
+      // Auto-detect overdue invoices: mark "sent" invoices past due_date as "overdue"
+      const today = new Date().toISOString().split("T")[0];
+      const overdueIds = invoices
+        .filter(
+          (inv) =>
+            inv.status === "sent" &&
+            inv.due_date &&
+            inv.due_date < today
+        )
+        .map((inv) => inv.id);
+
+      if (overdueIds.length > 0) {
+        // Fire-and-forget: update status to overdue in the background
+        supabase
+          .from("invoices")
+          .update({ status: "overdue" as InvoiceStatus })
+          .in("id", overdueIds)
+          .then();
+      }
+
       return invoices.map((row) => {
         const client = clientMap.get(row.client_id);
+        // Also reflect overdue in the returned data immediately
+        const effectiveStatus =
+          row.status === "sent" && row.due_date && row.due_date < today
+            ? "overdue"
+            : row.status;
         return {
           ...row,
+          status: effectiveStatus,
           client_name: client?.company_name ?? "Unknown",
           client_currency: client?.currency ?? "INR",
         } as InvoiceListItem;
@@ -861,6 +887,29 @@ export function useRecordPayment() {
     mutationFn: async (payload: RecordPaymentPayload): Promise<void> => {
       const supabase = createClient();
       const invoiceId = payload.payment.invoice_id;
+
+      // 0. Validate payment amount does not exceed balance due (overpayment guard)
+      const { data: preInvoice, error: preInvError } = await supabase
+        .from("invoices")
+        .select("total_amount, total_received, total_tds_deducted")
+        .eq("id", invoiceId)
+        .single();
+
+      if (preInvError) throw new Error(preInvError.message);
+
+      const currentBalance = Math.max(
+        0,
+        (preInvoice.total_amount ?? 0)
+          - (preInvoice.total_received ?? 0)
+          - (preInvoice.total_tds_deducted ?? 0)
+      );
+      const paymentTotal = (payload.payment.amount_received ?? 0) + (payload.payment.tds_amount ?? 0);
+
+      if (paymentTotal > currentBalance + 0.01) {
+        throw new Error(
+          `Payment of ${paymentTotal.toFixed(2)} exceeds the outstanding balance of ${currentBalance.toFixed(2)}. Please enter a smaller amount.`
+        );
+      }
 
       // 1. Insert the payment record
       const { error: paymentError } = await supabase

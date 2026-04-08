@@ -9,6 +9,7 @@ import { useClients } from "@/lib/hooks/use-clients";
 import { useServices } from "@/lib/hooks/use-services";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useCreateInvoice } from "@/lib/hooks/use-invoices";
+import { createInvoiceSchema } from "@/lib/validations/invoice";
 import type { Database } from "@/types/database";
 
 type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
@@ -101,12 +102,26 @@ export function NewInvoiceModal({
   }
 
   function handleSubmit(asDraft: boolean) {
-    if (!selectedClientId) { toast.error("Please select a client"); return; }
     const finalLineItems = lineItems
       .filter((i) => i.description.trim() && parseFloat(i.amount) > 0)
       .map((i) => ({ description: getFormattedDescription(i), amount: parseFloat(i.amount) || 0, quantity: i.quantity }));
-    if (finalLineItems.length === 0) { toast.error("Add at least one line item with a description and amount"); return; }
-    if (!invoiceDate) { toast.error("Invoice date is required"); return; }
+
+    // Validate with Zod schema
+    const validation = createInvoiceSchema.safeParse({
+      client_id: selectedClientId,
+      invoice_type: invoiceType,
+      invoice_date: invoiceDate,
+      due_date: dueDate || null,
+      currency: effectiveCurrency,
+      notes: notes || null,
+      lineItems: finalLineItems,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
 
     createInvoice.mutate(
       {
@@ -130,8 +145,8 @@ export function NewInvoiceModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(6px)" }} onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Create invoice">
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(6px)" }} onClick={onClose} aria-hidden="true" />
       <div
         className="relative w-full max-w-3xl rounded-2xl flex flex-col"
         style={{

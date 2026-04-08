@@ -50,7 +50,7 @@ function getTrajectory(
   if (status === "completed") return { label: "Completed", color: "#16a34a", bg: "rgba(22,163,74,0.10)" };
   if (status === "on_hold" || status === "cancelled") return { label: "On Hold", color: "#9ca3af", bg: "rgba(156,163,175,0.10)" };
 
-  const now = new Date("2026-03-03");
+  const now = new Date();
 
   if (!startDate || !endDate) {
     return progressPct >= 50
@@ -72,7 +72,7 @@ function getTrajectory(
 
 function getDaysRemaining(endDate: string | null): number | null {
   if (!endDate) return null;
-  const diff = new Date(endDate).getTime() - new Date("2026-03-03").getTime();
+  const diff = new Date(endDate).getTime() - new Date().getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 

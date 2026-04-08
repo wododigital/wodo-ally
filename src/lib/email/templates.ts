@@ -149,6 +149,18 @@ const FOOTER_ORANGE_STYLE = `
   font-weight: 600;
 `;
 
+/**
+ * Escape HTML special characters to prevent XSS in email templates.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function wrapTemplate(headerContent: string, bodyContent: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -186,26 +198,29 @@ export function invoiceSentTemplate(data: {
   dueDate: string;
   currency: string;
 }): string {
-  const { clientName, invoiceNumber, amount, dueDate } = data;
+  const safeClientName = escapeHtml(data.clientName);
+  const safeInvoiceNumber = escapeHtml(data.invoiceNumber);
+  const safeAmount = escapeHtml(data.amount);
+  const safeDueDate = escapeHtml(data.dueDate);
 
   const body = `
-    <h2 style="${GREETING_STYLE}">Dear ${clientName},</h2>
+    <h2 style="${GREETING_STYLE}">Dear ${safeClientName},</h2>
     <p style="${BODY_TEXT_STYLE}">
-      Please find attached invoice <strong>${invoiceNumber}</strong> from WODO Digital Private Limited.
+      Please find attached invoice <strong>${safeInvoiceNumber}</strong> from WODO Digital Private Limited.
       Kindly review the invoice and process payment by the due date mentioned below.
     </p>
     <div style="${INFO_BOX_STYLE}">
       <div style="margin-bottom: 12px;">
         <p style="font-size: 11px; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0;">Invoice Amount</p>
-        <p style="${AMOUNT_HIGHLIGHT_STYLE}">${amount}</p>
+        <p style="${AMOUNT_HIGHLIGHT_STYLE}">${safeAmount}</p>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Invoice No.</span>
-        <span style="${INFO_VALUE_STYLE}">${invoiceNumber}</span>
+        <span style="${INFO_VALUE_STYLE}">${safeInvoiceNumber}</span>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Due Date</span>
-        <span style="${INFO_VALUE_STYLE}">${dueDate}</span>
+        <span style="${INFO_VALUE_STYLE}">${safeDueDate}</span>
       </div>
     </div>
     <p style="${BODY_TEXT_STYLE}">
@@ -220,7 +235,7 @@ export function invoiceSentTemplate(data: {
     </p>
   `;
 
-  return wrapTemplate(`Invoice ${invoiceNumber}`, body);
+  return wrapTemplate(`Invoice ${safeInvoiceNumber}`, body);
 }
 
 // ─── Template 2: Payment Reminder ────────────────────────────────────────────
@@ -232,7 +247,11 @@ export function paymentReminderTemplate(data: {
   dueDate: string;
   daysOverdue: number;
 }): string {
-  const { clientName, invoiceNumber, amount, dueDate, daysOverdue } = data;
+  const safeClientName = escapeHtml(data.clientName);
+  const safeInvoiceNumber = escapeHtml(data.invoiceNumber);
+  const safeAmount = escapeHtml(data.amount);
+  const safeDueDate = escapeHtml(data.dueDate);
+  const { daysOverdue } = data;
 
   const isOverdue = daysOverdue > 0;
   const subject = isOverdue
@@ -240,10 +259,10 @@ export function paymentReminderTemplate(data: {
     : `Payment due in ${Math.abs(daysOverdue)} day${Math.abs(daysOverdue) !== 1 ? "s" : ""}`;
 
   const body = `
-    <h2 style="${GREETING_STYLE}">Dear ${clientName},</h2>
+    <h2 style="${GREETING_STYLE}">Dear ${safeClientName},</h2>
     <p style="${BODY_TEXT_STYLE}">
       This is a ${isOverdue ? "gentle but important" : "friendly"} reminder regarding
-      invoice <strong>${invoiceNumber}</strong> which ${isOverdue ? `was due on ${dueDate}` : `is due on ${dueDate}`}.
+      invoice <strong>${safeInvoiceNumber}</strong> which ${isOverdue ? `was due on ${safeDueDate}` : `is due on ${safeDueDate}`}.
     </p>
     ${
       isOverdue
@@ -258,15 +277,15 @@ export function paymentReminderTemplate(data: {
     <div style="${INFO_BOX_STYLE}">
       <div style="margin-bottom: 12px;">
         <p style="font-size: 11px; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0;">Amount Due</p>
-        <p style="${AMOUNT_HIGHLIGHT_STYLE}">${amount}</p>
+        <p style="${AMOUNT_HIGHLIGHT_STYLE}">${safeAmount}</p>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Invoice No.</span>
-        <span style="${INFO_VALUE_STYLE}">${invoiceNumber}</span>
+        <span style="${INFO_VALUE_STYLE}">${safeInvoiceNumber}</span>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Due Date</span>
-        <span style="${INFO_VALUE_STYLE}">${dueDate}</span>
+        <span style="${INFO_VALUE_STYLE}">${safeDueDate}</span>
       </div>
     </div>
     <p style="${BODY_TEXT_STYLE}">
@@ -280,7 +299,7 @@ export function paymentReminderTemplate(data: {
     </p>
   `;
 
-  return wrapTemplate(`${subject} - Invoice ${invoiceNumber}`, body);
+  return wrapTemplate(`${subject} - Invoice ${safeInvoiceNumber}`, body);
 }
 
 // ─── Template 3: Payment Receipt ─────────────────────────────────────────────
@@ -291,12 +310,15 @@ export function paymentReceiptTemplate(data: {
   amountReceived: string;
   paymentDate: string;
 }): string {
-  const { clientName, invoiceNumber, amountReceived, paymentDate } = data;
+  const safeClientName = escapeHtml(data.clientName);
+  const safeInvoiceNumber = escapeHtml(data.invoiceNumber);
+  const safeAmountReceived = escapeHtml(data.amountReceived);
+  const safePaymentDate = escapeHtml(data.paymentDate);
 
   const body = `
-    <h2 style="${GREETING_STYLE}">Dear ${clientName},</h2>
+    <h2 style="${GREETING_STYLE}">Dear ${safeClientName},</h2>
     <p style="${BODY_TEXT_STYLE}">
-      We have successfully received your payment for invoice <strong>${invoiceNumber}</strong>.
+      We have successfully received your payment for invoice <strong>${safeInvoiceNumber}</strong>.
       Thank you for your prompt payment!
     </p>
     <div style="${SUCCESS_BOX_STYLE}">
@@ -305,15 +327,15 @@ export function paymentReceiptTemplate(data: {
     <div style="${INFO_BOX_STYLE}">
       <div style="margin-bottom: 12px;">
         <p style="font-size: 11px; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0;">Amount Received</p>
-        <p style="${AMOUNT_HIGHLIGHT_STYLE}">${amountReceived}</p>
+        <p style="${AMOUNT_HIGHLIGHT_STYLE}">${safeAmountReceived}</p>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Invoice No.</span>
-        <span style="${INFO_VALUE_STYLE}">${invoiceNumber}</span>
+        <span style="${INFO_VALUE_STYLE}">${safeInvoiceNumber}</span>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Payment Date</span>
-        <span style="${INFO_VALUE_STYLE}">${paymentDate}</span>
+        <span style="${INFO_VALUE_STYLE}">${safePaymentDate}</span>
       </div>
     </div>
     <p style="${BODY_TEXT_STYLE}">
@@ -338,8 +360,11 @@ export function investorReportTemplate(data: {
   revenue: string;
   netProfit: string;
 }): string {
-  const { month, year, revenue, netProfit } = data;
-  const monthYear = `${month} ${year}`;
+  const safeMonth = escapeHtml(data.month);
+  const safeRevenue = escapeHtml(data.revenue);
+  const safeNetProfit = escapeHtml(data.netProfit);
+  const { year } = data;
+  const monthYear = `${safeMonth} ${year}`;
 
   const body = `
     <h2 style="${GREETING_STYLE}">Dear Investor,</h2>
@@ -353,11 +378,11 @@ export function investorReportTemplate(data: {
       </p>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Total Revenue</span>
-        <span style="${INFO_VALUE_STYLE}" style="color: #16a34a;">${revenue}</span>
+        <span style="${INFO_VALUE_STYLE}" style="color: #16a34a;">${safeRevenue}</span>
       </div>
       <div style="${INFO_ROW_STYLE}">
         <span style="${INFO_LABEL_STYLE}">Net Profit</span>
-        <span style="${INFO_VALUE_STYLE}">${netProfit}</span>
+        <span style="${INFO_VALUE_STYLE}">${safeNetProfit}</span>
       </div>
     </div>
     <p style="${BODY_TEXT_STYLE}">

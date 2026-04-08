@@ -68,7 +68,7 @@ export function useInvoiceKPI() {
       // invoice, as multiple partial payments may span the month boundary.
       const { data: monthPayments, error: paymentsError } = await supabase
         .from("invoice_payments")
-        .select("amount_received_inr, amount_received")
+        .select("amount_received_inr, amount_received, currency")
         .gte("payment_date", monthStart)
         .lte("payment_date", monthEnd);
 
@@ -78,7 +78,7 @@ export function useInvoiceKPI() {
       // store the converted value in amount_received_inr).
       const paymentReceived = (monthPayments ?? []).reduce(
         (sum, p) =>
-          sum + Number(p.amount_received_inr ?? p.amount_received ?? 0),
+          sum + Number(p.amount_received_inr ?? (p.currency === "INR" || !p.currency ? p.amount_received ?? 0 : 0)),
         0
       );
 

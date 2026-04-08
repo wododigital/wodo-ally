@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn } from "@/lib/utils/cn";
 import { useClient, useUpdateClient } from "@/lib/hooks/use-clients";
 import type { Database } from "@/types/database";
@@ -29,6 +31,9 @@ export default function EditClientPage() {
   const [engagementType, setEngagementType] = useState<"retainer" | "one_time">("one_time");
   const [billingDay, setBillingDay] = useState<number>(1);
   const [phone, setPhone] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+
+  useUnsavedChanges(isDirty);
 
   useEffect(() => {
     if (client) {
@@ -99,7 +104,13 @@ export default function EditClientPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <Breadcrumbs items={[
+        { label: "Clients", href: "/clients" },
+        { label: client.display_name ?? client.company_name, href: `/clients/${id}` },
+        { label: "Edit" },
+      ]} />
+
+      <form className="space-y-6" onSubmit={handleSubmit} onChange={() => setIsDirty(true)}>
 
         {/* Company info - first */}
         <GlassCard padding="md">

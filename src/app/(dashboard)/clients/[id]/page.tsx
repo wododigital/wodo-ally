@@ -16,6 +16,7 @@ import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { useClient, useClientStats, useCloseClient, useReactivateClient } from "@/lib/hooks/use-clients";
@@ -398,6 +399,11 @@ export default function ClientDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs items={[
+        { label: "Clients", href: "/clients" },
+        { label: client.display_name ?? client.company_name },
+      ]} />
+
       {showAddProjectModal && (
         <AddProjectModal onClose={() => setShowAddProjectModal(false)} preselectedClientId={id} />
       )}

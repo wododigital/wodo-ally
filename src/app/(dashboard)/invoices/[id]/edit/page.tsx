@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn } from "@/lib/utils/cn";
 import { useServices } from "@/lib/hooks/use-services";
 import { useClients } from "@/lib/hooks/use-clients";
@@ -83,6 +85,9 @@ export default function EditInvoicePage() {
   ]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  useUnsavedChanges(isDirty);
 
   const { data: projects = [] } = useProjects(selectedClientId || undefined);
 
@@ -203,6 +208,12 @@ export default function EditInvoicePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs items={[
+        { label: "Invoices", href: "/invoices" },
+        { label: invoice?.invoice_number ?? "Invoice", href: `/invoices/${id}` },
+        { label: "Edit" },
+      ]} />
+
       {showDeleteModal && (
         <DeleteModal
           onConfirm={handleDelete}
@@ -229,7 +240,7 @@ export default function EditInvoicePage() {
         </button>
       </div>
 
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit} onChange={() => setIsDirty(true)}>
         {/* Invoice type */}
         <GlassCard padding="md">
           <h3 className="text-sm font-semibold text-text-primary mb-4">Invoice Type</h3>
