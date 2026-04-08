@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils/cn";
 
 type Status =
   | "draft" | "sent" | "viewed" | "paid" | "partially_paid"
-  | "overdue" | "cancelled"
+  | "overdue" | "cancelled" | "archived"
   | "active" | "inactive" | "churned"
   | "onboarding" | "design_phase" | "development_phase"
   | "deployment_qa" | "setup_strategy" | "active_execution"
@@ -18,6 +18,7 @@ const statusConfig: Record<Status, { label: string; className: string }> = {
   partially_paid: { label: "Partial", className: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
   overdue: { label: "Overdue", className: "bg-red-500/10 text-red-400 border-red-500/20" },
   cancelled: { label: "Cancelled", className: "bg-surface-DEFAULT text-text-muted border-surface-border" },
+  archived: { label: "Archived", className: "bg-gray-500/10 text-gray-400 border-gray-500/20" },
   active: { label: "Active", className: "bg-green-500/10 text-green-400 border-green-500/20" },
   inactive: { label: "Inactive", className: "bg-surface-DEFAULT text-text-muted border-surface-border" },
   churned: { label: "Churned", className: "bg-red-500/10 text-red-400 border-red-500/20" },

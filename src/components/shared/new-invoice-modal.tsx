@@ -82,9 +82,9 @@ export function NewInvoiceModal({
     ? (selectedClient ? getInvoiceTypeFromClient(selectedClient) : "gst")
     : invoiceType;
   const taxRate = effectiveTaxType === "gst" ? 18 : 0;
-  const subtotal = lineItems.reduce((s, item) => s + (parseFloat(item.amount) || 0) * item.quantity, 0);
-  const tax = subtotal * (taxRate / 100);
-  const total = subtotal + tax;
+  const subtotal = Math.round(lineItems.reduce((s, item) => s + (parseFloat(item.amount) || 0) * item.quantity, 0) * 100) / 100;
+  const tax = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+  const total = Math.round((subtotal + tax) * 100) / 100;
   const currencyPrefix = effectiveCurrency === "USD" ? "$" : effectiveCurrency === "AED" ? "AED " : effectiveCurrency === "GBP" ? "GBP " : "Rs.";
 
   function addLineItem() {

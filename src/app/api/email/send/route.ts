@@ -8,8 +8,30 @@ import {
   investorReportTemplate,
 } from "@/lib/email/templates";
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type EmailTemplate = "invoice" | "reminder" | "followup";
+
+// Maps the email `type` field to a canonical email_template value for activity logging
+const TYPE_TO_TEMPLATE: Record<string, EmailTemplate> = {
+  invoice_sent: "invoice",
+  payment_reminder: "reminder",
+  payment_receipt: "followup",
+};
+
+// ---------------------------------------------------------------------------
 // POST /api/email/send
-// Body: { type, to, ...template-specific data }
+// Body: {
+//   type: string,          // email template type
+//   to: string | string[], // primary recipients
+//   cc?: string[],         // optional CC recipients
+//   invoiceId?: string,    // if present, activity is logged against this invoice
+//   ...template-specific data
+// }
+// ---------------------------------------------------------------------------
+
 export async function POST(req: NextRequest) {
   // 1. Auth check
   const supabase = await createClient();
@@ -27,7 +49,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { type, to, ...data } = body;
+  // Extract common fields - cc and invoiceId are optional
+  const { type, to, cc, invoiceId, ...data } = body;
 
   if (!type || typeof type !== "string") {
     return NextResponse.json({ error: "Missing email type" }, { status: 400 });
@@ -43,6 +66,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No recipients specified" }, { status: 400 });
   }
 
+  // Validate CC if provided
+  const ccList: string[] = Array.isArray(cc)
+    ? (cc as string[]).filter((addr) => typeof addr === "string" && addr.length > 0)
+    : [];
+
   // 3. Build subject + html based on type
   let subject: string;
   let html: string;
@@ -56,9 +84,12 @@ export async function POST(req: NextRequest) {
           amount: string;
           dueDate: string;
           currency: string;
+          subject?: string;
+          body?: string;
         };
-        subject = `Invoice ${d.invoiceNumber} from WODO Digital`;
-        html = invoiceSentTemplate(d);
+        // Allow caller to override default subject/body
+        subject = d.subject ?? `Invoice ${d.invoiceNumber} from WODO Digital`;
+        html = d.body ?? invoiceSentTemplate(d);
         break;
       }
 
@@ -69,12 +100,16 @@ export async function POST(req: NextRequest) {
           amount: string;
           dueDate: string;
           daysOverdue: number;
+          subject?: string;
+          body?: string;
         };
         const overdue = Number(d.daysOverdue ?? 0);
-        subject = overdue > 0
-          ? `Overdue: Invoice ${d.invoiceNumber} - Payment pending (${overdue} day${overdue !== 1 ? "s" : ""} overdue)`
-          : `Reminder: Invoice ${d.invoiceNumber} due on ${d.dueDate}`;
-        html = paymentReminderTemplate({ ...d, daysOverdue: overdue });
+        subject = d.subject ?? (
+          overdue > 0
+            ? `Overdue: Invoice ${d.invoiceNumber} - Payment pending (${overdue} day${overdue !== 1 ? "s" : ""} overdue)`
+            : `Reminder: Invoice ${d.invoiceNumber} due on ${d.dueDate}`
+        );
+        html = d.body ?? paymentReminderTemplate({ ...d, daysOverdue: overdue });
         break;
       }
 
@@ -84,9 +119,11 @@ export async function POST(req: NextRequest) {
           invoiceNumber: string;
           amountReceived: string;
           paymentDate: string;
+          subject?: string;
+          body?: string;
         };
-        subject = `Payment received - Invoice ${d.invoiceNumber}`;
-        html = paymentReceiptTemplate(d);
+        subject = d.subject ?? `Payment received - Invoice ${d.invoiceNumber}`;
+        html = d.body ?? paymentReceiptTemplate(d);
         break;
       }
 
@@ -96,9 +133,11 @@ export async function POST(req: NextRequest) {
           year: number;
           revenue: string;
           netProfit: string;
+          subject?: string;
+          body?: string;
         };
-        subject = `WODO Digital - Monthly Report: ${d.month} ${d.year}`;
-        html = investorReportTemplate(d);
+        subject = d.subject ?? `WODO Digital - Monthly Report: ${d.month} ${d.year}`;
+        html = d.body ?? investorReportTemplate(d);
         break;
       }
 
@@ -113,13 +152,53 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  // 4. Send email
+  // 4. Send email (pass CC if provided)
   try {
-    await sendEmail({ to: recipients, subject, html });
-    return NextResponse.json({ success: true });
+    await sendEmail({
+      to: recipients,
+      cc: ccList.length > 0 ? ccList : undefined,
+      subject,
+      html,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to send email";
     console.error("[email/send] Error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  // 5. Persist email activity for invoice-related emails (fire-and-forget, non-blocking)
+  //    We do not fail the request if activity logging fails.
+  const emailTemplate: EmailTemplate | undefined = TYPE_TO_TEMPLATE[type];
+
+  if (
+    invoiceId &&
+    typeof invoiceId === "string" &&
+    emailTemplate !== undefined
+  ) {
+    const allRecipients = [...recipients, ...ccList];
+
+    const activityRows = allRecipients.map((addr) => ({
+      invoice_id: invoiceId,
+      action_type: "sent" as const,
+      email_recipient: addr.toLowerCase().trim(),
+      email_template: emailTemplate,
+      created_by: user.id,
+    }));
+
+    // eslint-disable-next-line
+    const db = supabase as any;
+    const { error: activityErr } = await db
+      .from("invoice_email_activity")
+      .insert(activityRows);
+
+    if (activityErr) {
+      // Log but do not surface to caller - the email was already sent successfully
+      console.error(
+        "[email/send] Failed to log email activity:",
+        activityErr.message
+      );
+    }
+  }
+
+  return NextResponse.json({ success: true });
 }

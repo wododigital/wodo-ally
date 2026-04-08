@@ -192,9 +192,11 @@ export function useUpdateInvoice() {
     mutationFn: async ({
       id,
       data,
+      lineItems,
     }: {
       id: string;
       data: InvoiceUpdate;
+      lineItems?: Array<{ description: string; amount: number; quantity: number; service_id?: string | null; sort_order?: number }>;
     }): Promise<InvoiceRow> => {
       const supabase = createClient();
       const { data: updated, error } = await supabase
@@ -205,6 +207,34 @@ export function useUpdateInvoice() {
         .single();
 
       if (error) throw new Error(error.message);
+
+      // If line items provided, replace them
+      if (lineItems && lineItems.length > 0) {
+        // Delete existing line items
+        const { error: deleteError } = await supabase
+          .from("invoice_line_items")
+          .delete()
+          .eq("invoice_id", id);
+
+        if (deleteError) throw new Error(deleteError.message);
+
+        // Insert new line items
+        const { error: insertError } = await supabase
+          .from("invoice_line_items")
+          .insert(
+            lineItems.map((item, idx) => ({
+              invoice_id: id,
+              description: item.description,
+              amount: item.amount,
+              quantity: item.quantity,
+              service_id: item.service_id || null,
+              sort_order: item.sort_order ?? idx,
+            }))
+          );
+
+        if (insertError) throw new Error(insertError.message);
+      }
+
       return updated;
     },
     onSuccess: async (data) => {
@@ -405,9 +435,9 @@ export function useGenerateRetainerInvoices() {
             : "international";
 
         const taxRate = invoiceType === "gst" ? 18 : 0;
-        const subtotal = project.retainer_amount ?? 0;
-        const taxAmount = (subtotal * taxRate) / 100;
-        const totalAmount = subtotal + taxAmount;
+        const subtotal = Math.round((project.retainer_amount ?? 0) * 100) / 100;
+        const taxAmount = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+        const totalAmount = Math.round((subtotal + taxAmount) * 100) / 100;
 
         const invoiceInsert: InvoiceInsert = {
           invoice_type: invoiceType,
@@ -682,7 +712,7 @@ export function useConvertProformaToInvoice() {
       // Fetch the proforma invoice
       const { data: inv, error: fetchError } = await supabase
         .from("invoices")
-        .select("invoice_type, invoice_date, total_amount, client_id, currency, status")
+        .select("invoice_type, invoice_date, total_amount, client_id, currency, status, proforma_ref")
         .eq("id", invoiceId)
         .single();
 
@@ -730,6 +760,22 @@ export function useConvertProformaToInvoice() {
         .single();
 
       if (updateError) throw new Error(updateError.message);
+
+      // Create a payment record so revenue aggregation views can see this payment
+      const { error: paymentError } = await supabase
+        .from("invoice_payments")
+        .insert({
+          invoice_id: invoiceId,
+          amount_received: inv.total_amount,
+          payment_date: now.split("T")[0],
+          payment_method: "bank_transfer" as any,
+          notes: `Auto-created from proforma conversion (${inv.proforma_ref ?? "PF"})`,
+        });
+
+      if (paymentError) {
+        console.error("Failed to create payment for proforma conversion:", paymentError.message);
+      }
+
       return updated;
     },
     onSuccess: async (data) => {
@@ -741,6 +787,67 @@ export function useConvertProformaToInvoice() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to convert proforma: ${error.message}`);
+    },
+  });
+}
+
+// ─── useExportInvoicesCSV ─────────────────────────────────────────────────────
+
+export interface ExportInvoicesCSVParams {
+  /** Filter by invoice type: "gst" | "non_gst" | "international" | "proforma" */
+  invoiceType?: string;
+  /** ISO date string (YYYY-MM-DD) - inclusive lower bound on invoice_date */
+  dateFrom?: string;
+  /** ISO date string (YYYY-MM-DD) - inclusive upper bound on invoice_date */
+  dateTo?: string;
+}
+
+/**
+ * Triggers a CSV export of invoices matching the supplied filters.
+ * The API route returns an application/octet-stream response; this hook
+ * converts it to a Blob URL and programmatically clicks a hidden anchor
+ * to prompt the browser's native file-save dialog.
+ *
+ * The download filename includes today's date for easy archival,
+ * e.g. "invoices-export-2026-03-04.csv".
+ */
+export function useExportInvoicesCSV() {
+  return useMutation<{ success: true }, Error, ExportInvoicesCSVParams>({
+    mutationFn: async (
+      params: ExportInvoicesCSVParams
+    ): Promise<{ success: true }> => {
+      const qs = new URLSearchParams();
+      if (params.invoiceType) qs.set("invoiceType", params.invoiceType);
+      if (params.dateFrom) qs.set("dateFrom", params.dateFrom);
+      if (params.dateTo) qs.set("dateTo", params.dateTo);
+
+      const url = `/api/invoices/export-csv${qs.toString() ? `?${qs.toString()}` : ""}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(
+          body?.error ?? `Export failed (${response.status})`
+        );
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `invoices-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(objectUrl);
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast.success("CSV exported successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to export CSV: ${error.message}`);
     },
   });
 }
@@ -770,14 +877,14 @@ export function useRecordPayment() {
 
       if (fetchError) throw new Error(fetchError.message);
 
-      const totalReceived = (allPayments ?? []).reduce(
+      const totalReceived = Math.round((allPayments ?? []).reduce(
         (sum, p) => sum + (p.amount_received ?? 0),
         0
-      );
-      const totalTds = (allPayments ?? []).reduce(
+      ) * 100) / 100;
+      const totalTds = Math.round((allPayments ?? []).reduce(
         (sum, p) => sum + (p.tds_amount ?? 0),
         0
-      );
+      ) * 100) / 100;
 
       // 3. Fetch invoice to get total_amount
       const { data: invoice, error: invFetchError } = await supabase
@@ -788,7 +895,7 @@ export function useRecordPayment() {
 
       if (invFetchError) throw new Error(invFetchError.message);
 
-      const balanceDue = Math.max(0, (invoice.total_amount ?? 0) - totalReceived);
+      const balanceDue = Math.max(0, Math.round(((invoice.total_amount ?? 0) - totalReceived - totalTds) * 100) / 100);
 
       // 4. Determine new status
       let newStatus: InvoiceStatus | undefined;

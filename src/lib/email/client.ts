@@ -10,13 +10,14 @@ export function createTransport() {
       pass: process.env.SMTP_PASS ?? process.env.SMTP_PASSWORD ?? "",
     },
     tls: {
-      ciphers: "SSLv3",
+      minVersion: "TLSv1.2",
     },
   });
 }
 
 export async function sendEmail(options: {
   to: string | string[];
+  cc?: string | string[];
   subject: string;
   html: string;
   attachments?: Array<{
@@ -29,6 +30,11 @@ export async function sendEmail(options: {
   await transporter.sendMail({
     from: `"WODO Digital" <${process.env.SMTP_USER ?? "accounts@wodo.digital"}>`,
     to: Array.isArray(options.to) ? options.to.join(", ") : options.to,
+    cc: options.cc
+      ? Array.isArray(options.cc)
+        ? options.cc.join(", ")
+        : options.cc
+      : undefined,
     subject: options.subject,
     html: options.html,
     attachments: options.attachments,

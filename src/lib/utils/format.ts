@@ -21,16 +21,25 @@ export function formatCurrency(
   }).format(safeAmount);
 }
 
-export function formatDate(date: string | Date): string {
-  return format(new Date(date), "dd MMM yyyy");
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return "N/A";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
+  return format(d, "dd MMM yyyy");
 }
 
-export function formatDateShort(date: string | Date): string {
-  return format(new Date(date), "dd/MM/yy");
+export function formatDateShort(date: string | Date | null | undefined): string {
+  if (!date) return "N/A";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
+  return format(d, "dd/MM/yy");
 }
 
-export function formatRelativeTime(date: string | Date): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
+export function formatRelativeTime(date: string | Date | null | undefined): string {
+  if (!date) return "N/A";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
+  return formatDistanceToNow(d, { addSuffix: true });
 }
 
 export function formatNumber(n: number): string {

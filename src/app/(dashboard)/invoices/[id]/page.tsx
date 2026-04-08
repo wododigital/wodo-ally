@@ -12,6 +12,9 @@ import { GlassCard } from "@/components/shared/glass-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { PdfPreviewModal } from "@/components/shared/pdf-preview-modal";
+import { SendInvoiceEmailModal } from "@/components/invoices/send-invoice-email-modal";
+import { StatusChangeDropdown } from "@/components/invoices/status-change-dropdown";
+import { SendInvoiceDropdown } from "@/components/invoices/send-invoice-dropdown";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import {
@@ -19,7 +22,10 @@ import {
   useInvoicePayments,
   useRecordPayment,
   useFinalizeInvoice,
+  useUpdateInvoice,
+  useConvertProformaToInvoice,
 } from "@/lib/hooks/use-invoices";
+import { useInvoiceEmailActivity, useRecordEmailActivity } from "@/lib/hooks/use-email-activity";
 // generateInvoicePdf and downloadBlob are loaded dynamically on demand to avoid bundling @react-pdf/renderer upfront
 import type { Database } from "@/types/database";
 
@@ -286,12 +292,17 @@ export default function InvoiceDetailPage() {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [emailLog, setEmailLog] = useState<{ label: string; sentAt: string }[]>([]);
+  const [sendEmailType, setSendEmailType] = useState<"invoice" | "reminder" | "followup">("invoice");
 
   const { data: invoice, isLoading } = useInvoice(id);
   const { data: payments = [] } = useInvoicePayments(id);
+  const { data: emailActivityResponse } = useInvoiceEmailActivity(id);
   const finalizeInvoice = useFinalizeInvoice();
+  const updateInvoice = useUpdateInvoice();
+  const convertProforma = useConvertProformaToInvoice();
+  const recordEmailActivity = useRecordEmailActivity();
+
+  const emailLog = emailActivityResponse?.activities ?? [];
 
   const balance = invoice
     ? Math.max(0, invoice.total_amount - (invoice.total_received ?? 0))
@@ -340,57 +351,21 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  async function handleSendInvoiceEmail(emails: string[]) {
-    if (!invoice) return;
-    setIsSendingEmail(true);
-    try {
-      const clientName = invoice.client?.company_name ?? "Client";
-      const invoiceRef =
-        invoice.invoice_type === "proforma"
-          ? (invoice.proforma_ref ?? "Pro Forma")
-          : (invoice.invoice_number ?? "DRAFT");
-      const currencySymbol = invoice.currency === "USD" ? "$" : invoice.currency === "AED" ? "AED " : "Rs.";
-      const amount = `${currencySymbol}${invoice.total_amount.toLocaleString("en-IN")}`;
-      const dueDate = invoice.due_date
-        ? new Date(invoice.due_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-        : "N/A";
-
-      const response = await fetch("/api/email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "invoice_sent",
-          to: emails,
-          clientName,
-          invoiceNumber: invoiceRef,
-          amount,
-          dueDate,
-          currency: invoice.currency,
-        }),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error((body as { error?: string }).error ?? "Failed to send");
-      }
-
-      toast.success(`Invoice sent to ${emails.join(", ")}`);
-      setEmailLog((prev) => [
-        { label: "Invoice sent", sentAt: new Date().toISOString() },
-        ...prev,
-      ]);
-      setShowSendModal(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to send invoice");
-    } finally {
-      setIsSendingEmail(false);
-    }
-  }
-
-  if (isLoading || !invoice) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  if (!invoice) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <AlertCircle className="w-12 h-12 text-text-muted" />
+        <h2 className="text-lg font-semibold text-text-primary">Invoice not found</h2>
+        <p className="text-text-muted text-sm">The invoice you are looking for does not exist or has been deleted.</p>
+        <Link href="/invoices" className="text-accent hover:underline text-sm">Back to Invoices</Link>
       </div>
     );
   }
@@ -413,12 +388,21 @@ export default function InvoiceDetailPage() {
         onDownload={handleDownloadPdf}
       />
 
-      {showSendModal && (
-        <SendInvoiceModal
-          defaultEmail={invoice.client?.billing_emails?.[0] ?? ""}
+      {showSendModal && invoice.client && (
+        <SendInvoiceEmailModal
+          isOpen={showSendModal}
+          invoiceId={id}
+          type={sendEmailType}
           onClose={() => setShowSendModal(false)}
-          onSend={handleSendInvoiceEmail}
-          isSending={isSendingEmail}
+          onSent={() => {
+            recordEmailActivity.mutate({
+              invoiceId: id,
+              action_type: sendEmailType === "invoice" ? "sent" : "resent",
+              email_recipient: invoice.client?.billing_emails?.[0] ?? "client@example.com",
+              email_template: `invoice_${sendEmailType}`,
+            });
+          }}
+          clientEmail={invoice.client?.billing_emails?.[0] ?? ""}
         />
       )}
 
@@ -441,7 +425,12 @@ export default function InvoiceDetailPage() {
             <p className="text-sm text-text-muted mt-1">{clientName}</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <StatusBadge status={invoice.status} />
+            <StatusChangeDropdown
+              status={invoice.status}
+              invoiceType={invoice.invoice_type}
+              onChange={(s) => updateInvoice.mutate({ id, data: { status: s as any, ...(s === "paid" ? { paid_at: new Date().toISOString() } : {}), ...(s === "sent" ? { sent_at: new Date().toISOString() } : {}) } })}
+              onConvertProforma={() => convertProforma.mutate(id)}
+            />
             <Link
               href={`/invoices/${id}/edit`}
               className="flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium text-text-secondary bg-surface-DEFAULT border border-black/[0.05] hover:border-black/[0.08] hover:text-accent transition-all"
@@ -479,25 +468,15 @@ export default function InvoiceDetailPage() {
                 Finalize
               </button>
             )}
-            {invoice.status === "sent" && (
-              <button
-                onClick={() => setShowSendModal(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-              >
-                <Mail className="w-4 h-4" />
-                Resend Email
-              </button>
-            )}
-            {invoice.status === "draft" && invoice.invoice_number && (
-              <button
-                onClick={() => setShowSendModal(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-              >
-                <Mail className="w-4 h-4" />
-                Send Invoice
-              </button>
+            {(["sent", "overdue", "viewed", "paid", "partially_paid"].includes(invoice.status) || (invoice.status === "draft" && invoice.invoice_number)) && (
+              <SendInvoiceDropdown
+                invoiceStatus={invoice.status}
+                invoiceId={id}
+                onSendClick={(type) => {
+                  setSendEmailType(type);
+                  setShowSendModal(true);
+                }}
+              />
             )}
           </div>
         </div>
@@ -712,11 +691,14 @@ export default function InvoiceDetailPage() {
                 </div>
               )}
               {emailLog.map((entry, i) => (
-                <div key={i} className="flex items-center gap-2">
+                <div key={entry.id} className="flex items-center gap-2">
                   <Bell className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-text-secondary">{entry.label}</p>
-                    <p className="text-[11px] text-text-muted font-sans">{formatDate(entry.sentAt.slice(0, 10))}</p>
+                    <p className="text-xs text-text-secondary">
+                      {entry.action_type === "sent" ? "Sent to" : entry.action_type === "viewed" ? "Viewed by" : "Resent to"} {entry.email_recipient}
+                      {entry.resent_count > 0 && ` (${entry.resent_count} times)`}
+                    </p>
+                    <p className="text-[11px] text-text-muted font-sans">{formatDate(entry.sent_at.slice(0, 10))}</p>
                   </div>
                 </div>
               ))}
@@ -726,11 +708,14 @@ export default function InvoiceDetailPage() {
             </div>
 
             {/* Past due reminder buttons */}
-            {balance > 0 && invoice.status !== "cancelled" && invoice.status !== "draft" && (
+            {balance > 0 && !["cancelled", "draft", "archived", "paid"].includes(invoice.status as string) && (
               <div className="space-y-2 pt-3 border-t border-black/[0.05]">
                 <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-2">Send Reminder</p>
                 <button
-                  onClick={() => setShowSendModal(true)}
+                  onClick={() => {
+                    setSendEmailType("reminder");
+                    setShowSendModal(true);
+                  }}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-button text-xs font-medium text-white"
                   style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
                 >
@@ -739,7 +724,10 @@ export default function InvoiceDetailPage() {
                 </button>
                 {invoice.status === "overdue" && (
                   <button
-                    onClick={() => setShowSendModal(true)}
+                    onClick={() => {
+                      setSendEmailType("followup");
+                      setShowSendModal(true);
+                    }}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-button text-xs font-medium"
                     style={{
                       background: "rgba(239,68,68,0.08)",
@@ -754,73 +742,6 @@ export default function InvoiceDetailPage() {
               </div>
             )}
           </GlassCard>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Send Invoice Modal ───────────────────────────────────────────────────────
-
-function SendInvoiceModal({
-  defaultEmail,
-  onClose,
-  onSend,
-  isSending,
-}: {
-  defaultEmail: string;
-  onClose: () => void;
-  onSend: (emails: string[]) => void;
-  isSending: boolean;
-}) {
-  const [email, setEmail] = useState(defaultEmail);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0"
-        style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-sm rounded-2xl p-6"
-        style={{
-          background: "rgba(255,255,255,0.98)",
-          backdropFilter: "blur(24px)",
-          border: "1px solid rgba(0,0,0,0.08)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
-        }}
-      >
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">Send Invoice</h3>
-        <p className="text-xs text-gray-500 mb-4">Enter recipient email addresses (comma-separated)</p>
-        <input
-          type="text"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-button text-sm border border-black/[0.1] bg-black/[0.02] text-gray-800 focus:outline-none focus:border-[#fd7e14]"
-          placeholder="client@example.com"
-        />
-        <div className="flex gap-3 mt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2 rounded-button text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const emails = email.split(",").map((e) => e.trim()).filter(Boolean);
-              if (emails.length > 0) onSend(emails);
-            }}
-            disabled={isSending || !email.trim()}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-button text-sm font-semibold text-white transition-all disabled:opacity-70"
-            style={{ background: "linear-gradient(135deg, #fd7e14, #e8720f)" }}
-          >
-            {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-            {isSending ? "Sending..." : "Send"}
-          </button>
         </div>
       </div>
     </div>

@@ -107,7 +107,7 @@ export function useGenerateReport() {
       if (report_type === "quarterly") {
         // report_month is the first month of the quarter (4, 7, 10, or 1)
         const quarterStart = new Date(report_year, report_month - 1, 1);
-        const quarterEnd = new Date(report_year, report_month + 1, 0); // last day of 3rd month
+        const quarterEnd = new Date(report_year, report_month + 2, 0); // last day of 3rd month
         startStr = quarterStart.toISOString().split("T")[0];
         endStr = quarterEnd.toISOString().split("T")[0];
       } else if (report_type === "annual") {

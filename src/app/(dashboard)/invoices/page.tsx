@@ -7,7 +7,7 @@ import {
   Plus, FileText, Search, ChevronDown,
   CheckCircle2, AlertCircle, Clock, Download,
   ArrowUpDown, ArrowUp, ArrowDown, ChevronRight,
-  BarChart2,
+  BarChart2, Loader2,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
@@ -15,6 +15,9 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NewInvoiceModal } from "@/components/shared/new-invoice-modal";
+import { CsvExportModal } from "@/components/invoices/csv-export-modal";
+import { TypeFilterDropdown } from "@/components/invoices/type-filter-dropdown";
+import { StatusChangeDropdown } from "@/components/invoices/status-change-dropdown";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { useInvoices, useUpdateInvoice, useConvertProformaToInvoice } from "@/lib/hooks/use-invoices";
@@ -24,11 +27,11 @@ import type { InvoiceListItem } from "@/lib/hooks/use-invoices";
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ["sent", "cancelled"],
-  sent: ["paid", "overdue", "cancelled"],
-  overdue: ["paid", "sent", "cancelled"],
+  sent: ["paid", "overdue", "cancelled", "archived"],
+  overdue: ["paid", "sent", "cancelled", "archived"],
   paid: [],
   cancelled: ["draft"],
-  archived: [],
+  archived: ["draft"],
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -61,81 +64,6 @@ type SortField = "invoice" | "client" | "type" | "date" | "amount" | "status";
 type SortDir = "asc" | "desc";
 type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "partially_paid" | "overdue" | "cancelled" | "archived";
 
-
-// ─── Status change dropdown ───────────────────────────────────────────────────
-
-function StatusChangeDropdown({
-  status,
-  invoiceType,
-  onChange,
-  onConvertProforma,
-}: {
-  status: string;
-  invoiceType?: string;
-  onChange: (s: string) => void;
-  onConvertProforma?: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  if (invoiceType === "proforma") {
-    if (status === "cancelled") {
-      return <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />;
-    }
-    return (
-      <div className="relative">
-        <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }} className="flex items-center gap-1 group/sd" title="Change status">
-          <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />
-          <ChevronDown className="w-3 h-3 text-text-muted opacity-0 group-hover/sd:opacity-100 transition-opacity" />
-        </button>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
-            <div className="absolute left-0 top-full mt-1 z-20 py-1.5 rounded-xl min-w-[140px]"
-              style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); onConvertProforma?.(); setOpen(false); }}
-                className="w-full text-left px-3 py-1.5 text-xs text-green-600 font-medium hover:bg-green-50 transition-colors"
-              >
-                Record Payment
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onChange("cancelled"); setOpen(false); }}
-                className="w-full text-left px-3 py-1.5 text-xs hover:bg-black/[0.04] transition-colors text-text-secondary hover:text-text-primary"
-              >
-                Cancel
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  const options = STATUS_TRANSITIONS[status] ?? [];
-  if (options.length === 0) return <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />;
-  return (
-    <div className="relative">
-      <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }} className="flex items-center gap-1 group/sd" title="Change status">
-        <StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />
-        <ChevronDown className="w-3 h-3 text-text-muted opacity-0 group-hover/sd:opacity-100 transition-opacity" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
-          <div className="absolute left-0 top-full mt-1 z-20 py-1.5 rounded-xl min-w-[110px]"
-            style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}>
-            {options.map((s) => (
-              <button key={s} onClick={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
-                className="w-full text-left px-3 py-1.5 text-xs capitalize hover:bg-black/[0.04] transition-colors text-text-secondary hover:text-text-primary">
-                {s === "paid" ? "Mark Paid" : s === "sent" ? "Mark Sent" : s === "overdue" ? "Mark Overdue" : s.charAt(0).toUpperCase() + s.slice(1)}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 // ─── Status filter dropdown ───────────────────────────────────────────────────
 
@@ -217,8 +145,10 @@ function InvoicesContent() {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showCsvModal, setShowCsvModal] = useState(false);
   const [modalClientId, setModalClientId] = useState("");
   const [modalType, setModalType] = useState<string | null>(null);
+  const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   const { data: invoices = [], isLoading } = useInvoices();
   const updateInvoice = useUpdateInvoice();
@@ -328,13 +258,22 @@ function InvoicesContent() {
         />
       )}
 
+      {showCsvModal && (
+        <CsvExportModal
+          isOpen={showCsvModal}
+          onClose={() => setShowCsvModal(false)}
+          invoices={invoices}
+          isLoading={isLoading}
+        />
+      )}
+
       {/* Invoice KPIs */}
       <DarkSection>
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>Invoice Overview</p>
           <div className="flex items-center gap-2.5 flex-wrap justify-end">
             <button
-              onClick={() => downloadCsv(invoices)}
+              onClick={() => setShowCsvModal(true)}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-button text-xs font-medium transition-all border bg-white/[0.06] text-white/60 border-white/[0.10] hover:border-white/[0.18] hover:text-white/80"
             >
               <Download className="w-3.5 h-3.5" />
@@ -359,10 +298,10 @@ function InvoicesContent() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: FileText,     label: "Total invoices",  value: `${invoices.length}`,                                color: "#3b82f6", sub: "All time" },
-            { icon: CheckCircle2, label: "Paid this month", value: `Rs.${(totals.paid_this_month / 1000).toFixed(0)}K`, color: "#22c55e", sub: "Current month" },
-            { icon: Clock,        label: "Outstanding",     value: `Rs.${(totals.outstanding / 1000).toFixed(0)}K`,     color: "#f59e0b", sub: "Awaiting payment" },
-            { icon: AlertCircle,  label: "Overdue",         value: `${totals.overdue_count} invoice${totals.overdue_count !== 1 ? "s" : ""}`, color: "#ef4444", sub: "Follow-up needed" },
+            { icon: FileText,     label: "Total Invoices Sent",  value: `${invoices.length}`,                                color: "#3b82f6", sub: "This month" },
+            { icon: CheckCircle2, label: "Payment Received", value: `Rs.${(totals.paid_this_month / 1000).toFixed(0)}K`, color: "#22c55e", sub: "This month" },
+            { icon: Clock,        label: "Payment Pending",     value: `Rs.${(totals.outstanding / 1000).toFixed(0)}K`,     color: "#f59e0b", sub: "This month" },
+            { icon: AlertCircle,  label: "Overdue Amount",         value: `${totals.overdue_count} invoice${totals.overdue_count !== 1 ? "s" : ""}`, color: "#ef4444", sub: "This month" },
           ].map((stat) => (
             <DarkCard key={stat.label} className="p-5">
               <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3" style={{ background: `${stat.color}18` }}>
@@ -387,26 +326,8 @@ function InvoicesContent() {
         {/* Status dropdown */}
         <StatusFilterDropdown value={statusFilter} onChange={setStatusFilter} />
 
-        {/* Type pill group */}
-        <div
-          className="flex items-center gap-0.5 p-1 rounded-button"
-          style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.04)" }}
-        >
-          {TYPE_OPTIONS.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setTypeFilter(opt)}
-              className={cn(
-                "px-3 py-1.5 rounded-button text-xs font-medium transition-all whitespace-nowrap",
-                typeFilter === opt
-                  ? "bg-white text-text-primary shadow-sm"
-                  : "text-text-muted hover:text-text-secondary"
-              )}
-            >
-              {opt === "all" ? "All Types" : (TYPE_LABELS[opt] ?? opt)}
-            </button>
-          ))}
-        </div>
+        {/* Type filter dropdown */}
+        <TypeFilterDropdown value={typeFilter} onChange={setTypeFilter} />
 
         {(statusFilter !== "all" || typeFilter !== "all") && (
           <button
@@ -473,13 +394,26 @@ function InvoicesContent() {
                 {sorted.map((invoice, idx) => {
                   const isIntl = invoice.invoice_type === "international";
                   const inrAmount = invoice.total_amount_inr ?? null;
+                  const isArchived = (invoice.status as string) === "archived";
                   return (
-                    <tr key={invoice.id} onClick={() => router.push(`/invoices/${invoice.id}`)}
-                      className={cn("hover:bg-surface-DEFAULT transition-colors cursor-pointer group", idx < sorted.length - 1 && "border-b border-black/[0.05]")}>
+                    <tr key={invoice.id} onClick={() => {
+                      setNavigatingId(invoice.id);
+                      router.push(`/invoices/${invoice.id}`);
+                    }}
+                      className={cn(
+                        "hover:bg-surface-DEFAULT transition-colors cursor-pointer group",
+                        isArchived && "opacity-60 grayscale",
+                        idx < sorted.length - 1 && "border-b border-black/[0.05]"
+                      )}>
                       <td className="px-5 py-4">
-                        <p className="text-sm font-sans font-semibold text-text-primary group-hover:text-accent transition-colors">
-                          {getDisplayNumber(invoice)}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-sans font-semibold text-text-primary group-hover:text-accent transition-colors">
+                            {getDisplayNumber(invoice)}
+                          </p>
+                          {navigatingId === invoice.id && (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <p className="text-sm text-text-secondary">{invoice.client_name}</p>

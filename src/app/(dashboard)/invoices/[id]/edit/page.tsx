@@ -114,10 +114,10 @@ export default function EditInvoicePage() {
 
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const effectiveCurrency = selectedClient?.currency ?? invoice?.currency ?? "INR";
-  const subtotal = lineItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0) * item.quantity, 0);
+  const subtotal = Math.round(lineItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0) * item.quantity, 0) * 100) / 100;
   const taxRate = invoiceType === "gst" ? 18 : 0;
-  const tax = subtotal * (taxRate / 100);
-  const total = subtotal + tax;
+  const tax = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+  const total = Math.round((subtotal + tax) * 100) / 100;
   const currencyPrefix = effectiveCurrency === "USD" ? "$" : effectiveCurrency === "AED" ? "AED " : "Rs.";
 
   function addLineItem() {
@@ -165,6 +165,13 @@ export default function EditInvoicePage() {
           total_amount: total,
           currency: effectiveCurrency,
         },
+        lineItems: validItems.map((item, idx) => ({
+          description: item.description.trim(),
+          amount: parseFloat(item.amount) || 0,
+          quantity: item.quantity,
+          service_id: item.service_id || null,
+          sort_order: idx,
+        })),
       },
       {
         onSuccess: () => router.push(`/invoices/${id}`),

@@ -42,15 +42,19 @@ export interface InvoicePdfProps {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatCurrency(amount: number, currency: string): string {
+  if (!Number.isFinite(amount)) amount = 0;
   const sym =
     currency === "USD"
       ? "$"
       : currency === "AED"
       ? "AED "
       : currency === "GBP"
-      ? "GBP "
+      ? "\u00A3"
+      : currency === "EUR"
+      ? "\u20AC"
       : "Rs.";
-  return `${sym}${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const locale = currency === "INR" ? "en-IN" : "en-US";
+  return `${sym}${amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -88,9 +92,11 @@ function getBankDetails(
   if (invoiceType === "gst") {
     return [
       { label: "Bank", value: "IDFC FIRST Bank" },
-      { label: "Account Number", value: "10113982735" },
-      { label: "IFSC Code", value: "IDFB0080181" },
-      { label: "Account Name", value: "WODO Digital Private Limited" },
+      { label: "Account Number", value: "10213871315" },
+      { label: "IFSC Code", value: "IDFB0080574" },
+      { label: "SWIFT Code", value: "IDFBINBBMUM" },
+      { label: "Account Name", value: "WODO DIGITAL PRIVATE LIMITED" },
+      { label: "Branch", value: "KARNATAKA-DEVARAJA URS ROAD BRANCH" },
       { label: "Account Type", value: "Current Account" },
     ];
   }
@@ -98,10 +104,11 @@ function getBankDetails(
   if (invoiceType === "non_gst") {
     return [
       { label: "Bank", value: "IDFC FIRST Bank" },
-      { label: "Account Number", value: "10113982735" },
-      { label: "IFSC Code", value: "IDFB0080181" },
-      { label: "Account Name", value: "WODO Digital Private Limited" },
-      { label: "Account Type", value: "Current Account" },
+      { label: "Account Number", value: "10221086461" },
+      { label: "IFSC Code", value: "IDFB0081105" },
+      { label: "Account Name", value: "Shyam Singh Bhati" },
+      { label: "Branch", value: "BANGALORE-JP NAGAR 5TH PHASE BRANCH" },
+      { label: "Account Type", value: "Savings Account" },
     ];
   }
 

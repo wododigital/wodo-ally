@@ -272,7 +272,8 @@ export function useExpenseSummary(period?: ExpenseSummaryPeriod) {
         .from("transactions")
         .select("category_id, debit, expense_categories(id, name, color)")
         .not("debit", "is", null)
-        .gt("debit", 0);
+        .gt("debit", 0)
+        .not("transaction_type", "in", '("transfer","loan","tax")');
 
       if (period?.from) {
         query = query.gte("transaction_date", period.from);
