@@ -6,6 +6,10 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+import { registerPdfFonts } from "./register-fonts";
+
+// Register Unicode-capable fonts (Noto Sans) for rupee symbol and extended chars
+registerPdfFonts();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

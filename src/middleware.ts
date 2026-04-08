@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Public paths - allow through without auth check
-  if (path === "/login") {
+  if (path === "/login" || path === "/forgot-password" || path === "/reset-password") {
     return supabaseResponse;
   }
 
@@ -49,6 +49,35 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // CSRF protection for state-changing API requests
+    const method = request.method.toUpperCase();
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+      const origin = request.headers.get("origin");
+      const referer = request.headers.get("referer");
+      const host = request.headers.get("host");
+      const csrfHeader = request.headers.get("x-csrf-protection");
+
+      // Allow if custom CSRF header is present (same-origin fetch)
+      if (csrfHeader !== "1") {
+        let originValid = false;
+        if (origin) {
+          try { originValid = new URL(origin).host === host; } catch { /* invalid */ }
+        } else if (referer) {
+          try { originValid = new URL(referer).host === host; } catch { /* invalid */ }
+        } else {
+          // No Origin/Referer - allow server-side calls
+          originValid = true;
+        }
+        if (!originValid) {
+          return NextResponse.json(
+            { error: "CSRF validation failed" },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     return supabaseResponse;
   }
 

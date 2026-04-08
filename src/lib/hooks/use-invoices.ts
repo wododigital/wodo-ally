@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { getNextInvoiceNumber, generateProformaRef } from "@/lib/invoice/number-generator";
+import { logAudit } from "@/lib/hooks/use-audit-log";
 import type { Database } from "@/types/database";
 
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
@@ -978,6 +979,17 @@ export function useRecordPayment() {
         queryClient.invalidateQueries({ queryKey: ["invoice-payments", invoiceId] }),
       ]);
       toast.success("Payment recorded successfully");
+
+      // Audit log (non-blocking)
+      logAudit({
+        action: "payment.create",
+        entity_type: "invoice",
+        entity_id: invoiceId,
+        details: {
+          amount_received: payload.payment.amount_received,
+          tds_amount: payload.payment.tds_amount,
+        },
+      });
     },
     onError: (error: Error) => {
       toast.error(`Failed to record payment: ${error.message}`);

@@ -94,6 +94,7 @@ export const NAV_ITEMS = [
   { href: "/payments", label: "Payments", icon: "CreditCard" },
   { separator: true },
   { href: "/expenses", label: "Expenses", icon: "Receipt" },
+  { href: "/tds", label: "TDS Certificates", icon: "FileCheck2" },
   { href: "/analytics", label: "Analytics", icon: "BarChart3" },
   { href: "/targets", label: "Targets", icon: "Target" },
   { separator: true },

@@ -8,6 +8,10 @@ import {
 import { pdf } from "@react-pdf/renderer";
 import React from "react";
 import type { ReportData } from "@/lib/hooks/use-reports";
+import { registerPdfFonts } from "./register-fonts";
+
+// Register Unicode-capable fonts (Noto Sans) for rupee symbol and extended chars
+registerPdfFonts();
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -315,6 +319,247 @@ const styles = StyleSheet.create({
   },
 });
 
+// ─── Chart Styles ─────────────────────────────────────────────────────────────
+
+const CHART_COLORS = ["#fd7e14", "#3b82f6", "#8b5cf6", "#22c55e", "#ec4899", "#06b6d4", "#f59e0b", "#ef4444"];
+
+const chartStyles = StyleSheet.create({
+  barContainer: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  barRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  barLabel: {
+    width: 80,
+    fontSize: 8.5,
+    color: DARK,
+    fontFamily: "Helvetica-Bold",
+  },
+  barTrack: {
+    flex: 1,
+    height: 22,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 4,
+    overflow: "hidden",
+    position: "relative",
+  },
+  barFill: {
+    height: 22,
+    borderRadius: 4,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  barValue: {
+    fontSize: 8,
+    color: DARK,
+    marginLeft: 8,
+    width: 70,
+    textAlign: "right",
+    fontFamily: "Helvetica-Bold",
+  },
+  // Client distribution
+  clientBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  clientBarLabel: {
+    width: 120,
+    fontSize: 7.5,
+    color: DARK,
+    overflow: "hidden",
+  },
+  clientBarTrack: {
+    flex: 1,
+    height: 16,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 3,
+    overflow: "hidden",
+    position: "relative",
+  },
+  clientBarFill: {
+    height: 16,
+    borderRadius: 3,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  clientBarPct: {
+    fontSize: 7,
+    color: GRAY,
+    marginLeft: 6,
+    width: 30,
+    textAlign: "right",
+  },
+  clientBarAmt: {
+    fontSize: 7,
+    color: DARK,
+    marginLeft: 4,
+    width: 55,
+    textAlign: "right",
+    fontFamily: "Helvetica-Bold",
+  },
+  // Ratios
+  ratiosGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  ratioBox: {
+    flex: 1,
+    backgroundColor: SECTION_BG,
+    borderRadius: 6,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR,
+    alignItems: "center",
+  },
+  ratioLabel: {
+    fontSize: 7.5,
+    color: GRAY,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  ratioValue: {
+    fontSize: 20,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 6,
+  },
+  ratioTrack: {
+    width: "100%",
+    height: 6,
+    backgroundColor: "#e5e5e5",
+    borderRadius: 3,
+    overflow: "hidden",
+    position: "relative",
+  },
+  ratioFill: {
+    height: 6,
+    borderRadius: 3,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+});
+
+// ─── Chart Components ─────────────────────────────────────────────────────────
+
+function RevenueExpenseChart({
+  revenue,
+  expenses,
+  netProfit,
+}: {
+  revenue: number;
+  expenses: number;
+  netProfit: number;
+}) {
+  const maxVal = Math.max(revenue, expenses, Math.abs(netProfit), 1);
+  const items = [
+    { label: "Revenue", value: revenue, color: "#16a34a" },
+    { label: "Expenses", value: expenses, color: "#ef4444" },
+    { label: "Net Profit", value: Math.max(netProfit, 0), color: ORANGE },
+  ];
+
+  return (
+    <View style={chartStyles.barContainer}>
+      {items.map((item, idx) => {
+        const pct = Math.min((item.value / maxVal) * 100, 100);
+        return (
+          <View key={idx} style={chartStyles.barRow}>
+            <Text style={chartStyles.barLabel}>{item.label}</Text>
+            <View style={chartStyles.barTrack}>
+              <View
+                style={[
+                  chartStyles.barFill,
+                  { width: `${Math.max(pct, 2)}%`, backgroundColor: item.color },
+                ]}
+              />
+            </View>
+            <Text style={chartStyles.barValue}>{formatINR(item.value)}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function ClientDistributionChart({
+  clients,
+  totalRevenue,
+}: {
+  clients: Array<{ name: string; revenue: number }>;
+  totalRevenue: number;
+}) {
+  const maxRevenue = Math.max(...clients.map((c) => c.revenue), 1);
+
+  return (
+    <View style={{ marginTop: 6 }}>
+      {clients.slice(0, 8).map((client, idx) => {
+        const pct = totalRevenue > 0 ? (client.revenue / totalRevenue) * 100 : 0;
+        const barPct = (client.revenue / maxRevenue) * 100;
+        return (
+          <View key={idx} style={chartStyles.clientBar}>
+            <Text style={chartStyles.clientBarLabel}>
+              {client.name.length > 20 ? client.name.slice(0, 18) + "..." : client.name}
+            </Text>
+            <View style={chartStyles.clientBarTrack}>
+              <View
+                style={[
+                  chartStyles.clientBarFill,
+                  {
+                    width: `${Math.max(barPct, 3)}%`,
+                    backgroundColor: CHART_COLORS[idx % CHART_COLORS.length],
+                  },
+                ]}
+              />
+            </View>
+            <Text style={chartStyles.clientBarPct}>{pct.toFixed(1)}%</Text>
+            <Text style={chartStyles.clientBarAmt}>{formatINR(client.revenue)}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function RatioGauge({
+  label,
+  value,
+  suffix,
+  color,
+}: {
+  label: string;
+  value: number;
+  suffix: string;
+  color: string;
+}) {
+  const safeVal = Number.isFinite(value) ? Math.max(0, Math.min(value, 100)) : 0;
+
+  return (
+    <View style={chartStyles.ratioBox}>
+      <Text style={chartStyles.ratioLabel}>{label}</Text>
+      <Text style={[chartStyles.ratioValue, { color }]}>
+        {safeVal.toFixed(1)}{suffix}
+      </Text>
+      <View style={chartStyles.ratioTrack}>
+        <View
+          style={[
+            chartStyles.ratioFill,
+            { width: `${safeVal}%`, backgroundColor: color },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export function ReportPdfDocument({ report }: { report: InvestorReportWithData }) {
@@ -456,6 +701,62 @@ export function ReportPdfDocument({ report }: { report: InvestorReportWithData }
           </Text>
           <Text style={styles.footerText}>
             #1, First Floor, Shree Lakshmi Arcade, BDA Layout, Nagarbhavi, Bangalore - 560091
+          </Text>
+        </View>
+      </Page>
+
+      {/* Page 2 - Visual Charts */}
+      <Page size="A4" style={styles.page}>
+        <View style={[styles.coverBar, { paddingVertical: 16 }]}>
+          <Text style={styles.coverTagline}>VISUAL ANALYTICS</Text>
+          <Text style={[styles.coverTitle, { fontSize: 16 }]}>
+            {report.report_type === "quarterly" ? "Quarterly" : report.report_type === "annual" ? "Annual" : "Monthly"} Performance Charts
+          </Text>
+          <Text style={styles.coverSubtitle}>{monthYear} - FY {d.financialYear}</Text>
+        </View>
+
+        {/* Revenue vs Expenses Bar Chart */}
+        <Text style={styles.sectionHeading}>Revenue vs Expenses</Text>
+        <RevenueExpenseChart revenue={d.revenue} expenses={d.expenses} netProfit={d.netProfit} />
+
+        {/* Client Revenue Distribution */}
+        {d.topClients && d.topClients.length > 0 && (
+          <>
+            <Text style={[styles.sectionHeading, { marginTop: 20 }]}>Client Revenue Distribution</Text>
+            <ClientDistributionChart clients={d.topClients} totalRevenue={d.revenue} />
+          </>
+        )}
+
+        {/* Key Ratios */}
+        <Text style={[styles.sectionHeading, { marginTop: 20 }]}>Key Financial Ratios</Text>
+        <View style={chartStyles.ratiosGrid}>
+          <RatioGauge
+            label="Profit Margin"
+            value={d.revenue > 0 ? (d.netProfit / d.revenue) * 100 : 0}
+            suffix="%"
+            color={d.netProfit >= 0 ? "#16a34a" : "#ef4444"}
+          />
+          <RatioGauge
+            label="Expense Ratio"
+            value={d.revenue > 0 ? (d.expenses / d.revenue) * 100 : 0}
+            suffix="%"
+            color={d.expenses / Math.max(d.revenue, 1) > 0.8 ? "#ef4444" : ORANGE}
+          />
+          <RatioGauge
+            label="Collection Rate"
+            value={d.revenue > 0 ? ((d.revenue - d.outstandingInvoices) / d.revenue) * 100 : 0}
+            suffix="%"
+            color="#3b82f6"
+          />
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerBold}>
+            Confidential - WODO Digital Private Limited
+          </Text>
+          <Text style={styles.footerText}>
+            accounts@wodo.digital  |  +91 63621 80633  |  www.wodo.digital
           </Text>
         </View>
       </Page>
