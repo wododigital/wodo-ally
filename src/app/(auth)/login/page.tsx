@@ -58,9 +58,10 @@ export default function LoginPage() {
 
       router.push("/dashboard");
       router.refresh();
+      // Don't setLoading(false) on success — keep spinner visible
+      // until navigation completes and this component unmounts
     } catch {
       setError("An unexpected error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   }
