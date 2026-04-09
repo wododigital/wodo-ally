@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WODO Ally - E2E Audit Report</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text-muted: #71717a;
+    --accent: #fd7e14;
+    --pass: #16a34a;
+    --fail: #ef4444;
+    --warn: #f59e0b;
+    --skip: #6b7280;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 48px 40px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .header .meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Score ring */
+  .score-section {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+    align-items: center;
+  }
+  .score-ring {
+    width: 180px;
+    height: 180px;
+    position: relative;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .score-ring .value .num {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .score-ring .value .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* KPI cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .kpi .num {
+    font-size: 32px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+  .kpi.pass .num { color: var(--pass); }
+  .kpi.fail .num { color: var(--fail); }
+  .kpi.total .num { color: var(--accent); }
+  .kpi.time .num { color: #8b5cf6; }
+
+  /* Category table */
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .cat-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+  }
+  .cat-table th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .cat-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 14px;
+  }
+  .bar-bg {
+    display: inline-block;
+    width: 100px;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  /* Suite blocks */
+  .suite-block {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .suite-block.collapsed .test-table { display: none; }
+  .suite-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .suite-header:hover { background: rgba(255,255,255,0.02); }
+  .suite-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .suite-stats {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .test-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .test-table thead th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    background: rgba(0,0,0,0.2);
+    border-top: 1px solid var(--card-border);
+  }
+  .test-table tbody td {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+  }
+  .icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+  }
+  .icon.pass { background: rgba(22,163,106,0.15); color: var(--pass); }
+  .icon.fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+  .icon.warn { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .icon.skip { background: rgba(107,114,128,0.15); color: var(--skip); }
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: var(--text-muted); }
+  .err-summary {
+    cursor: pointer;
+    color: var(--fail);
+    font-size: 12px;
+  }
+  .err-detail {
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 8px;
+    font-size: 11px;
+    color: #fca5a5;
+    overflow-x: auto;
+    max-height: 200px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+    font-size: 12px;
+    border-top: 1px solid var(--card-border);
+    margin-top: 40px;
+  }
+
+  /* Test data section */
+  .test-data {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .test-data h3 { font-size: 14px; margin-bottom: 12px; color: var(--accent); }
+  .test-data table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .test-data th { text-align: left; padding: 6px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+  .test-data td { padding: 6px 8px; }
+  .test-data .calc { color: var(--accent); font-weight: 600; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>WODO <span>Ally</span> - E2E Audit Report</h1>
+  <p class="subtitle">Comprehensive product audit using Playwright + Chromium</p>
+  <div class="meta">
+    <span>Generated: Thursday, 9 April 2026 at 9:37 am</span>
+    <span>Browser: Chromium</span>
+    <span>Parallel Workers: 5</span>
+    <span>Total Duration: 2956.6s</span>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Health Score + KPIs -->
+  <div class="score-section">
+    <div class="score-ring">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="80" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+        <circle cx="90" cy="90" r="80" fill="none"
+          stroke="var(--pass)"
+          stroke-width="10"
+          stroke-dasharray="502.6548245743669"
+          stroke-dashoffset="45.23893421169301"
+          stroke-linecap="round"/>
+      </svg>
+      <div class="value">
+        <div class="num" style="color:var(--pass)">91</div>
+        <div class="label">Health Score</div>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi pass"><div class="num">120</div><div class="label">Passed</div></div>
+      <div class="kpi fail"><div class="num">11</div><div class="label">Failed</div></div>
+      <div class="kpi total"><div class="num">132</div><div class="label">Total Tests</div></div>
+      <div class="kpi time"><div class="num">2956.6s</div><div class="label">Duration</div></div>
+    </div>
+  </div>
+
+  <!-- Test Data Used -->
+  <div class="test-data">
+    <h3>Test Data & Expected Calculations</h3>
+    <table>
+      <thead><tr><th>Scenario</th><th>Input</th><th>Expected Output</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>GST Invoice</td>
+          <td>Website Design (1x50,000) + SEO Setup (2x15,000)</td>
+          <td><span class="calc">Subtotal: 80,000 | GST 18%: 14,400 | Total: 94,400</span></td>
+        </tr>
+        <tr>
+          <td>International Invoice</td>
+          <td>Full Stack Dev (1x$5,000) + QA Testing (3x$1,200)</td>
+          <td><span class="calc">Subtotal: $8,600 | Tax: $0 | Total: $8,600</span></td>
+        </tr>
+        <tr>
+          <td>Non-GST Invoice</td>
+          <td>Branding Package (1x25,000)</td>
+          <td><span class="calc">Subtotal: 25,000 | Tax: 0 | Total: 25,000</span></td>
+        </tr>
+        <tr>
+          <td>Payment (Full)</td>
+          <td>Bank Transfer Rs.94,400, TDS: 0</td>
+          <td><span class="calc">Balance Due: 0</span></td>
+        </tr>
+        <tr>
+          <td>Payment (with TDS)</td>
+          <td>Bank Transfer Rs.80,000, TDS: Rs.8,000</td>
+          <td><span class="calc">Received: 80,000 | TDS Deducted: 8,000</span></td>
+        </tr>
+        <tr>
+          <td>GST Client</td>
+          <td>Audit Test GST Pvt Ltd, GSTIN: 29AABCT1332L1ZD, Bangalore</td>
+          <td><span class="calc">Type: indian_gst | Currency: INR | GSTIN visible</span></td>
+        </tr>
+        <tr>
+          <td>Intl Client</td>
+          <td>Audit Test Intl Corp, New York, USA</td>
+          <td><span class="calc">Type: international | Currency: USD | No GSTIN field</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Category breakdown -->
+  <h2 class="section-title">Category Breakdown</h2>
+  <table class="cat-table">
+    <thead><tr><th>Category</th><th>Passed</th><th>Failed</th><th>Total</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Auth & Security</strong></td>
+        <td>16</td>
+        <td>0</td>
+        <td>16</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Dashboard</strong></td>
+        <td>5</td>
+        <td>0</td>
+        <td>5</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Client Management</strong></td>
+        <td>18</td>
+        <td>1</td>
+        <td>19</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:95%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">95%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Invoice & Calculations</strong></td>
+        <td>19</td>
+        <td>0</td>
+        <td>19</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Payments</strong></td>
+        <td>5</td>
+        <td>1</td>
+        <td>6</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:83%;background:#f59e0b"></div></div>
+          <span style="color:#f59e0b;font-weight:600">83%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Expenses</strong></td>
+        <td>3</td>
+        <td>4</td>
+        <td>7</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:43%;background:#ef4444"></div></div>
+          <span style="color:#ef4444;font-weight:600">43%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Analytics</strong></td>
+        <td>21</td>
+        <td>0</td>
+        <td>21</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Settings</strong></td>
+        <td>5</td>
+        <td>3</td>
+        <td>8</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:63%;background:#ef4444"></div></div>
+          <span style="color:#ef4444;font-weight:600">63%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Contracts & Pipeline</strong></td>
+        <td>8</td>
+        <td>0</td>
+        <td>8</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>TDS & Reports</strong></td>
+        <td>5</td>
+        <td>2</td>
+        <td>7</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:71%;background:#f59e0b"></div></div>
+          <span style="color:#f59e0b;font-weight:600">71%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Navigation & Responsive</strong></td>
+        <td>4</td>
+        <td>1</td>
+        <td>5</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:80%;background:#f59e0b"></div></div>
+          <span style="color:#f59e0b;font-weight:600">80%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Form Validation</strong></td>
+        <td>6</td>
+        <td>0</td>
+        <td>6</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Data Persistence</strong></td>
+        <td>5</td>
+        <td>0</td>
+        <td>5</td>
+        <td>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+          <span style="color:#16a34a;font-weight:600">100%</span>
+        </td>
+      </tr></tbody>
+  </table>
+
+  <!-- Detailed results -->
+  <h2 class="section-title">Detailed Test Results</h2>
+  
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">01-login-auth.spec.ts &gt; Login &amp; Authentication</span>
+          <span class="suite-stats">7/7 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>login page loads with correct branding</td>
+          <td class="mono">4539ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>email and password fields are present and functional</td>
+          <td class="mono">4850ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>submit button exists with &quot;Sign In&quot; text</td>
+          <td class="mono">4611ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>invalid credentials show error message</td>
+          <td class="mono">4895ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>valid login redirects to /dashboard</td>
+          <td class="mono">11783ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>auth persists across navigation</td>
+          <td class="mono">18046ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>logout or session check</td>
+          <td class="mono">10843ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">02-dashboard-load.spec.ts &gt; Dashboard Load &amp; Layout</span>
+          <span class="suite-stats">5/5 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>dashboard page loads after login</td>
+          <td class="mono">11296ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>KPI cards are visible</td>
+          <td class="mono">11249ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigation navbar has all expected links</td>
+          <td class="mono">13316ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>page does not have console errors</td>
+          <td class="mono">21898ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>charts/graphs section loads</td>
+          <td class="mono">11161ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">03-clients-page.spec.ts &gt; Clients Page</span>
+          <span class="suite-stats">6/7 passed (86%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>clients page loads at /clients</td>
+          <td class="mono">17904ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>&quot;Add Client&quot; button is visible</td>
+          <td class="mono">26916ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>search input is present and filters client cards</td>
+          <td class="mono">29936ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>invoice type filter pills are present</td>
+          <td class="mono">22181ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>status filter pills are present</td>
+          <td class="mono">20491ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>client cards display expected elements</td>
+          <td class="mono">24233ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row skip">
+          <td><span class="icon skip">&#9711;</span></td>
+          <td>pagination works if clients &gt; 18</td>
+          <td class="mono">17732ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">04-client-creation-gst.spec.ts &gt; Client Creation - GST Invoice Type</span>
+          <span class="suite-stats">6/6 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>clicking &quot;Add Client&quot; opens modal with title &quot;Add New Client&quot;</td>
+          <td class="mono">16126ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>invoice type selection has 3 options</td>
+          <td class="mono">17098ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>GST type is selected by default</td>
+          <td class="mono">16596ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>fill GST client form and GSTIN field appears for GST type</td>
+          <td class="mono">16214ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>fill complete GST client form and submit</td>
+          <td class="mono">24187ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>new GST client appears in client list</td>
+          <td class="mono">19228ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">05-client-creation-intl.spec.ts &gt; Client Creation - International Type</span>
+          <span class="suite-stats">6/6 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>open Add Client modal</td>
+          <td class="mono">18635ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>select &quot;International&quot; type and GSTIN field should NOT appear</td>
+          <td class="mono">20527ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>currency dropdown shows USD option</td>
+          <td class="mono">20739ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>region dropdown shows USA</td>
+          <td class="mono">18082ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>fill international client form and submit</td>
+          <td class="mono">25179ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>new international client appears in client list</td>
+          <td class="mono">22396ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">06-invoice-creation-gst.spec.ts &gt; Invoice Creation - GST Invoice</span>
+          <span class="suite-stats">3/3 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should open new invoice modal from invoices page</td>
+          <td class="mono">17069ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should create a GST invoice with correct calculations</td>
+          <td class="mono">40636ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should verify GST calculation formula: subtotal + 18% tax = total</td>
+          <td class="mono">20109ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">07-invoice-creation-intl.spec.ts &gt; Invoice Creation - International Invoice</span>
+          <span class="suite-stats">2/2 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should create an international invoice with 0% tax</td>
+          <td class="mono">34656ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should verify international calculation formula: subtotal + 0% tax = subtotal</td>
+          <td class="mono">15777ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">08-invoice-creation-nongst.spec.ts &gt; Invoice Creation - Non-GST Invoice</span>
+          <span class="suite-stats">2/2 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should create a non-GST invoice with 0% tax</td>
+          <td class="mono">17920ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should verify non-GST calculation formula: subtotal + 0% = subtotal</td>
+          <td class="mono">20266ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">09-invoice-detail-view.spec.ts &gt; Invoice Detail View</span>
+          <span class="suite-stats">6/6 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should navigate to invoices page and see invoice list</td>
+          <td class="mono">24476ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should click on first invoice and view detail page</td>
+          <td class="mono">33079ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should display line items table with description, quantity, and amount columns</td>
+          <td class="mono">24456ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should display subtotal, tax, and total</td>
+          <td class="mono">34176ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should show Record Payment button or area</td>
+          <td class="mono">22701ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should show invoice actions: PDF, Send, Edit</td>
+          <td class="mono">28905ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">10-invoice-calculations-verify.spec.ts &gt; Invoice Calculations Verification</span>
+          <span class="suite-stats">6/6 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should calculate single item: qty=1, amount=10000 -&gt; subtotal=10000</td>
+          <td class="mono">29311ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should calculate multiple items: qty=1 amt=10000 + qty=2 amt=5000 -&gt; subtotal=20000</td>
+          <td class="mono">46251ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should handle zero quantity without breaking calculation</td>
+          <td class="mono">34098ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should handle large numbers: amount=999999, qty=10 -&gt; subtotal=9999990</td>
+          <td class="mono">28634ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should verify rounding to 2 decimal places</td>
+          <td class="mono">27102ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should verify calculation consistency across all invoice types</td>
+          <td class="mono">20481ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">11-payments-page.spec.ts &gt; Payments Page</span>
+          <span class="suite-stats">5/6 passed (83%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /payments and page loads</td>
+          <td class="mono">18740ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>page loads with payment tracking UI</td>
+          <td class="mono">14968ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>check for payment list or table presence</td>
+          <td class="mono">17889ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>verify filtering capabilities exist</td>
+          <td class="mono">15444ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>check for payment method indicators</td>
+          <td class="mono">19611ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+Received: [31mfalse[39m
+
+  89 |     const isEmpty = await page.getByText(/no payment|no records|no data/i).first().isVisible().catch(() =&gt; false);
+  90 |
+&gt; 91 |     expect(hasMethodText || hasMethodIcons || isEmpty).toBeTruthy();
+     |                                                        ^
+  92 |   });
+  93 |
+  94 |   test(&quot;check for TDS column or data if applicable&quot;, async ({ page }) =&gt; {
+    at /Users/shyam/Desktop</pre></details></td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>check for TDS column or data if applicable</td>
+          <td class="mono">18003ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">12-expenses-page.spec.ts &gt; Expenses Page</span>
+          <span class="suite-stats">3/7 passed (43%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /expenses and page loads</td>
+          <td class="mono">22972ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>expenses page renders without error</td>
+          <td class="mono">25374ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>check for Upload bank statement button or link at /expenses/upload</td>
+          <td class="mono">56092ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to &quot;http://localhost:3000/expenses/upload&quot;, waiting until &quot;networkidle&quot;[22m
+
+
+   at helpers.ts:19
+
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+  18 | export async function navigateTo(page: Page, path: string) {
+&gt; 19 |   await page.goto(path, { waitUntil: &quot;networkidle&quot;, timeout: 30000 });
+     |              ^
+  20 | }
+  21 |
+  22 | // ─── Audit result tracking ────────────</pre></details></td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>navigate to /expenses/transactions and page loads</td>
+          <td class="mono">48588ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to &quot;http://localhost:3000/expenses/transactions&quot;, waiting until &quot;networkidle&quot;[22m
+
+
+   at helpers.ts:19
+
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+  18 | export async function navigateTo(page: Page, path: string) {
+&gt; 19 |   await page.goto(path, { waitUntil: &quot;networkidle&quot;, timeout: 30000 });
+     |              ^
+  20 | }
+  21 |
+  22 | // ─── Audit result tracking ──────</pre></details></td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>transactions page loads with categorization UI</td>
+          <td class="mono">45705ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to &quot;http://localhost:3000/expenses/transactions&quot;, waiting until &quot;networkidle&quot;[22m
+
+
+   at helpers.ts:19
+
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+  18 | export async function navigateTo(page: Page, path: string) {
+&gt; 19 |   await page.goto(path, { waitUntil: &quot;networkidle&quot;, timeout: 30000 });
+     |              ^
+  20 | }
+  21 |
+  22 | // ─── Audit result tracking ──────</pre></details></td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>check for transaction type filters (expense, income, transfer)</td>
+          <td class="mono">23595ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to &quot;**/dashboard&quot; until &quot;load&quot;
+============================================================
+
+   at helpers.ts:14
+
+  12 |
+  13 |   // Wait for redirect to dashboard
+&gt; 14 |   await page.waitForURL(&quot;**/dashboard&quot;, { timeout: 15000 });
+     |              ^
+  15 | }
+  16 |
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+ </pre></details></td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>auto-categorization indicators present</td>
+          <td class="mono">52127ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">13-analytics-dashboards.spec.ts &gt; Analytics Dashboards</span>
+          <span class="suite-stats">21/21 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics - Main Analytics page loads</td>
+          <td class="mono">48876ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Main Analytics page has no error states</td>
+          <td class="mono">35612ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Main Analytics page should have charts (SVG or canvas)</td>
+          <td class="mono">37437ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics/balance - Balance Sheet page loads</td>
+          <td class="mono">34173ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Balance Sheet page has no error states</td>
+          <td class="mono">26464ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Balance Sheet page should have charts (SVG or canvas)</td>
+          <td class="mono">18679ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics/clients - Client Analytics page loads</td>
+          <td class="mono">16725ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Client Analytics page has no error states</td>
+          <td class="mono">15800ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Client Analytics page should have charts (SVG or canvas)</td>
+          <td class="mono">19273ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics/expenses - Expense Analytics page loads</td>
+          <td class="mono">19773ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Expense Analytics page has no error states</td>
+          <td class="mono">19771ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Expense Analytics page should have charts (SVG or canvas)</td>
+          <td class="mono">21739ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics/invoices - Invoice Analytics page loads</td>
+          <td class="mono">19389ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Invoice Analytics page has no error states</td>
+          <td class="mono">20090ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Invoice Analytics page should have charts (SVG or canvas)</td>
+          <td class="mono">19269ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics/pl - P&amp;L page loads</td>
+          <td class="mono">18914ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>P&amp;L page has no error states</td>
+          <td class="mono">17382ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>P&amp;L page should have charts (SVG or canvas)</td>
+          <td class="mono">18618ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /analytics/projects - Project Analytics page loads</td>
+          <td class="mono">20444ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Project Analytics page has no error states</td>
+          <td class="mono">17899ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Project Analytics page should have charts (SVG or canvas)</td>
+          <td class="mono">26756ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">14-settings-page.spec.ts &gt; Settings Page</span>
+          <span class="suite-stats">5/8 passed (63%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /settings and page loads</td>
+          <td class="mono">25745ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>settings page loads with tabs</td>
+          <td class="mono">24053ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Company tab: verify company name field has WODO Digital or is editable</td>
+          <td class="mono">23350ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>verify GSTIN field present</td>
+          <td class="mono">23839ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Bank Settings tab: verify bank account fields</td>
+          <td class="mono">18598ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>Invoice Settings tab: verify invoice prefix or numbering</td>
+          <td class="mono">24377ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+Received: [31mfalse[39m
+
+  125 |       || await page.getByText(/invoice prefix|invoice number|numbering|auto.?number/i).first().isVisible().catch(() =&gt; false);
+  126 |
+&gt; 127 |     expect(hasInvoiceSettings).toBeTruthy();
+      |                                ^
+  128 |   });
+  129 |
+  130 |   test(&quot;Services tab: verify service list is present&quot;, async ({ page }) =&gt; {
+    at /Users/shyam/Desktop/Claude Dev Projects/WODO A</pre></details></td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>Services tab: verify service list is present</td>
+          <td class="mono">21753ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">Error: locator.count: SyntaxError: Invalid flags supplied to RegExp constructor 'i, table, [role=&quot;list&quot;], [class*=&quot;service&quot;], [class*=&quot;Service&quot;], button:has-text(&quot;Add Service&quot;), button:has-text(&quot;New Service&quot;)'
+    at new RegExp (&lt;anonymous&gt;)
+    at createTextMatcher (&lt;anonymous&gt;:7846:16)
+    at Object.queryAll (&lt;anonymous&gt;:6672:33)
+    at InjectedScript._queryEngineAll (&lt;anonymous&gt;:6645:49)
+    at InjectedScript.querySelectorAll (&lt;anonymous&gt;:6632:30)
+    at eval (eval at evaluate (:302:30), &lt;ano</pre></details></td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>Users tab: verify user management area</td>
+          <td class="mono">20660ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">Error: locator.count: SyntaxError: Invalid flags supplied to RegExp constructor 'i, table, [role=&quot;list&quot;], button:has-text(&quot;Invite&quot;), button:has-text(&quot;Add User&quot;), button:has-text(&quot;Add Member&quot;), [class*=&quot;user&quot;], [class*=&quot;User&quot;], [class*=&quot;member&quot;], [class*=&quot;Member&quot;]'
+    at new RegExp (&lt;anonymous&gt;)
+    at createTextMatcher (&lt;anonymous&gt;:7846:16)
+    at Object.queryAll (&lt;anonymous&gt;:6672:33)
+    at InjectedScript._queryEngineAll (&lt;anonymous&gt;:6645:49)
+    at InjectedScript.querySelectorAll (&lt;anonymous&gt;</pre></details></td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">15-contracts-pipeline.spec.ts &gt; Contracts &amp; Pipeline</span>
+          <span class="suite-stats">8/8 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /contracts and page loads</td>
+          <td class="mono">25202ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>contracts page loads without errors</td>
+          <td class="mono">20659ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>check for contract list or empty state</td>
+          <td class="mono">23846ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /pipeline and page loads</td>
+          <td class="mono">26438ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>pipeline page loads with sales pipeline view</td>
+          <td class="mono">26384ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>check for pipeline stages or columns</td>
+          <td class="mono">26069ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigate to /targets and page loads</td>
+          <td class="mono">27486ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>targets page loads with financial targets</td>
+          <td class="mono">20018ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">16-tds-reports.spec.ts &gt; TDS &amp; Reports</span>
+          <span class="suite-stats">5/7 passed (71%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should navigate to /tds page</td>
+          <td class="mono">40379ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>TDS certificates page loads with heading</td>
+          <td class="mono">40224ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>TDS page shows financial year and quarter columns</td>
+          <td class="mono">21161ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to &quot;**/dashboard&quot; until &quot;load&quot;
+============================================================
+
+   at helpers.ts:14
+
+  12 |
+  13 |   // Wait for redirect to dashboard
+&gt; 14 |   await page.waitForURL(&quot;**/dashboard&quot;, { timeout: 15000 });
+     |              ^
+  15 | }
+  16 |
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+ </pre></details></td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>TDS page shows certificate received indicator</td>
+          <td class="mono">21043ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to &quot;**/dashboard&quot; until &quot;load&quot;
+============================================================
+
+   at helpers.ts:14
+
+  12 |
+  13 |   // Wait for redirect to dashboard
+&gt; 14 |   await page.waitForURL(&quot;**/dashboard&quot;, { timeout: 15000 });
+     |              ^
+  15 | }
+  16 |
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+ </pre></details></td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>should navigate to /reports page</td>
+          <td class="mono">40098ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Investor reports page loads with content</td>
+          <td class="mono">21279ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>Reports page shows generation or listing controls</td>
+          <td class="mono">19871ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">17-navigation-responsive.spec.ts &gt; Navigation &amp; Responsive Layout &gt; Desktop viewport (1440x900)</span>
+          <span class="suite-stats">2/3 passed (67%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>sidebar navigation is fully visible at desktop width</td>
+          <td class="mono">9026ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>all nav links are clickable and navigate correctly</td>
+          <td class="mono">9673ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row fail">
+          <td><span class="icon fail">&#10008;</span></td>
+          <td>breadcrumbs appear on inner pages</td>
+          <td class="mono">23573ms</td>
+          <td><details><summary class="err-summary">Error</summary><pre class="err-detail">TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to &quot;**/dashboard&quot; until &quot;load&quot;
+============================================================
+
+   at helpers.ts:14
+
+  12 |
+  13 |   // Wait for redirect to dashboard
+&gt; 14 |   await page.waitForURL(&quot;**/dashboard&quot;, { timeout: 15000 });
+     |              ^
+  15 | }
+  16 |
+  17 | // ─── Navigation helpers ──────────────────────────────────────────────────────
+ </pre></details></td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">17-navigation-responsive.spec.ts &gt; Navigation &amp; Responsive Layout &gt; Mobile viewport (375x812)</span>
+          <span class="suite-stats">2/2 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>navigation adapts for mobile (hamburger menu or collapsed sidebar)</td>
+          <td class="mono">22441ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>floating action button is visible on mobile</td>
+          <td class="mono">34960ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">18-form-validation.spec.ts &gt; Form Validation &gt; Client Form Validation</span>
+          <span class="suite-stats">3/3 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>empty company name shows required error</td>
+          <td class="mono">30952ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>invalid billing email shows validation error</td>
+          <td class="mono">29850ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>GSTIN field shows/hides based on client type toggle</td>
+          <td class="mono">36305ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">18-form-validation.spec.ts &gt; Form Validation &gt; Invoice Form Validation</span>
+          <span class="suite-stats">3/3 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>saving with no client selected shows error</td>
+          <td class="mono">35105ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>saving with no line items shows error</td>
+          <td class="mono">22971ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>notes field respects max 5000 chars</td>
+          <td class="mono">21515ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">19-data-persistence.spec.ts &gt; 19 - Data Persistence</span>
+          <span class="suite-stats">5/5 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>client data persists after navigation away and back</td>
+          <td class="mono">36850ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>search filters clients and resets correctly</td>
+          <td class="mono">28731ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>invoice data persists on detail page after reload</td>
+          <td class="mono">25922ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>client detail page shows correct info</td>
+          <td class="mono">25837ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>settings persist across tab switches</td>
+          <td class="mono">26312ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+      <div class="suite-block">
+        <div class="suite-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="suite-title">20-security-accessibility.spec.ts &gt; 20 - Security &amp; Accessibility</span>
+          <span class="suite-stats">9/9 passed (100%)</span>
+        </div>
+        <table class="test-table">
+          <thead><tr><th width="40"></th><th>Test</th><th width="80">Time</th><th width="200">Error</th></tr></thead>
+          <tbody>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>unauthenticated access to dashboard redirects to login</td>
+          <td class="mono">1716ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>unauthenticated access to clients redirects to login</td>
+          <td class="mono">6063ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>unauthenticated API returns 401</td>
+          <td class="mono">613ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>login form has proper labels and structure</td>
+          <td class="mono">3911ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>invalid credentials show error message</td>
+          <td class="mono">4804ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>XSS prevention in text inputs</td>
+          <td class="mono">9182ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>modals have proper ARIA attributes</td>
+          <td class="mono">9021ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>security headers are present</td>
+          <td class="mono">3006ms</td>
+          <td>-</td>
+        </tr>
+        <tr class="test-row pass">
+          <td><span class="icon pass">&#10004;</span></td>
+          <td>CSRF protection on API routes</td>
+          <td class="mono">508ms</td>
+          <td>-</td>
+        </tr></tbody>
+        </table>
+      </div>
+</div>
+
+<div class="footer">
+  <p>WODO Ally E2E Audit | SPARC Multi-Agent Orchestration | Playwright + Chromium</p>
+  <p style="margin-top:4px">WODO Digital Private Limited &copy; 2026</p>
+</div>
+
+</body>
+</html>

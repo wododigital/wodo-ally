@@ -6,6 +6,7 @@ import { Plus, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
+import { InvoiceEditSkeleton } from "@/components/shared/boneyard-skeletons";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn } from "@/lib/utils/cn";
 import { useServices } from "@/lib/hooks/use-services";
@@ -192,11 +193,7 @@ export default function EditInvoicePage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
-      </div>
-    );
+    return <InvoiceEditSkeleton />;
   }
 
   if (!invoice) {

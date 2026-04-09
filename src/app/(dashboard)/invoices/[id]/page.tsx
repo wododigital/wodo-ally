@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
+import { InvoiceDetailSkeleton } from "@/components/shared/boneyard-skeletons";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { PdfPreviewModal } from "@/components/shared/pdf-preview-modal";
@@ -373,11 +374,7 @@ export default function InvoiceDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
-      </div>
-    );
+    return <InvoiceDetailSkeleton />;
   }
 
   if (!invoice) {
