@@ -21,6 +21,11 @@ type PeriodType = TargetRow["period_type"];
 
 // Use centralized FY helper from format.ts
 const CURRENT_FY = getFinancialYear();
+const _currentFYStartYear = parseInt(CURRENT_FY.split("-")[0], 10);
+const fyOptions = Array.from({ length: 3 }, (_, i) => {
+  const y = _currentFYStartYear - 1 + i;
+  return `${y}-${String(y + 1).slice(2)}`;
+});
 
 function computeElapsedPct(target: TargetRow): number {
   const now = new Date();
@@ -336,8 +341,9 @@ export default function GoalsPage() {
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-gray-700">Financial Year</label>
                     <select className="glass-input" value={CURRENT_FY} disabled>
-                      <option value="2025-26">FY 2025-26</option>
-                      <option value="2026-27">FY 2026-27</option>
+                      {fyOptions.map((fy) => (
+                        <option key={fy} value={fy}>FY {fy}</option>
+                      ))}
                     </select>
                   </div>
 

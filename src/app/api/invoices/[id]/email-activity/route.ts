@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole, isRoleAllowed } from "@/lib/auth/check-role";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,6 +44,12 @@ export async function POST(
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 1b. Role check - only admin, manager, and accountant can manage email activity
+  const role = await getUserRole(supabase, user.id);
+  if (!isRoleAllowed(role, ["admin", "manager", "accountant"])) {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
   // 2. Extract and validate invoiceId from params
@@ -143,6 +150,12 @@ export async function GET(
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 1b. Role check - only admin, manager, and accountant can view email activity
+  const role = await getUserRole(supabase, user.id);
+  if (!isRoleAllowed(role, ["admin", "manager", "accountant"])) {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
   // 2. Extract invoiceId

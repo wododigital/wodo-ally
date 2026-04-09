@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { getFinancialYear, getFinancialYearRange } from "@/lib/utils/format";
 
 // Views are not registered in the Database type - use this helper to query them.
 // The cast is safe because Supabase views are read-only and we only call .select().
@@ -108,16 +109,12 @@ export interface PaymentListItem {
 
 // ─── FY helpers ───────────────────────────────────────────────────────────────
 
+/** Derives ISO date range for the current Indian FY using canonical helpers from format.ts */
 function getCurrentFYRange(): { from: string; to: string } {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 1-based
-  // FY Apr-Mar: if month >= 4 it's FY year/year+1, else FY year-1/year
-  const fyStart = month >= 4 ? year : year - 1;
-  return {
-    from: `${fyStart}-04-01`,
-    to: `${fyStart + 1}-03-31`,
-  };
+  const fy = getFinancialYear();
+  const { start, end } = getFinancialYearRange(fy);
+  const fmt = (d: Date) => d.toISOString().split("T")[0];
+  return { from: fmt(start), to: fmt(end) };
 }
 
 function getNMonthsAgo(months: number): string {

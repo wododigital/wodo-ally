@@ -9,6 +9,16 @@ import {
 
 type EmailType = "invoice" | "reminder" | "followup";
 
+/** Strip dangerous HTML tags and attributes to prevent XSS in email bodies */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/on\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
 // Maps our local type to the email_template enum used by invoice_email_activity
 const TYPE_TO_TEMPLATE: Record<EmailType, string> = {
   invoice: "invoice",
@@ -86,7 +96,7 @@ export async function POST(
     // Build email HTML - use caller body if provided, otherwise use template
     let html: string;
     if (payload.body && payload.body.trim()) {
-      html = payload.body;
+      html = sanitizeHtml(payload.body);
     } else if (payload.type === "reminder") {
       html = paymentReminderTemplate({
         clientName: client?.company_name ?? "Client",

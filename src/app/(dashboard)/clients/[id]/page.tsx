@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { getFinancialYear } from "@/lib/utils/format";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -71,7 +72,7 @@ function TdsUploadModal({
   const supabase = createClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
-  const [financialYear, setFinancialYear] = useState("2025-26");
+  const [financialYear, setFinancialYear] = useState(getFinancialYear());
   const [quarter, setQuarter] = useState(1);
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -357,6 +358,7 @@ export default function ClientDetailPage() {
 
   // Fetch TDS certificates for this client
   useEffect(() => {
+    let mounted = true;
     async function fetchTds() {
       setTdsLoading(true);
       const supabase = createClient();
@@ -366,10 +368,13 @@ export default function ClientDetailPage() {
         .eq("client_id", id)
         .order("financial_year", { ascending: false })
         .order("quarter", { ascending: false });
-      setTdsCerts((data as TdsCertificate[]) ?? []);
-      setTdsLoading(false);
+      if (mounted) {
+        setTdsCerts((data as TdsCertificate[]) ?? []);
+        setTdsLoading(false);
+      }
     }
     fetchTds();
+    return () => { mounted = false; };
   }, [id, tdsRefreshKey]);
 
   if (isLoading) return <ClientDetailSkeleton />;

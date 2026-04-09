@@ -1,0 +1,116 @@
+{
+  "results": [
+    {
+      "id": "INV-CLICK",
+      "test": "Click row navigates to detail",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/invoices/896c1aa0-b446-4b3d-a41f-20d4da88ab1b"
+    },
+    {
+      "id": "INV-H1",
+      "test": "Invoice number display",
+      "result": "PASS",
+      "details": "Invoices"
+    },
+    {
+      "id": "INV-BTNS",
+      "test": "All buttons",
+      "result": "INFO",
+      "details": "Invoices | Analytics | Preview PDF | Download"
+    },
+    {
+      "id": "INV-EDIT",
+      "test": "Edit button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "INV-PDF",
+      "test": "Preview PDF button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "INV-DL",
+      "test": "Download button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "INV-RP",
+      "test": "Record Payment button",
+      "result": "INFO",
+      "details": "Not visible (may be fully paid)"
+    },
+    {
+      "id": "INV-LINES",
+      "test": "Line items",
+      "result": "PASS",
+      "details": "1 items"
+    },
+    {
+      "id": "INV-PAY-SUM",
+      "test": "Payment Summary section",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "INV-EMAIL",
+      "test": "Email Activity section",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "INV-TABS",
+      "test": "All button elements",
+      "result": "INFO",
+      "details": "[{\"text\":\"Invoices\",\"dataState\":null,\"role\":null},{\"text\":\"Analytics\",\"dataState\":null,\"role\":null},{\"text\":\"Export CSV\",\"dataState\":null,\"role\":null},{\"text\":\"New Invoice\",\"dataState\":null,\"role\":null},{\"text\":\"All Status\",\"dataState\":null,\"role\":null},{\"text\":\"All Types\",\"dataState\":null,\"role\":null},{\"text\":\"GST\",\"dataState\":null,\"role\":null},{\"text\":\"Intl.\",\"dataState\":null,\"role\":null},{\"text\":\"Non-GST\",\"dataState\":null,\"role\":null},{\"text\":\"Proforma\",\"dataState\":null,\"role\":null},{\"text\":\"Invoice\",\"dataState\":null,\"role\":null},{\"text\":\"Client\",\"dataState\":null,\"role\":null},{\"text\":\"Type\",\"dataState\":null,\"role\":null},{\"text\":\"Date\",\"dataState\":null,\"role\":null},{\"text\":\"Amount\",\"dataState\":null,\"role\":null},{\"text\":\"Status\",\"dataState\":null,\"role\":null},{\"text\":\"Paid\",\"dataState\":null,\"role\":null},{\"text\":\"Sent\",\"dataState\":null,\"role\":null},{\"text\":\"Overdue\",\"dataState\":null,\"role\":null},{\"text\":\"Sent\",\"dataState\":null,\"role\":null}]"
+    },
+    {
+      "id": "INV-NEW",
+      "test": "New invoice form",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/invoices"
+    },
+    {
+      "id": "INV-NEW-TYPE",
+      "test": "Form type",
+      "result": "INFO",
+      "details": "Modal/dialog"
+    },
+    {
+      "id": "INV-NEW-FIELDS",
+      "test": "Form fields",
+      "result": "INFO",
+      "details": "[{\"tag\":\"INPUT\",\"type\":\"text\",\"name\":null,\"placeholder\":null,\"className\":\"glass-input opacity-50 cursor-default text-text-mu\"},{\"tag\":\"SELECT\",\"type\":null,\"name\":null,\"placeholder\":null,\"className\":\"glass-input\"},{\"tag\":\"INPUT\",\"type\":\"date\",\"name\":null,\"placeholder\":null,\"className\":\"glass-input\"},{\"tag\":\"INPUT\",\"type\":\"date\",\"name\":null,\"placeholder\":null,\"className\":\"glass-input\"},{\"tag\":\"TEXTAREA\",\"type\":null,\"name\":null,\"placeholder\":\"Payment terms, bank details will be added automatically...\",\"className\":\"glass-input resize-none\"},{\"tag\":\"SELECT\",\"type\":null,\"name\":null,\"placeholder\":null,\"className\":\"glass-input text-xs py-2\"},{\"tag\":\"INPUT\",\"type\":\"text\",\"name\":null,\"placeholder\":\"Description\",\"className\":\"glass-input\"},{\"tag\":\"INPUT\",\"type\":\"number\",\"name\":null,\"placeholder\":\"1\",\"className\":\"glass-input text-center\"},{\"tag\":\"INPUT\",\"type\":\"number\",\"name\":null,\"placeholder\":\"Amount\",\"className\":\"glass-input font-sans\"},{\"tag\":\"INPUT\",\"type\":\"text\",\"name\":null,\"placeholder\":\"Search by invoice number or client...\",\"className\":\"glass-input pl-9\"}]"
+    },
+    {
+      "id": "INV-NEW-LABELS",
+      "test": "Form labels",
+      "result": "INFO",
+      "details": "Invoice Number, Client *, Invoice Date *, Due Date, Notes (shown on invoice)"
+    },
+    {
+      "id": "INV-NEW-TAX",
+      "test": "Tax calculation",
+      "result": "PASS",
+      "details": "Tax elements visible: true"
+    },
+    {
+      "id": "INV-NEW-TYPES",
+      "test": "Invoice type selector",
+      "result": "PASS",
+      "details": "6 type buttons"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/invoices. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/invoices/bbbbbbbb-0000-0000-0000-000000000007. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    }
+  ]
+}

@@ -1,0 +1,316 @@
+{
+  "results": [
+    {
+      "id": "LOGIN-01",
+      "test": "Login with valid credentials",
+      "result": "PASS",
+      "details": "Redirected to https://wodo-ally-production.up.railway.app/dashboard"
+    },
+    {
+      "id": "3A-01",
+      "test": "List all clients",
+      "result": "PASS",
+      "details": "Found 10 client entries"
+    },
+    {
+      "id": "3A-02",
+      "test": "Client names display",
+      "result": "PASS",
+      "details": "Names: DdemoDemoGST InvoiceINActive50At RiskClient since Mar 2026No payment data, aasdasdasdasdGST InvoiceINActive50At RiskClient since Mar 2026No payment data, twodo testtestGST InvoiceINActive50At RiskClient since Mar 2026No payment data, twodo digitestGST InvoiceINActive50At RiskClient since Mar 2026No payment data, DDentiqueDentique Dental CareInternationalAEActive91Excellent95% on-timeClient since Mar 2026Bills 5th of monthPays in ~9dPrompt payer"
+    },
+    {
+      "id": "3A-03",
+      "test": "Search - partial name",
+      "result": "PASS",
+      "details": "Searched \"Dde\", got 0 results"
+    },
+    {
+      "id": "3A-04",
+      "test": "Search - case sensitivity",
+      "result": "WARN",
+      "details": "Uppercase search returned 0 results"
+    },
+    {
+      "id": "3A-05",
+      "test": "Search - special characters",
+      "result": "PASS",
+      "details": "No crash with special characters"
+    },
+    {
+      "id": "3A-06",
+      "test": "Filter dropdowns exist",
+      "result": "PASS",
+      "details": "Found 1 filter elements"
+    },
+    {
+      "id": "3A-07",
+      "test": "Navigate to client detail",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/clients/605c66df-2649-4510-9bf1-e373dd877c11"
+    },
+    {
+      "id": "3A-08",
+      "test": "Client detail tabs",
+      "result": "PASS",
+      "details": "Tabs found: ₹0, ₹0, ₹0"
+    },
+    {
+      "id": "3A-08-Overview",
+      "test": "Client tab: Overview",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3A-08-Projects",
+      "test": "Client tab: Projects",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3A-08-Invoices",
+      "test": "Client tab: Invoices",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3A-08-Payments",
+      "test": "Client tab: Payments",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3A-ERR",
+      "test": "Clients module error",
+      "result": "FAIL",
+      "details": "page.$: Unexpected token \"=\" while parsing css selector \"[class*=\"health\"], [class*=\"score\"], text=/[0-9]+%/\". Did you mean to CSS.escape it?"
+    },
+    {
+      "id": "3B-01",
+      "test": "List projects",
+      "result": "PASS",
+      "details": "Found 10 project entries"
+    },
+    {
+      "id": "3B-02",
+      "test": "Client associations shown",
+      "result": "INFO",
+      "details": "Checking page content for client references"
+    },
+    {
+      "id": "3B-03",
+      "test": "Search projects",
+      "result": "PASS",
+      "details": "Search input functional"
+    },
+    {
+      "id": "3B-05",
+      "test": "New project button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "3B-06",
+      "test": "New project form",
+      "result": "PASS",
+      "details": "Form opened"
+    },
+    {
+      "id": "3B-07",
+      "test": "Retainer project fields",
+      "result": "INFO",
+      "details": "Monthly amount: yes, Billing day: no"
+    },
+    {
+      "id": "3C-01",
+      "test": "Services section found",
+      "result": "PASS",
+      "details": "In settings"
+    },
+    {
+      "id": "3C-02",
+      "test": "List services",
+      "result": "WARN",
+      "details": "0 services found"
+    },
+    {
+      "id": "3C-03",
+      "test": "Add service button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "3D-01",
+      "test": "List contracts",
+      "result": "PASS",
+      "details": "Found 1 contract entries"
+    },
+    {
+      "id": "3D-02",
+      "test": "Status badges",
+      "result": "WARN",
+      "details": "0 badges found"
+    },
+    {
+      "id": "3D-03",
+      "test": "Status filter",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "3D-04",
+      "test": "New contract form",
+      "result": "FAIL",
+      "details": "0 form fields found"
+    },
+    {
+      "id": "3D-05",
+      "test": "Contract-client linkage",
+      "result": "WARN",
+      "details": "No explicit client dropdown"
+    },
+    {
+      "id": "3D-06",
+      "test": "Delete button",
+      "result": "WARN",
+      "details": "Not visible on list page"
+    },
+    {
+      "id": "3E-01",
+      "test": "TDS page loads",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/tds"
+    },
+    {
+      "id": "3E-02",
+      "test": "KPI cards",
+      "result": "WARN",
+      "details": "0 card elements"
+    },
+    {
+      "id": "3E-03",
+      "test": "FY filter",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "3F-01",
+      "test": "Progress bars display",
+      "result": "WARN",
+      "details": "0 progress elements"
+    },
+    {
+      "id": "3F-02",
+      "test": "Add target button",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "3F-03",
+      "test": "Target entries",
+      "result": "INFO",
+      "details": "9 target elements found"
+    },
+    {
+      "id": "3F-04",
+      "test": "Delete target button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "3G-01",
+      "test": "Settings tabs",
+      "result": "PASS",
+      "details": "Tabs: Company, Bank Details, Invoice, Services, Email Templates, Contracts, Users, Notifications"
+    },
+    {
+      "id": "3G-02-Company",
+      "test": "Settings tab: Company",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Bank Details",
+      "test": "Settings tab: Bank Details",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Invoice",
+      "test": "Settings tab: Invoice",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Services",
+      "test": "Settings tab: Services",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Email Templates",
+      "test": "Settings tab: Email Templates",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Contracts",
+      "test": "Settings tab: Contracts",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Users",
+      "test": "Settings tab: Users",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-02-Notifications",
+      "test": "Settings tab: Notifications",
+      "result": "PASS",
+      "details": "Tab loaded"
+    },
+    {
+      "id": "3G-03",
+      "test": "Save button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "3H-01",
+      "test": "Onboarding page loads",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/onboard"
+    },
+    {
+      "id": "3H-02",
+      "test": "Wizard steps",
+      "result": "WARN",
+      "details": "0 step elements"
+    },
+    {
+      "id": "3H-03",
+      "test": "Step progression button",
+      "result": "PASS",
+      "details": "Found"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/analytics/projects?period=month. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/analytics/clients?period=month. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/contracts/new",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/tds",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ]
+}

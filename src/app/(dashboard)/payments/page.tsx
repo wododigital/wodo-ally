@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AlertCircle, CheckCircle2, Search, CreditCard, ChevronUp, ChevronDown, TrendingUp, Clock } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
@@ -8,6 +8,7 @@ import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 import { usePaymentsList, useDashboardKPIs } from "@/lib/hooks/use-analytics";
@@ -36,6 +37,7 @@ export default function PaymentsPage() {
   const [dateFilter, setDateFilter] = useState<DateFilterState>({ mode: "all" });
   const [sortField, setSortField] = useState<SortField>("payment_date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: payments, isLoading: paymentsLoading } = usePaymentsList();
   const { data: kpis, isLoading: kpisLoading } = useDashboardKPIs();
@@ -72,6 +74,12 @@ export default function PaymentsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [payments, dateRange, search, sortField, sortDir]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, dateFilter, sortField, sortDir]);
+
+  const PAGE_SIZE = 20;
+  const { paged: paginated, total: totalFiltered } = paginateArray(filtered, currentPage, PAGE_SIZE);
 
   // All-time totals for KPIs (unaffected by filters)
   const allPayments = payments ?? [];
@@ -179,12 +187,12 @@ export default function PaymentsPage() {
             ))}
           </div>
 
-          {filtered.map((payment, idx) => (
+          {paginated.map((payment, idx) => (
             <div
               key={payment.id}
               className={cn(
                 "flex md:grid md:grid-cols-[2fr_1fr_1fr_1fr] items-start gap-4 px-5 py-4",
-                idx < filtered.length - 1 && "border-b border-black/[0.05]"
+                idx < paginated.length - 1 && "border-b border-black/[0.05]"
               )}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -236,6 +244,12 @@ export default function PaymentsPage() {
               </div>
             </div>
           ))}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalFiltered}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </GlassCard>
       )}
 

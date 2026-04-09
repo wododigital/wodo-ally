@@ -63,8 +63,34 @@ export function getFinancialYear(date: Date = new Date()): string {
 export function getFinancialYearRange(fy: string): { start: Date; end: Date } {
   const [startYear] = fy.split("-");
   const year = parseInt(startYear);
+  const end = new Date(year + 1, 2, 31);
+  end.setHours(23, 59, 59, 999);
   return {
     start: new Date(year, 3, 1),
-    end: new Date(year + 1, 2, 31),
+    end,
   };
+}
+
+/**
+ * Returns Date bounds for a quarter within an Indian FY.
+ * Q1 = Apr-Jun, Q2 = Jul-Sep, Q3 = Oct-Dec, Q4 = Jan-Mar
+ */
+export function getQuarterBounds(fy: string, quarter: number): { start: Date; end: Date } {
+  const [startYear] = fy.split("-");
+  const fyStart = parseInt(startYear);
+
+  const quarterDefs: Record<number, { startMonth: number; endMonth: number; yearOffset: number }> = {
+    1: { startMonth: 3, endMonth: 5, yearOffset: 0 },   // Apr(3)-Jun(5) in 0-indexed
+    2: { startMonth: 6, endMonth: 8, yearOffset: 0 },   // Jul-Sep
+    3: { startMonth: 9, endMonth: 11, yearOffset: 0 },  // Oct-Dec
+    4: { startMonth: 0, endMonth: 2, yearOffset: 1 },   // Jan-Mar (next calendar year)
+  };
+
+  const def = quarterDefs[quarter] ?? quarterDefs[1];
+  const calYear = fyStart + def.yearOffset;
+  const start = new Date(calYear, def.startMonth, 1);
+  const end = new Date(calYear, def.endMonth + 1, 0); // last day of end month
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
 }

@@ -5,6 +5,7 @@ import { Edit2, Save, Check, Copy } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { FieldLabel } from "./company-tab";
 import { lsGetJson, lsSetJson } from "./company-tab";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { cn } from "@/lib/utils/cn";
 
 // ---------------------------------------------------------------------------
@@ -77,6 +78,9 @@ export function BankTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [savedId,   setSavedId]   = useState<string | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, Record<string, string>>>({});
+  const [isDirty, setIsDirty] = useState(false);
+
+  useUnsavedChanges(isDirty);
 
   useEffect(() => {
     const stored = lsGetJson<Record<string, Record<string, string>>>("wodo_bank_accounts", {});
@@ -92,10 +96,12 @@ export function BankTab() {
       ...prev,
       [accountId]: { ...(prev[accountId] ?? {}), [key]: value },
     }));
+    setIsDirty(true);
   }
 
   function handleSave(id: string) {
     lsSetJson("wodo_bank_accounts", fieldValues);
+    setIsDirty(false);
     setSavedId(id);
     setEditingId(null);
     setTimeout(() => setSavedId(null), 2500);

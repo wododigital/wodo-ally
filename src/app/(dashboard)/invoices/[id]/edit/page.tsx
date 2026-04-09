@@ -123,7 +123,7 @@ export default function EditInvoicePage() {
   const taxRate = invoiceType === "gst" ? 18 : 0;
   const tax = Math.round(subtotal * (taxRate / 100) * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
-  const currencyPrefix = effectiveCurrency === "USD" ? "$" : effectiveCurrency === "AED" ? "AED " : "Rs.";
+  const currencyPrefix = effectiveCurrency === "USD" ? "$" : effectiveCurrency === "AED" ? "AED " : effectiveCurrency === "GBP" ? "£" : effectiveCurrency === "EUR" ? "€" : "Rs.";
 
   function addLineItem() {
     setLineItems((prev) => [
@@ -168,6 +168,7 @@ export default function EditInvoicePage() {
           tax_rate: taxRate,
           tax_amount: tax,
           total_amount: total,
+          balance_due: Math.max(0, total - (invoice?.total_received ?? 0) - (invoice?.total_tds_deducted ?? 0)),
           currency: effectiveCurrency,
         },
         lineItems: validItems.map((item, idx) => ({

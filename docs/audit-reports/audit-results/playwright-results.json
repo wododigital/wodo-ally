@@ -1,0 +1,321 @@
+{
+  "timestamp": "2026-04-08T19:05:34.332Z",
+  "baseUrl": "https://wodo-ally-production.up.railway.app",
+  "totalTests": 52,
+  "passed": 33,
+  "failed": 19,
+  "results": [
+    {
+      "id": "AUTH-01",
+      "test": "Login with valid credentials redirects to /dashboard",
+      "result": "PASS",
+      "details": "Redirected to: https://wodo-ally-production.up.railway.app/dashboard"
+    },
+    {
+      "id": "AUTH-02",
+      "test": "Login with wrong password shows error",
+      "result": "FAIL",
+      "details": "Still on login: true, Error shown: \"\""
+    },
+    {
+      "id": "AUTH-02b",
+      "test": "Error message does not reveal user existence",
+      "result": "PASS",
+      "details": "Error text: \"\""
+    },
+    {
+      "id": "AUTH-03",
+      "test": "Login with empty fields shows validation",
+      "result": "PASS",
+      "details": "Still on login: true, Required attribute: true"
+    },
+    {
+      "id": "AUTHZ-04-dashboard",
+      "test": "Access /dashboard without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-clients",
+      "test": "Access /clients without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-invoices",
+      "test": "Access /invoices without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-payments",
+      "test": "Access /payments without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-expenses",
+      "test": "Access /expenses without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-analytics",
+      "test": "Access /analytics without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-projects",
+      "test": "Access /projects without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-contracts",
+      "test": "Access /contracts without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-reports",
+      "test": "Access /reports without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-pipeline",
+      "test": "Access /pipeline without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-targets",
+      "test": "Access /targets without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-tds",
+      "test": "Access /tds without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-settings",
+      "test": "Access /settings without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTHZ-04-onboard",
+      "test": "Access /onboard without auth redirects to /login",
+      "result": "PASS",
+      "details": "Final URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "AUTH-05",
+      "test": "Session persists after login (new tab same context)",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/dashboard"
+    },
+    {
+      "id": "API-06-_api_email_send",
+      "test": "POST /api/email/send without auth",
+      "result": "FAIL",
+      "details": "page.evaluate: TypeError: Failed to fetch\n    at eval (eval at evaluate (:302:30), <anonymous>:2:33)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    },
+    {
+      "id": "API-06-_api_invoices_export_csv",
+      "test": "GET /api/invoices/export-csv without auth returns 401/403",
+      "result": "FAIL",
+      "details": "Status: 404"
+    },
+    {
+      "id": "API-06-_api_invoices_00000000_0000_0000_0000_000000000000_send_email",
+      "test": "POST /api/invoices/00000000-0000-0000-0000-000000000000/send-email without auth",
+      "result": "FAIL",
+      "details": "page.evaluate: TypeError: Failed to fetch\n    at eval (eval at evaluate (:302:30), <anonymous>:2:33)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    },
+    {
+      "id": "API-06-_api_invoices_00000000_0000_0000_0000_000000000000_email_activity",
+      "test": "GET /api/invoices/00000000-0000-0000-0000-000000000000/email-activity without auth returns 401/403",
+      "result": "FAIL",
+      "details": "Status: 404"
+    },
+    {
+      "id": "API-06-_api_invoices_00000000_0000_0000_0000_000000000000_email_activity",
+      "test": "POST /api/invoices/00000000-0000-0000-0000-000000000000/email-activity without auth",
+      "result": "FAIL",
+      "details": "page.evaluate: TypeError: Failed to fetch\n    at eval (eval at evaluate (:302:30), <anonymous>:2:33)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    },
+    {
+      "id": "URL-07-_clients_______admin",
+      "test": "URL manipulation: /clients/../../admin",
+      "result": "PASS",
+      "details": "Status: 404, URL: https://wodo-ally-production.up.railway.app/admin, Leaks: false"
+    },
+    {
+      "id": "URL-07-_clients_00000000-0000-0000-0000-000000000000",
+      "test": "URL manipulation: /clients/00000000-0000-0000-0000-000000000000",
+      "result": "PASS",
+      "details": "Status: 200, URL: https://wodo-ally-production.up.railway.app/clients/00000000-0000-0000-0000-000000000000, Leaks: false"
+    },
+    {
+      "id": "URL-07-_invoices_00000000-0000-0000-0000-000000000000",
+      "test": "URL manipulation: /invoices/00000000-0000-0000-0000-000000000000",
+      "result": "PASS",
+      "details": "Status: 200, URL: https://wodo-ally-production.up.railway.app/invoices/00000000-0000-0000-0000-000000000000, Leaks: false"
+    },
+    {
+      "id": "URL-07-_clients__________etc_passwd",
+      "test": "URL manipulation: /clients/../../../etc/passwd",
+      "result": "PASS",
+      "details": "Status: 404, URL: https://wodo-ally-production.up.railway.app/etc/passwd, Leaks: false"
+    },
+    {
+      "id": "URL-07-_settings_______api_email_send",
+      "test": "URL manipulation: /settings/../../api/email/send",
+      "result": "PASS",
+      "details": "Status: 405, URL: https://wodo-ally-production.up.railway.app/api/email/send, Leaks: false"
+    },
+    {
+      "id": "DATA-08",
+      "test": "No sensitive data in page source",
+      "result": "PASS",
+      "details": "No sensitive data found in page source"
+    },
+    {
+      "id": "AUTH-09",
+      "test": "Logout button exists",
+      "result": "FAIL",
+      "details": "Logout buttons found: 0"
+    },
+    {
+      "id": "HDR-10-x-frame-options",
+      "test": "Security header: X-Frame-Options",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "HDR-10-x-content-type-options",
+      "test": "Security header: X-Content-Type-Options",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "HDR-10-strict-transport-security",
+      "test": "Security header: Strict-Transport-Security",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "HDR-10-content-security-policy",
+      "test": "Security header: Content-Security-Policy",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "HDR-10-x-xss-protection",
+      "test": "Security header: X-XSS-Protection",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "HDR-10-referrer-policy",
+      "test": "Security header: Referrer-Policy",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "HDR-10-permissions-policy",
+      "test": "Security header: Permissions-Policy",
+      "result": "FAIL",
+      "details": "MISSING"
+    },
+    {
+      "id": "COOKIE-11-sb-oaujoosmbgcgacosqlhe-auth-token-httponly",
+      "test": "Cookie sb-oaujoosmbgcgacosqlhe-auth-token has HttpOnly flag",
+      "result": "FAIL",
+      "details": "HttpOnly: false"
+    },
+    {
+      "id": "COOKIE-11-sb-oaujoosmbgcgacosqlhe-auth-token-secure",
+      "test": "Cookie sb-oaujoosmbgcgacosqlhe-auth-token has Secure flag",
+      "result": "FAIL",
+      "details": "Secure: false"
+    },
+    {
+      "id": "COOKIE-11-sb-oaujoosmbgcgacosqlhe-auth-token-samesite",
+      "test": "Cookie sb-oaujoosmbgcgacosqlhe-auth-token has SameSite flag",
+      "result": "PASS",
+      "details": "SameSite: Lax"
+    },
+    {
+      "id": "SRCMAP-12",
+      "test": "No source maps accessible in production",
+      "result": "PASS",
+      "details": "No source maps found"
+    },
+    {
+      "id": "REDIR-13",
+      "test": "No open redirect vulnerability in login flow",
+      "result": "PASS",
+      "details": "No open redirect detected"
+    },
+    {
+      "id": "ERR-14",
+      "test": "Error pages do not leak stack traces",
+      "result": "PASS",
+      "details": "Status: 200, Leaks info: false"
+    },
+    {
+      "id": "XSS-15",
+      "test": "Email API XSS test",
+      "result": "FAIL",
+      "details": "page.evaluate: TypeError: Failed to fetch\n    at eval (eval at evaluate (:302:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    },
+    {
+      "id": "KEY-16a",
+      "test": "Supabase anon key in client bundle (expected for Supabase)",
+      "result": "PASS",
+      "details": "Anon key not found in page source"
+    },
+    {
+      "id": "KEY-16b",
+      "test": "Service role key NOT in client bundle",
+      "result": "PASS",
+      "details": "Service role key not found in client (correct)"
+    },
+    {
+      "id": "CSRF-17",
+      "test": "CSRF protection mechanism exists",
+      "result": "FAIL",
+      "details": "No CSRF token found - relies on SameSite cookies (note: check cookie SameSite setting)"
+    },
+    {
+      "id": "TLS-18",
+      "test": "Site served over HTTPS",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/login"
+    },
+    {
+      "id": "FRAME-19",
+      "test": "Clickjacking protection (iframe blocked)",
+      "result": "PASS",
+      "details": "iframe content blocked (correct)"
+    },
+    {
+      "id": "API-20",
+      "test": "Content type validation",
+      "result": "FAIL",
+      "details": "page.evaluate: TypeError: Failed to fetch\n    at eval (eval at evaluate (:302:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    },
+    {
+      "id": "INFO-21",
+      "test": "robots.txt does not expose internal paths",
+      "result": "PASS",
+      "details": "Status: 404, Content: <!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"stylesheet\" href=\"/_next/static/css/77ba18ac6f184bc0.css\" data"
+    }
+  ]
+}

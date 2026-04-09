@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   FileText,
   Plus,
@@ -25,6 +25,7 @@ import {
 import { useClients } from "@/lib/hooks/use-clients";
 import { getFinancialYear } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,6 +78,8 @@ export default function TdsPage() {
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   // Form state
   const [formCertNo, setFormCertNo] = useState("");
@@ -108,6 +111,15 @@ export default function TdsPage() {
     }
     return list;
   }, [certificates, filterQuarter, search]);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [selectedFY, filterQuarter, search]);
+
+  // Paginate
+  const { paged: pagedCerts, total: totalFiltered } = useMemo(
+    () => paginateArray(filtered, currentPage, PAGE_SIZE),
+    [filtered, currentPage]
+  );
 
   // Summary stats
   const totalTds = useMemo(() => filtered.reduce((sum, c) => sum + c.amount, 0), [filtered]);
@@ -305,7 +317,7 @@ export default function TdsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((cert) => (
+                {pagedCerts.map((cert) => (
                   <tr key={cert.id} className="border-b border-black/[0.04] last:border-0 hover:bg-black/[0.015] transition-colors">
                     <td className="px-5 py-3.5">
                       <span className="text-sm font-medium text-text-primary font-mono">{cert.certificate_number}</span>
@@ -344,6 +356,16 @@ export default function TdsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {!isLoading && filtered.length > 0 && (
+          <div className="px-5 pb-3">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalFiltered}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </GlassCard>

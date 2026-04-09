@@ -1,0 +1,344 @@
+{
+  "results": [
+    {
+      "id": "DD-01",
+      "test": "Invoice IDs found",
+      "result": "INFO",
+      "details": "0 unique invoice IDs: "
+    },
+    {
+      "id": "DD-PAY-KPI",
+      "test": "Payment KPI cards",
+      "result": "PASS",
+      "details": "Received: true, Outstanding: true, Overdue: true, TDS: true"
+    },
+    {
+      "id": "DD-PAY-SEARCH",
+      "test": "Payment search",
+      "result": "PASS",
+      "details": "Searched \"Dentique\""
+    },
+    {
+      "id": "DD-PAY-DATE",
+      "test": "Date filter",
+      "result": "PASS",
+      "details": "Date filter clicked"
+    },
+    {
+      "id": "DD-PAY-DATE-OPTS",
+      "test": "Date filter options",
+      "result": "PASS",
+      "details": "Quarter"
+    },
+    {
+      "id": "DD-PAY-SORT",
+      "test": "Sort by Payments Overview",
+      "result": "PASS",
+      "details": "Clicked"
+    },
+    {
+      "id": "DD-PAY-SORT",
+      "test": "Sort by Client / Invoice",
+      "result": "PASS",
+      "details": "Clicked"
+    },
+    {
+      "id": "DD-PAY-SORT",
+      "test": "Sort by Method",
+      "result": "PASS",
+      "details": "Clicked"
+    },
+    {
+      "id": "DD-PAY-SORT",
+      "test": "Sort by Date",
+      "result": "PASS",
+      "details": "Clicked"
+    },
+    {
+      "id": "DD-EXP-LOAD",
+      "test": "Expenses page content",
+      "result": "PASS",
+      "details": "Page loaded, length: 7591 chars"
+    },
+    {
+      "id": "DD-EXP-CHARTS",
+      "test": "Charts/icons on expenses",
+      "result": "INFO",
+      "details": "17 SVG elements"
+    },
+    {
+      "id": "DD-EXP-UPLOAD",
+      "test": "Upload page",
+      "result": "PASS",
+      "details": "Has drag/drop: true"
+    },
+    {
+      "id": "DD-EXP-PARSE",
+      "test": "File parsed after upload",
+      "result": "PASS",
+      "details": "Parsed data visible: true"
+    },
+    {
+      "id": "DD-EXP-CAT",
+      "test": "Category assignment",
+      "result": "WARN",
+      "details": "0 category elements"
+    },
+    {
+      "id": "DD-EXP-ACTIONS",
+      "test": "Upload action buttons",
+      "result": "INFO",
+      "details": "Invoices, Analytics, Cancel, Confirm Import"
+    },
+    {
+      "id": "DD-EXP-TXN",
+      "test": "Transactions page",
+      "result": "PASS",
+      "details": "Content length: 14913"
+    },
+    {
+      "id": "DD-PIPE",
+      "test": "Pipeline page",
+      "result": "PASS",
+      "details": "Loaded, length: 7601"
+    },
+    {
+      "id": "DD-DASH",
+      "test": "Dashboard page",
+      "result": "PASS",
+      "details": "Loaded, length: 7455"
+    },
+    {
+      "id": "DD-404-/invoices/bad-uuid",
+      "test": "404 handling: /invoices/bad-uuid",
+      "result": "PASS",
+      "details": "Error shown"
+    },
+    {
+      "id": "DD-404-/clients/bad-uuid",
+      "test": "404 handling: /clients/bad-uuid",
+      "result": "PASS",
+      "details": "Error shown"
+    },
+    {
+      "id": "DD-404-/contracts/bad-uuid",
+      "test": "404 handling: /contracts/bad-uuid",
+      "result": "PASS",
+      "details": "Error shown"
+    },
+    {
+      "id": "DD-NAV-BACK",
+      "test": "Browser back navigation",
+      "result": "PASS",
+      "details": "URL after back: https://wodo-ally-production.up.railway.app/clients"
+    },
+    {
+      "id": "DD-NAV-FWD",
+      "test": "Browser forward navigation",
+      "result": "PASS",
+      "details": "URL after forward: https://wodo-ally-production.up.railway.app/invoices"
+    },
+    {
+      "id": "DD-TDS",
+      "test": "TDS page content",
+      "result": "PASS",
+      "details": "Loaded. Has \"TDS\": false, Has \"Certificate\": false"
+    },
+    {
+      "id": "DD-TDS-BTNS",
+      "test": "TDS page buttons",
+      "result": "INFO",
+      "details": "Go back"
+    },
+    {
+      "id": "DD-TARGETS",
+      "test": "Targets page content",
+      "result": "PASS",
+      "details": "Loaded. Has \"Target\": true"
+    },
+    {
+      "id": "DD-TARGETS-BTNS",
+      "test": "Targets page buttons",
+      "result": "INFO",
+      "details": "Invoices, Analytics, Refresh, New Goal, Delete, Delete, Delete"
+    },
+    {
+      "id": "DD-CONTRACT-NEW",
+      "test": "New contract page",
+      "result": "PASS",
+      "details": "Content length: 3416"
+    },
+    {
+      "id": "DD-CONTRACT-FIELDS",
+      "test": "Contract form fields",
+      "result": "INFO",
+      "details": "[]"
+    },
+    {
+      "id": "DD-SETTINGS-SAVE",
+      "test": "Settings save action",
+      "result": "WARN",
+      "details": "No toast - may use localStorage only"
+    },
+    {
+      "id": "DD-SETTINGS-LS",
+      "test": "localStorage usage",
+      "result": "INFO",
+      "details": "Keys: wodo_logo_light, wodo_company, wodo_logo_dark, wodo_stamp"
+    },
+    {
+      "id": "DD-ONBOARD",
+      "test": "Onboarding page",
+      "result": "PASS",
+      "details": "Content length: 6821"
+    },
+    {
+      "id": "DD-ONBOARD-BTNS",
+      "test": "Onboarding buttons",
+      "result": "INFO",
+      "details": "Invoices, Analytics, GST InvoicesG-series, 18% GST, Non-GSTNG-series, 0% tax, InternationalG-series, 0% tax, Add another email, Next: Project Setup"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/invoices/bbbbbbbb-0000-0000-0000-000000000007. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/dashboard",
+      "message": "Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/contracts/bad-uuid",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/clients/605c66df-2649-4510-9bf1-e373dd877c11. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/analytics/clients. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/settings. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/clients/a7d57796-7963-41b8-babc-a21b66bb7a92. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/clients",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/clients/32a83420-b791-4370-88ee-79c8a8910f00. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/invoices/bbbbbbbb-0000-0000-0000-000000000007/edit. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/analytics/invoices. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/invoices/a2fe8d0c-b67e-43cb-9dc4-5ef758b2bda6/edit. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/invoices/bbbbbbbb-0000-0000-0000-000000000002/edit. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/reports. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33037)"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/tds",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/contracts/new",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ]
+}

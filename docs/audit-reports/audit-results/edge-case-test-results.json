@@ -1,0 +1,382 @@
+{
+  "results": [
+    {
+      "id": "T01",
+      "name": "Invalid UUID client page",
+      "result": "PASS",
+      "details": "Shows error/not-found message. Page content snippet: DashboardClientsInvoicesExpensesAnalyticsPipelineGoalsReportsWClients(self.__next_f=self.__next_f||["
+    },
+    {
+      "id": "T02",
+      "name": "Non-existent invoice page",
+      "result": "WARN",
+      "details": "Infinite loading spinner displayed - no error/not-found message shown"
+    },
+    {
+      "id": "T03",
+      "name": "Fake route 404 page",
+      "result": "PASS",
+      "details": "Status: 404. Shows 404 page correctly."
+    },
+    {
+      "id": "T04",
+      "name": "Empty form submission validation",
+      "result": "WARN",
+      "details": "No visible validation messages detected"
+    },
+    {
+      "id": "T05",
+      "name": "Long text (5000 chars) in company name",
+      "result": "WARN",
+      "details": "Field accepted 5000 chars. No max-length constraint - could cause DB issues"
+    },
+    {
+      "id": "T06",
+      "name": "Special characters in text fields",
+      "result": "PASS",
+      "details": "Field accepts special chars: \"<script>alert(\"XSS\")</script>&<>\"'\". React auto-escapes on render."
+    },
+    {
+      "id": "T07",
+      "name": "Negative number in amount field",
+      "result": "WARN",
+      "details": "Negative value accepted (should validate)"
+    },
+    {
+      "id": "T08",
+      "name": "Zero in amount field",
+      "result": "PASS",
+      "details": "Zero value accepted: 0"
+    },
+    {
+      "id": "T09",
+      "name": "Extremely large number in amount",
+      "result": "WARN",
+      "details": "Large value accepted: 999999999999. No upper bound validation detected."
+    },
+    {
+      "id": "T10",
+      "name": "Double submit prevention (rapid clicks)",
+      "result": "WARN",
+      "details": "Found 0 submit-type buttons. Code review shows disabled={isPending} pattern used in some forms - good practice. Full coverage needs verification."
+    },
+    {
+      "id": "T11",
+      "name": "Browser back/forward during navigation",
+      "result": "PASS",
+      "details": "URL after back: https://wodo-ally-production.up.railway.app/dashboard. Page rendered: true"
+    },
+    {
+      "id": "T12",
+      "name": "Console errors across all pages",
+      "result": "WARN",
+      "details": "Found 58 console errors across 12 pages"
+    },
+    {
+      "id": "T13",
+      "name": "Loading states vs blank screens",
+      "result": "PASS",
+      "details": "Loading indicator detected during page load"
+    },
+    {
+      "id": "T14",
+      "name": "Rapid button clicks",
+      "result": "PASS",
+      "details": "Page still functional after rapid clicks"
+    },
+    {
+      "id": "T15",
+      "name": "Slow network behavior",
+      "result": "PASS",
+      "details": "Dashboard loaded in 24731ms on simulated slow network"
+    },
+    {
+      "id": "T16",
+      "name": "Error messages leak technical details",
+      "result": "PASS",
+      "details": "API error response (status 404): <!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/css/77ba18ac6f184bc0.css\" da. Stack trace: false. SQL: false"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "page": "global",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/pipeline. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/pipeline. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "global",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/expenses. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/expenses. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "global",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/analytics/projects?period=month. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/analytics/projects?period=month. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "global",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/dashboard. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/dashboard. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "global",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/clients. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/clients. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+    },
+    {
+      "page": "global",
+      "message": "TypeError: Failed to fetch\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:23824\n    at tw (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:28079)\n    at tm (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:27823)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50993\n    at tD._useSession (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:49124)\n    at async tD._getUser (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50811)\n    at async https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50662"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "TypeError: Failed to fetch\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:23824\n    at tw (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:28079)\n    at tm (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:27823)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50993\n    at tD._useSession (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:49124)\n    at async tD._getUser (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50811)\n    at async https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50662"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 406 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 406 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 406 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 406 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 406 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 406 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "global",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "global",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "global",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "global",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/dashboard",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/dashboard",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "global",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "PAGE ERROR: Minified React error #425; visit https://react.dev/errors/425 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "global",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "PAGE ERROR: Minified React error #422; visit https://react.dev/errors/422 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    },
+    {
+      "page": "global",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "/clients/invalid-uuid",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "/invoices/nonexistent",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "page": "/completely-fake-route",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, FolderKanban, Search, TrendingUp, Users, CheckCircle2, BarChart2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { DarkSection, DarkCard } from "@/components/shared/dark-section";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { Skeleton } from "@/components/shared/loading-skeleton";
 import { AddProjectModal } from "@/components/shared/add-project-modal";
 import { cn } from "@/lib/utils/cn";
@@ -154,8 +155,12 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "retainer" | "one_time">("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: projects = [], isLoading, isError, error } = useProjects();
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, filter]);
 
   const filtered = projects.filter((p) => {
     const clientName = p.clients?.company_name ?? "";
@@ -165,6 +170,9 @@ export default function ProjectsPage() {
     const matchFilter = filter === "all" || p.engagement_type === filter;
     return matchSearch && matchFilter;
   });
+
+  const PAGE_SIZE = 20;
+  const { paged: paginatedProjects, total: totalFiltered } = paginateArray(filtered, currentPage, PAGE_SIZE);
 
   const activeRetainers = projects.filter(
     (p) => p.engagement_type === "retainer" && ACTIVE_STATUSES.includes(p.status)
@@ -272,7 +280,7 @@ export default function ProjectsPage() {
         />
       ) : (
         <div className="space-y-3">
-          {filtered.map((project) => {
+          {paginatedProjects.map((project) => {
             const traj = getTrajectory(
               project.status,
               project.progress_pct,
@@ -360,6 +368,12 @@ export default function ProjectsPage() {
               </GlassCard>
             );
           })}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalFiltered}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </div>

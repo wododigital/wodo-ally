@@ -10,6 +10,10 @@ import React from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 import type { ContractWithDetails } from "@/lib/hooks/use-contracts";
 import type { Json } from "@/types/database";
+import { registerPdfFonts } from "./register-fonts";
+
+// Register Unicode-capable fonts (Noto Sans) for currency symbols and extended chars
+registerPdfFonts();
 
 // Re-export the type for external consumers
 export type { ContractWithDetails };
@@ -155,7 +159,7 @@ const BORDER_COLOR = "#e0e0e0";
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Helvetica",
+    fontFamily: "NotoSans",
     backgroundColor: "#ffffff",
     paddingTop: 0,
     paddingBottom: 50,
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
   taglineText: {
     color: "#ffffff",
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 1.5,
   },
 
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 13,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     marginBottom: 4,
     letterSpacing: 0.5,
@@ -207,7 +211,7 @@ const styles = StyleSheet.create({
   },
   contractTitle: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: LIGHT_GRAY,
     letterSpacing: 1.2,
     textTransform: "uppercase",
@@ -234,7 +238,7 @@ const styles = StyleSheet.create({
   },
   docTitle: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 3,
   },
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
   },
   partyLabel: {
     fontSize: 7,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     letterSpacing: 1.2,
     textTransform: "uppercase",
@@ -273,7 +277,7 @@ const styles = StyleSheet.create({
   },
   partyName: {
     fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 3,
   },
@@ -286,14 +290,14 @@ const styles = StyleSheet.create({
   // Section heading
   sectionHeading: {
     fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 5,
     marginTop: 14,
   },
   sectionLabel: {
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     letterSpacing: 1.0,
     marginBottom: 5,
@@ -318,7 +322,7 @@ const styles = StyleSheet.create({
   },
   kvLabel: {
     fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: GRAY,
     width: 130,
     flexShrink: 0,
@@ -336,7 +340,7 @@ const styles = StyleSheet.create({
   },
   boilerplateTitle: {
     fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 3,
   },
@@ -364,7 +368,7 @@ const styles = StyleSheet.create({
   },
   signaturePartyLabel: {
     fontSize: 7,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     letterSpacing: 1.2,
     textTransform: "uppercase",
@@ -372,7 +376,7 @@ const styles = StyleSheet.create({
   },
   signaturePartyName: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 24,
   },

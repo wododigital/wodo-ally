@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WODO Ally - Production Audit Report V2</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --surface2: #222538;
+    --border: #2d3148;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --accent: #fd7e14;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #3b82f6;
+    --pass: #22c55e;
+    --fail: #ef4444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a1d2e 0%, #1e2235 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 0;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header-meta { color: var(--text-muted); font-size: 0.875rem; }
+  .header-meta span { margin-right: 1.5rem; }
+
+  /* Score Badge */
+  .score-section {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    flex: 1;
+    min-width: 200px;
+  }
+  .score-card.main {
+    border-color: var(--accent);
+    position: relative;
+    overflow: hidden;
+  }
+  .score-card.main::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--critical), var(--accent));
+  }
+  .score-big {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .score-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+  .score-verdict {
+    display: inline-block;
+    background: rgba(239,68,68,0.15);
+    color: var(--critical);
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 0.75rem;
+  }
+
+  /* Severity Pills */
+  .severity-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .sev-pill {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .sev-pill .count {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .sev-pill .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+  }
+  .sev-critical .count { color: var(--critical); }
+  .sev-high .count { color: var(--high); }
+  .sev-medium .count { color: var(--medium); }
+  .sev-low .count { color: var(--low); }
+
+  /* Sections */
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 3rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 2rem 0 0.75rem;
+    color: var(--accent);
+  }
+  h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  h4.crit { color: var(--critical); }
+  h4.high { color: var(--high); }
+  h4.med { color: var(--medium); }
+  h4.low { color: var(--low); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+  }
+  th {
+    background: var(--surface2);
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  code {
+    background: var(--surface2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8em;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge-pass { background: rgba(34,197,94,0.15); color: var(--pass); }
+  .badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+  .badge-partial { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .badge-info { background: rgba(59,130,246,0.15); color: var(--low); }
+  .badge-critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .badge-high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .badge-medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .badge-low { background: rgba(59,130,246,0.15); color: var(--low); }
+
+  /* Blockers */
+  .blocker-list {
+    list-style: none;
+    margin: 1rem 0;
+  }
+  .blocker-list li {
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border-left: 3px solid var(--critical);
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 0.5rem;
+  }
+  .blocker-list li strong { color: var(--critical); }
+
+  /* Positive section */
+  .positive {
+    background: rgba(34,197,94,0.06);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+  }
+  .positive strong { color: var(--pass); }
+
+  /* Sprint cards */
+  .sprint-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .sprint-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .sprint-card h4 {
+    margin: 0 0 0.75rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--accent);
+  }
+  .sprint-card ol {
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+  }
+  .sprint-card li { margin-bottom: 0.4rem; }
+
+  /* Score breakdown */
+  .breakdown-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+  }
+  .breakdown-label { width: 160px; font-size: 0.85rem; color: var(--text-muted); }
+  .breakdown-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .breakdown-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s;
+  }
+  .breakdown-value { width: 50px; text-align: right; font-size: 0.85rem; font-weight: 600; }
+
+  /* Comparison table */
+  .change-improved { color: var(--pass); }
+  .change-new { color: var(--medium); }
+  .change-regressed { color: var(--critical); }
+  .change-none { color: var(--text-muted); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .severity-grid { grid-template-columns: repeat(2, 1fr); }
+    .score-section { flex-direction: column; }
+    .header h1 { font-size: 1.5rem; }
+    table { font-size: 0.75rem; }
+    td, th { padding: 0.5rem; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #111; }
+    .header { background: #f8f8f8; }
+    .score-big { color: #d35400; }
+    .sev-critical .count { color: #c0392b; }
+    .sev-high .count { color: #e67e22; }
+    .sev-medium .count { color: #f39c12; }
+    .sev-low .count { color: #2980b9; }
+    .badge { border: 1px solid currentColor; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="container">
+    <h1>WODO Ally - Production Audit Report V2</h1>
+    <div class="header-meta">
+      <span>Date: 2026-04-09</span>
+      <span>Agents: 10 parallel SPARC</span>
+      <span>Stack: Next.js 14 / Supabase / TanStack Query</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- SCORE SECTION -->
+<div class="score-section">
+  <div class="score-card main">
+    <div class="score-big">52</div>
+    <div class="score-label">Production-Readiness Score (out of 100)</div>
+    <div class="score-verdict">Not Production-Ready</div>
+  </div>
+  <div class="score-card">
+    <div class="severity-grid">
+      <div class="sev-pill sev-critical"><div class="count">9</div><div class="label">Critical</div></div>
+      <div class="sev-pill sev-high"><div class="count">35</div><div class="label">High</div></div>
+      <div class="sev-pill sev-medium"><div class="count">43</div><div class="label">Medium</div></div>
+      <div class="sev-pill sev-low"><div class="count">66</div><div class="label">Low</div></div>
+    </div>
+    <div style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:var(--text-muted);">
+      153 total issues across 6 audit domains
+    </div>
+  </div>
+  <div class="score-card">
+    <table style="margin:0;">
+      <tr><td>Build</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>TypeScript</td><td><span class="badge badge-pass">PASS</span> 0 errors</td></tr>
+      <tr><td>ESLint</td><td><span class="badge badge-pass">PASS</span> 0 warnings</td></tr>
+      <tr><td>npm audit</td><td><span class="badge badge-fail">FAIL</span> 5 high vulns</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- TOP BLOCKERS -->
+<h2>Top 3 Blockers</h2>
+<ol class="blocker-list">
+  <li><strong>F-1:</strong> Mixed currency aggregation produces meaningless totals across KPIs, views, and reports. Confirmed with live data: Sea Wonders invoiced=8,000 (AED) vs collected=93,600 (INR).</li>
+  <li><strong>F-2:</strong> Invoice edit does not recalculate <code>balance_due</code>, causing payment tracking drift after line item changes.</li>
+  <li><strong>F-6:</strong> Hardcoded FY "2025-26" in 5+ places is already stale (we're in FY 2026-27 as of April 2026).</li>
+</ol>
+
+<!-- PHASE 1: FINANCIAL LOGIC -->
+<h2>1. Financial Logic Audit <span style="color:var(--text-muted); font-weight:400; font-size:0.9rem;">(20 issues)</span></h2>
+
+<h4 class="crit">Critical</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th><th>Evidence</th></tr>
+  <tr>
+    <td>F-1</td>
+    <td><strong>Currency mixing in balance aggregations</strong> - <code>balance_due</code> summed across INR, USD, AED, GBP without conversion</td>
+    <td><code>use-kpi.ts:96</code>, <code>invoices/page.tsx:240</code>, <code>pipeline/page.tsx:76</code></td>
+    <td><span class="badge badge-fail">CONFIRMED</span> Outstanding sums INR + AED + USD into single "Rs." figure</td>
+  </tr>
+</table>
+
+<h4 class="high">High (4)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th><th>Fix</th></tr>
+  <tr><td>F-2</td><td><strong>Edit invoice doesn't recalculate <code>balance_due</code></strong></td><td><code>invoices/[id]/edit/page.tsx:155-184</code></td><td>Add balance_due to update payload</td></tr>
+  <tr><td>F-3</td><td><strong>Invoice detail balance ignores TDS</strong></td><td><code>invoices/[id]/page.tsx:327-329</code></td><td>Use <code>invoice.balance_due</code> directly</td></tr>
+  <tr><td>F-4</td><td><strong>Proforma conversion missing currency on payment</strong></td><td><code>use-invoices.ts:794</code></td><td>Add <code>currency: inv.currency</code></td></tr>
+  <tr><td>F-5</td><td><strong>Foreign currency payments silently zeroed in KPIs</strong></td><td><code>use-analytics.ts:398-402</code></td><td>Require <code>amount_received_inr</code> for non-INR</td></tr>
+</table>
+
+<h4 class="med">Medium (5)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th></tr>
+  <tr><td>F-6</td><td>Hardcoded FY "2025-26" in 5+ places</td><td><code>use-targets.ts:59</code>, <code>analytics/page.tsx:37</code>, <code>targets/page.tsx:339</code></td></tr>
+  <tr><td>F-7</td><td>"Paid This Month" uses <code>invoice_date</code> not <code>paid_at</code></td><td><code>invoices/page.tsx:241</code></td></tr>
+  <tr><td>F-8</td><td>GST intra/inter-state not stored on invoice</td><td><code>pdf/invoice-pdf.tsx:621</code></td></tr>
+  <tr><td>F-9</td><td>Overpayment guard uses 0.01 epsilon</td><td><code>use-invoices.ts:909</code></td></tr>
+  <tr><td>F-10</td><td>Report revenue misses INR payments</td><td><code>use-reports.ts:128-137</code></td></tr>
+</table>
+
+<h4 class="low">Low (8)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th></tr>
+  <tr><td>F-11</td><td>FY range end date at midnight instead of 23:59:59</td><td><code>format.ts:63</code></td></tr>
+  <tr><td>F-12</td><td>Proforma reference collision risk</td><td><code>number-generator.ts:7</code></td></tr>
+  <tr><td>F-13</td><td>EUR missing from currency prefix in edit page</td><td><code>invoices/[id]/edit/page.tsx:126</code></td></tr>
+  <tr><td>F-14</td><td>Pipeline/dashboard hardcodes "Rs." for all currencies</td><td><code>pipeline/page.tsx</code></td></tr>
+  <tr><td>F-15</td><td>FY string parsing doesn't validate suffix</td><td><code>use-analytics.ts:143</code></td></tr>
+  <tr><td>F-16</td><td>TDS validation allows TDS exceeding invoice total</td><td><code>validations/invoice.ts:19</code></td></tr>
+  <tr><td>F-17</td><td>Quantity input allows decimal (Zod catches)</td><td><code>validations/invoice.ts:6</code></td></tr>
+  <tr><td>F-18</td><td>Q4 report year boundary issue</td><td><code>use-reports.ts:107</code></td></tr>
+</table>
+
+<!-- PHASE 1: SECURITY -->
+<h2>2. Security Audit <span style="color:var(--text-muted); font-weight:400; font-size:0.9rem;">(14 issues)</span></h2>
+
+<h4 class="high">High (3)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th><th>OWASP</th></tr>
+  <tr><td>S-1</td><td><strong>Raw HTML injection in email APIs</strong> - <code>payload.body</code> bypasses escapeHtml()</td><td><code>api/send-email/route.ts:87</code></td><td>A03:2021</td></tr>
+  <tr><td>S-2</td><td><strong>CSP allows <code>unsafe-eval</code> + <code>unsafe-inline</code></strong></td><td><code>next.config.mjs:46</code></td><td>A05:2021</td></tr>
+  <tr><td>S-3</td><td><strong>Migration 007 TDS table lacks RLS</strong></td><td><code>007_tds_certificates.sql</code></td><td>A01:2021</td></tr>
+</table>
+
+<h4 class="med">Medium (6)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th></tr>
+  <tr><td>S-4</td><td><code>dangerouslySetInnerHTML</code> with unsanitized template body</td><td><code>contracts-tab.tsx:324</code></td></tr>
+  <tr><td>S-5</td><td><code>bank_accounts</code> missing DELETE RLS policy</td><td><code>016_bank_accounts.sql</code></td></tr>
+  <tr><td>S-6</td><td>CSRF bypass when Origin/Referer missing</td><td><code>middleware.ts:68</code></td></tr>
+  <tr><td>S-7</td><td>No rate limiting on password reset</td><td><code>forgot-password/page.tsx</code></td></tr>
+  <tr><td>S-8</td><td>Real bank account numbers in migration seeds</td><td><code>016_bank_accounts.sql:46</code></td></tr>
+  <tr><td>S-9</td><td><code>getSession()</code> used instead of <code>getUser()</code></td><td><code>reset-password/page.tsx:24</code></td></tr>
+</table>
+
+<h4 class="low">Low (5)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th></tr>
+  <tr><td>S-10</td><td>Weak password policy (8 chars, no complexity)</td></tr>
+  <tr><td>S-11</td><td><code>audit_log</code> INSERT allows any user_id</td></tr>
+  <tr><td>S-12</td><td>Sentry DSN exposed (configure allowed origins)</td></tr>
+  <tr><td>S-13</td><td>Proforma reference predictable</td></tr>
+  <tr><td>S-14</td><td><code>csrfHeaders()</code> defined but never used</td></tr>
+</table>
+
+<div class="positive">
+  <strong>Positive:</strong> Service role key isolated, RLS on all tables, HTML escaping in templates, no SQL injection, idle timeout (30min), HTTP headers configured (HSTS, X-Frame-Options), .env gitignored.
+</div>
+
+<!-- PHASE 1: UI/UX -->
+<h2>3. UI/UX Audit <span style="color:var(--text-muted); font-weight:400; font-size:0.9rem;">(27 issues)</span></h2>
+
+<h4 class="crit">Critical</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>Evidence</th></tr>
+  <tr><td>U-1</td><td><strong>Zero <code>htmlFor</code> on ANY form label in the entire app</strong> - screen readers can't associate labels with inputs</td><td><code>grep htmlFor src/ = 0 results</code></td></tr>
+</table>
+
+<h4 class="high">High (5)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th></tr>
+  <tr><td>U-2</td><td>Most modals missing <code>role="dialog"</code> and <code>aria-modal="true"</code></td></tr>
+  <tr><td>U-3</td><td>No Escape key close on any modal</td></tr>
+  <tr><td>U-4</td><td>No focus trap in any modal - Tab escapes to background</td></tr>
+  <tr><td>U-5</td><td>Settings pages don't use <code>useUnsavedChanges</code></td></tr>
+  <tr><td>U-6</td><td>Invoice edit line items overflow at 375px mobile</td></tr>
+</table>
+
+<h4 class="med">Medium (11)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th></tr>
+  <tr><td>U-7</td><td>Missing pagination: Payments, Projects, Contracts</td></tr>
+  <tr><td>U-8</td><td>TDS page missing from navigation</td></tr>
+  <tr><td>U-9</td><td><code>useUnsavedChanges</code> only handles beforeunload, not Next.js nav</td></tr>
+  <tr><td>U-10</td><td>Missing error boundaries: contracts, projects, pipeline, targets, reports</td></tr>
+  <tr><td>U-11</td><td>Status filter dropdowns lack ARIA attributes</td></tr>
+  <tr><td>U-12</td><td>TDS certificates page missing pagination</td></tr>
+  <tr><td>U-13</td><td>Pipeline grid has no tablet breakpoint</td></tr>
+  <tr><td>U-14</td><td>Status badges lack <code>aria-live</code></td></tr>
+  <tr><td>U-15</td><td>Missing breadcrumbs on expense sub-pages</td></tr>
+  <tr><td>U-16</td><td>Missing toast on PDF generation failure</td></tr>
+  <tr><td>U-17</td><td>Missing toast on contract PDF download failure</td></tr>
+</table>
+
+<div class="positive">
+  <strong>Positive:</strong> No fake/mock data anywhere, toast notifications comprehensive across all CRUD, empty states well-implemented.
+</div>
+
+<!-- PHASE 1: DATA INTEGRITY -->
+<h2>4. Data Integrity Audit <span style="color:var(--text-muted); font-weight:400; font-size:0.9rem;">(21 issues)</span></h2>
+
+<h4 class="crit">Critical (3)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>Evidence</th></tr>
+  <tr>
+    <td>D-1</td>
+    <td><strong><code>revenue_by_client_view</code> sums mixed currencies</strong></td>
+    <td><span class="badge badge-fail">CONFIRMED</span> Sea Wonders: invoiced=8,000 (AED) vs collected=93,600 (INR)</td>
+  </tr>
+  <tr>
+    <td>D-2</td>
+    <td><strong>TDS schema conflict</strong> - migration 001 vs 007. Live DB has 001 (INTEGER quarter, no certificate_number)</td>
+    <td><span class="badge badge-fail">CONFIRMED</span> UI expects TEXT quarter + certificate_number</td>
+  </tr>
+  <tr>
+    <td>D-3</td>
+    <td><strong>Client deletion fails</strong> - invoices FK has NO CASCADE</td>
+    <td><span class="badge badge-fail">CONFIRMED</span> FK: invoices->clients = NO ACTION</td>
+  </tr>
+</table>
+
+<h4 class="high">High (7)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>Evidence</th></tr>
+  <tr><td>D-4</td><td><code>expenses_by_category_view</code> includes tax (350,238 INR)</td><td><span class="badge badge-fail">CONFIRMED</span> 28% inflation</td></tr>
+  <tr><td>D-5</td><td><code>partially_paid</code> missing from STATUS_TRANSITIONS</td><td>Code review</td></tr>
+  <tr><td>D-6</td><td>Foreign currency payments dropped from KPIs</td><td>Overlaps F-5</td></tr>
+  <tr><td>D-7</td><td>Outstanding balance sums mixed currencies</td><td>Overlaps F-1</td></tr>
+  <tr><td>D-8</td><td>Audit log table completely empty (0 rows)</td><td><span class="badge badge-fail">CONFIRMED</span></td></tr>
+  <tr><td>D-9</td><td>Invoice deletion cascades payments (data loss)</td><td><span class="badge badge-fail">CONFIRMED</span></td></tr>
+  <tr><td>D-10</td><td>2 invoices stuck in wrong status (paid but 'sent')</td><td><span class="badge badge-fail">CONFIRMED</span></td></tr>
+</table>
+
+<h4 class="med">Medium (6)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th></tr>
+  <tr><td>D-11</td><td>cancelled->draft doesn't clear stale metadata</td></tr>
+  <tr><td>D-12</td><td>Overdue detection is client-side only</td></tr>
+  <tr><td>D-13</td><td>Invoice status changes not audit-logged</td></tr>
+  <tr><td>D-14</td><td>TDS certificates not linked to invoices</td></tr>
+  <tr><td>D-15</td><td>Tax detection regex too aggressive</td></tr>
+  <tr><td>D-16</td><td>MRR sums retainers across currencies</td></tr>
+</table>
+
+<!-- PHASE 1: PDF -->
+<h2>5. PDF Generation Audit <span style="color:var(--text-muted); font-weight:400; font-size:0.9rem;">(21 issues)</span></h2>
+
+<h4 class="crit">Critical</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th></tr>
+  <tr><td>P-1</td><td><strong>NotoSans registered but never used</strong> - all PDFs use Helvetica, so currency symbols won't render</td><td><code>invoice-pdf.tsx:179</code></td></tr>
+</table>
+
+<h4 class="high">High (4)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>File</th></tr>
+  <tr><td>P-2</td><td><strong>Bank details hardcoded</strong> - DB has correct data but PDF ignores it</td><td><code>invoice-pdf.tsx:95-165</code></td></tr>
+  <tr><td>P-3</td><td><strong>Image src path wrong</strong> - <code>/public/wodo-logo.png</code> should be <code>/wodo-logo.png</code></td><td><code>invoice-pdf.tsx:506</code></td></tr>
+  <tr><td>P-4</td><td><strong>Font only registers Latin subset</strong> - missing currency symbols</td><td><code>register-fonts.ts:20</code></td></tr>
+  <tr><td>P-5</td><td><strong>GST intra/inter-state fails when GSTIN null</strong></td><td><code>invoice-pdf.tsx:621</code></td></tr>
+</table>
+
+<h4 class="med">Medium (7) + Low (9)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>Sev</th></tr>
+  <tr><td>P-6</td><td>"Rs." used instead of actual rupee symbol</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-7</td><td>Missing EUR bank details</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-8</td><td>No PROFORMA watermark</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-9</td><td>toLocaleString inconsistent in react-pdf</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-10</td><td>Report PDF hardcodes "Rs."</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-11</td><td>Contract PDF missing client address</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-12</td><td>PDF accessibility - alt text suppressed</td><td><span class="badge badge-medium">MED</span></td></tr>
+  <tr><td>P-13 to P-21</td><td>9 low-severity PDF issues (page numbers, memory leak, placeholder text, etc.)</td><td><span class="badge badge-low">LOW</span></td></tr>
+</table>
+
+<!-- PHASE 1: CODE QUALITY -->
+<h2>6. Code Quality Audit <span style="color:var(--text-muted); font-weight:400; font-size:0.9rem;">(38 issues)</span></h2>
+
+<h4 class="high">High (2)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th><th>Detail</th></tr>
+  <tr><td>Q-1</td><td><strong>28 <code>as any</code> type assertions</strong></td><td>6 tables missing from generated <code>database.ts</code>. Fix: <code>npx supabase gen types typescript</code></td></tr>
+  <tr><td>Q-2</td><td><strong><code>use-invoices.ts</code> is 998 lines</strong></td><td>Split into 5-6 focused modules</td></tr>
+</table>
+
+<h4 class="med">Medium (4)</h4>
+<table>
+  <tr><th>#</th><th>Issue</th></tr>
+  <tr><td>Q-3</td><td>18 files over 500 lines</td></tr>
+  <tr><td>Q-4</td><td>FY helper duplicated 4 times across codebase</td></tr>
+  <tr><td>Q-5</td><td>Missing role authorization on email-activity API</td></tr>
+  <tr><td>Q-6</td><td>Memory leak in client detail page</td></tr>
+</table>
+
+<div class="positive">
+  <strong>Positive:</strong> TypeScript strict mode, zero <code>@ts-ignore</code>, consistent TanStack Query patterns, all <code>@/</code> path aliases, Playwright in devDependencies, no TODO/FIXME/HACK, clean useEffect cleanup, settings page well-decomposed.
+</div>
+
+<!-- PHASE 2: LIVE DATABASE -->
+<h2>Phase 2: Live Database Testing</h2>
+
+<table>
+  <tr><th>Test</th><th>Result</th><th>Evidence</th></tr>
+  <tr><td>Schema verification</td><td><span class="badge badge-pass">PASS</span></td><td>All core tables exist</td></tr>
+  <tr><td>RLS enabled on all tables</td><td><span class="badge badge-pass">PASS</span></td><td>13/13 tables have RLS</td></tr>
+  <tr><td>RLS policies comprehensive</td><td><span class="badge badge-partial">PARTIAL</span></td><td>48 policies. bank_accounts missing DELETE.</td></tr>
+  <tr><td><code>settings</code> table exists</td><td><span class="badge badge-fail">FAIL</span></td><td>Table does not exist</td></tr>
+  <tr><td>Bank accounts in DB</td><td><span class="badge badge-partial">PARTIAL</span></td><td>4 accounts. Missing GBP, EUR.</td></tr>
+  <tr><td>Bank accounts match PDF</td><td><span class="badge badge-fail">FAIL</span></td><td>PDF hardcodes different values</td></tr>
+  <tr><td>Audit log entries</td><td><span class="badge badge-fail">FAIL</span></td><td>0 rows despite 17 action types</td></tr>
+  <tr><td>TDS schema</td><td><span class="badge badge-fail">FAIL</span></td><td>Migration 001 active, 007 dead</td></tr>
+  <tr><td>FK cascades</td><td><span class="badge badge-partial">MIXED</span></td><td>Payments CASCADE (dangerous), Invoices NO ACTION (blocks delete)</td></tr>
+  <tr><td>pg_cron overdue detection</td><td><span class="badge badge-fail">FAIL</span></td><td>No cron extension installed</td></tr>
+  <tr><td>monthly_pl_view</td><td><span class="badge badge-pass">PASS</span></td><td>Revenue/expenses correct</td></tr>
+  <tr><td>expenses_by_category_view</td><td><span class="badge badge-fail">FAIL</span></td><td>Tax included - 28% inflation</td></tr>
+  <tr><td>revenue_by_client_view</td><td><span class="badge badge-fail">FAIL</span></td><td>Mixed currency confirmed</td></tr>
+  <tr><td>Invoice status consistency</td><td><span class="badge badge-fail">FAIL</span></td><td>2 paid invoices stuck as 'sent'</td></tr>
+</table>
+
+<!-- PHASE 2: BUILD -->
+<h2>Build & Dependency Testing</h2>
+
+<table>
+  <tr><th>Check</th><th>Status</th><th>Detail</th></tr>
+  <tr><td>Node.js</td><td><span class="badge badge-pass">PASS</span></td><td>v22.22.0</td></tr>
+  <tr><td>TypeScript</td><td><span class="badge badge-pass">PASS</span></td><td>Zero errors, strict mode</td></tr>
+  <tr><td>ESLint</td><td><span class="badge badge-pass">PASS</span></td><td>Zero warnings</td></tr>
+  <tr><td>Production build</td><td><span class="badge badge-pass">PASS</span></td><td>31 pages compiled</td></tr>
+  <tr><td>npm audit</td><td><span class="badge badge-fail">FAIL</span></td><td>5 high, 1 moderate vuln</td></tr>
+</table>
+
+<h3>npm Vulnerabilities</h3>
+<table>
+  <tr><th>Package</th><th>Severity</th><th>Issue</th><th>Fix</th></tr>
+  <tr><td><code>xlsx</code></td><td><span class="badge badge-high">HIGH</span></td><td>Prototype Pollution, ReDoS</td><td style="color:var(--critical);">No fix (unmaintained)</td></tr>
+  <tr><td><code>nodemailer</code></td><td><span class="badge badge-high">HIGH</span></td><td>SMTP injection, DoS</td><td>v8.0.5+ (breaking)</td></tr>
+  <tr><td><code>next</code> 14.2.35</td><td><span class="badge badge-high">HIGH</span></td><td>DoS, request smuggling (4 CVEs)</td><td>v15+ (breaking)</td></tr>
+  <tr><td><code>lodash</code></td><td><span class="badge badge-high">HIGH</span></td><td>Code injection, Prototype Pollution</td><td><code>npm audit fix</code></td></tr>
+  <tr><td><code>picomatch</code></td><td><span class="badge badge-high">HIGH</span></td><td>Method injection, ReDoS</td><td><code>npm audit fix</code></td></tr>
+  <tr><td><code>brace-expansion</code></td><td><span class="badge badge-medium">MOD</span></td><td>Process hang</td><td><code>npm audit fix</code></td></tr>
+</table>
+
+<h3>Bundle Size</h3>
+<table>
+  <tr><th>Chunk</th><th>Size</th><th>Assessment</th></tr>
+  <tr><td><code>7159.*.js</code></td><td>651 kB</td><td><span class="badge badge-high">HIGH</span> - likely xlsx/react-pdf</td></tr>
+  <tr><td><code>3315-*.js</code></td><td>343 kB</td><td><span class="badge badge-medium">MOD</span> - likely recharts</td></tr>
+  <tr><td><code>725-*.js</code></td><td>323 kB</td><td><span class="badge badge-medium">MOD</span> - shared chunk</td></tr>
+</table>
+
+<!-- FIX PLAN -->
+<h2>Fix Plan (4 Sprints)</h2>
+
+<div class="sprint-grid">
+  <div class="sprint-card">
+    <h4>Sprint 1: Critical Financial (1-2 days)</h4>
+    <ol>
+      <li>Fix currency aggregation everywhere</li>
+      <li>Fix balance_due recalculation on edit</li>
+      <li>Fix invoice detail balance (include TDS)</li>
+      <li>Replace hardcoded FY "2025-26"</li>
+      <li>Fix expenses_by_category_view</li>
+      <li>Fix invoice status on payment</li>
+    </ol>
+  </div>
+  <div class="sprint-card">
+    <h4>Sprint 2: Security & Data (2-3 days)</h4>
+    <ol>
+      <li>Sanitize email body (DOMPurify)</li>
+      <li>Fix CSP (nonce-based)</li>
+      <li>Fix TDS schema conflict</li>
+      <li>Add partially_paid transitions</li>
+      <li>Require amount_received_inr</li>
+      <li>Fix proforma conversion</li>
+      <li>Add server-side overdue detection</li>
+    </ol>
+  </div>
+  <div class="sprint-card">
+    <h4>Sprint 3: PDF & UI (2-3 days)</h4>
+    <ol>
+      <li>Fix PDF font (NotoSans)</li>
+      <li>Pull bank details from DB</li>
+      <li>Fix PDF image paths</li>
+      <li>Add htmlFor to all labels</li>
+      <li>Add modal accessibility</li>
+      <li>Add pagination to 3 pages</li>
+      <li>Add TDS to navigation</li>
+    </ol>
+  </div>
+  <div class="sprint-card">
+    <h4>Sprint 4: Code Quality (1-2 days)</h4>
+    <ol>
+      <li>Regenerate database.ts</li>
+      <li>Split use-invoices.ts</li>
+      <li>Consolidate FY helpers</li>
+      <li>Implement audit logging</li>
+    </ol>
+  </div>
+</div>
+
+<!-- SCORE BREAKDOWN -->
+<h2>Score Breakdown</h2>
+
+<div style="background:var(--surface); border-radius:12px; padding:1.5rem; margin:1rem 0;">
+  <div class="breakdown-bar">
+    <div class="breakdown-label">Financial Accuracy</div>
+    <div class="breakdown-track"><div class="breakdown-fill" style="width:35%; background:var(--critical);"></div></div>
+    <div class="breakdown-value" style="color:var(--critical);">35%</div>
+  </div>
+  <div class="breakdown-bar">
+    <div class="breakdown-label">Security</div>
+    <div class="breakdown-track"><div class="breakdown-fill" style="width:65%; background:var(--medium);"></div></div>
+    <div class="breakdown-value" style="color:var(--medium);">65%</div>
+  </div>
+  <div class="breakdown-bar">
+    <div class="breakdown-label">Data Integrity</div>
+    <div class="breakdown-track"><div class="breakdown-fill" style="width:40%; background:var(--high);"></div></div>
+    <div class="breakdown-value" style="color:var(--high);">40%</div>
+  </div>
+  <div class="breakdown-bar">
+    <div class="breakdown-label">UI/UX & Accessibility</div>
+    <div class="breakdown-track"><div class="breakdown-fill" style="width:50%; background:var(--medium);"></div></div>
+    <div class="breakdown-value" style="color:var(--medium);">50%</div>
+  </div>
+  <div class="breakdown-bar">
+    <div class="breakdown-label">PDF Generation</div>
+    <div class="breakdown-track"><div class="breakdown-fill" style="width:40%; background:var(--high);"></div></div>
+    <div class="breakdown-value" style="color:var(--high);">40%</div>
+  </div>
+  <div class="breakdown-bar">
+    <div class="breakdown-label">Code Quality</div>
+    <div class="breakdown-track"><div class="breakdown-fill" style="width:72%; background:var(--pass);"></div></div>
+    <div class="breakdown-value" style="color:var(--pass);">72%</div>
+  </div>
+</div>
+
+<!-- COMPARISON -->
+<h2>Comparison with Previous Audit</h2>
+<table>
+  <tr><th>Area</th><th>Previous (V1)</th><th>Current (V2)</th><th>Change</th></tr>
+  <tr><td>Fake notification data</td><td>Present</td><td>Removed</td><td class="change-improved">Improved</td></tr>
+  <tr><td>P&L expense exclusion</td><td>Broken</td><td>Fixed (monthly_pl_view)</td><td class="change-improved">Improved</td></tr>
+  <tr><td>Health score double-counting</td><td>Present</td><td>Fixed (DISTINCT)</td><td class="change-improved">Improved</td></tr>
+  <tr><td>expenses_by_category_view</td><td>Not audited</td><td>Broken (includes tax)</td><td class="change-new">New finding</td></tr>
+  <tr><td>Mixed currency aggregation</td><td>Identified</td><td>Still present</td><td class="change-regressed">No fix applied</td></tr>
+  <tr><td>TDS schema conflict</td><td>Not audited</td><td>Confirmed (001 active)</td><td class="change-new">New finding</td></tr>
+  <tr><td>Audit logging</td><td>Not implemented</td><td>Still empty (0 rows)</td><td class="change-none">No change</td></tr>
+  <tr><td>Bank details in PDF</td><td>Hardcoded</td><td>Still hardcoded</td><td class="change-none">No change</td></tr>
+  <tr><td>Invoice status consistency</td><td>Not audited</td><td>2 invoices wrong status</td><td class="change-new">New finding</td></tr>
+  <tr><td>Accessibility (htmlFor)</td><td>Not audited</td><td>Zero labels associated</td><td class="change-new">New finding</td></tr>
+</table>
+
+<div style="text-align:center; margin:3rem 0 1rem; color:var(--text-muted); font-size:0.85rem;">
+  Generated by SPARC Orchestrator with 10 parallel audit agents | 2026-04-09
+</div>
+
+</div>
+</body>
+</html>

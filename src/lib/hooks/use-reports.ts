@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { getFinancialYear } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
 
 type ReportRow = Database["public"]["Tables"]["investor_reports"]["Row"];
@@ -38,11 +39,9 @@ const MONTH_NAMES = [
 ];
 
 function getIndianFY(month: number, year: number): string {
-  // Apr-Dec: FY is year-(year+1), Jan-Mar: FY is (year-1)-year
-  if (month >= 4) {
-    return `${year}-${String(year + 1).slice(-2)}`;
-  }
-  return `${year - 1}-${String(year).slice(-2)}`;
+  // Delegate to canonical getFinancialYear from format.ts
+  // month is 1-based calendar month, year is calendar year
+  return getFinancialYear(new Date(year, month - 1, 15));
 }
 
 // ─── useReports ───────────────────────────────────────────────────────────────
@@ -58,7 +57,7 @@ export function useReports() {
         .order("report_year", { ascending: false })
         .order("report_month", { ascending: false });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
@@ -78,7 +77,7 @@ export function useReport(id: string) {
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!id,
@@ -124,15 +123,15 @@ export function useGenerateReport() {
         endStr = monthEnd.toISOString().split("T")[0];
       }
 
-      // 1. Revenue this month
+      // 1. Revenue this period (prefer INR-normalised amount; fall back for INR-only payments)
       const { data: payments } = await supabase
         .from("invoice_payments")
-        .select("amount_received_inr")
+        .select("amount_received_inr, amount_received, currency")
         .gte("payment_date", startStr)
         .lte("payment_date", endStr);
 
       const revenue = (payments ?? []).reduce(
-        (sum, p) => sum + (p.amount_received_inr ?? 0),
+        (sum, p) => sum + (p.amount_received_inr ?? (p.currency === "INR" || !p.currency ? p.amount_received ?? 0 : 0)),
         0
       );
 
@@ -271,7 +270,7 @@ export function useGenerateReport() {
         .select()
         .single();
 
-      if (insertErr) throw insertErr;
+      if (insertErr) throw new Error(insertErr.message);
       return created;
     },
     onSuccess: async () => {
@@ -304,7 +303,7 @@ export function useUpdateReport() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: async () => {
@@ -329,7 +328,7 @@ export function useDeleteReport() {
         .delete()
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["investor_reports"] });
@@ -387,7 +386,7 @@ export function useSendReport() {
         })
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["investor_reports"] });

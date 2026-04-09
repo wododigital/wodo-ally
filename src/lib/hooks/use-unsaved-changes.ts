@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 /**
  * Warns the user before leaving the page if there are unsaved changes.
- * Uses the browser's native beforeunload event.
+ * Handles browser close/refresh via beforeunload and browser back/forward via popstate.
  *
  * @param isDirty - whether the form has unsaved changes
  */
@@ -12,13 +12,28 @@ export function useUnsavedChanges(isDirty: boolean) {
   useEffect(() => {
     if (!isDirty) return;
 
-    const handler = (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      // Modern browsers ignore custom messages but still show the dialog
-      e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+      e.returnValue = "";
     };
 
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
+    // Intercept browser back/forward
+    const handlePopState = () => {
+      if (isDirty) {
+        const confirmed = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+        if (!confirmed) {
+          // Push current URL back to prevent navigation
+          window.history.pushState(null, "", window.location.href);
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [isDirty]);
 }

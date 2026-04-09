@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FilePlus,
   Search,
@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
+import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -609,10 +610,14 @@ export default function ContractsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractWithDetails | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: contracts = [], isLoading } = useContracts({
     status: STATUS_FILTER_MAP[statusFilter],
   });
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
 
   const filtered = contracts.filter((c) => {
     if (!search.trim()) return true;
@@ -624,6 +629,9 @@ export default function ContractsPage() {
       (c.project?.name ?? "").toLowerCase().includes(q)
     );
   });
+
+  const PAGE_SIZE = 20;
+  const { paged: paginatedContracts, total: totalFiltered } = paginateArray(filtered, currentPage, PAGE_SIZE);
 
   function openNewModal() {
     setEditingContract(null);
@@ -724,13 +732,19 @@ export default function ContractsPage() {
           </GlassCard>
         ) : (
           <div className="space-y-3">
-            {filtered.map((contract) => (
+            {paginatedContracts.map((contract) => (
               <ContractCard
                 key={contract.id}
                 contract={contract}
                 onEdit={openEditModal}
               />
             ))}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalFiltered}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

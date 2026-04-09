@@ -10,6 +10,20 @@ import {
 } from "@/lib/email/templates";
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Strip dangerous HTML tags and attributes to prevent XSS in email bodies */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/on\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -96,7 +110,7 @@ export async function POST(req: NextRequest) {
         };
         // Allow caller to override default subject/body
         subject = d.subject ?? `Invoice ${d.invoiceNumber} from WODO Digital`;
-        html = d.body ?? invoiceSentTemplate(d);
+        html = d.body ? sanitizeHtml(d.body) : invoiceSentTemplate(d);
         break;
       }
 
@@ -116,7 +130,7 @@ export async function POST(req: NextRequest) {
             ? `Overdue: Invoice ${d.invoiceNumber} - Payment pending (${overdue} day${overdue !== 1 ? "s" : ""} overdue)`
             : `Reminder: Invoice ${d.invoiceNumber} due on ${d.dueDate}`
         );
-        html = d.body ?? paymentReminderTemplate({ ...d, daysOverdue: overdue });
+        html = d.body ? sanitizeHtml(d.body) : paymentReminderTemplate({ ...d, daysOverdue: overdue });
         break;
       }
 
@@ -130,7 +144,7 @@ export async function POST(req: NextRequest) {
           body?: string;
         };
         subject = d.subject ?? `Payment received - Invoice ${d.invoiceNumber}`;
-        html = d.body ?? paymentReceiptTemplate(d);
+        html = d.body ? sanitizeHtml(d.body) : paymentReceiptTemplate(d);
         break;
       }
 
@@ -144,7 +158,7 @@ export async function POST(req: NextRequest) {
           body?: string;
         };
         subject = d.subject ?? `WODO Digital - Monthly Report: ${d.month} ${d.year}`;
-        html = d.body ?? investorReportTemplate(d);
+        html = d.body ? sanitizeHtml(d.body) : investorReportTemplate(d);
         break;
       }
 

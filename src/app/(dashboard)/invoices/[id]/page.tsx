@@ -324,9 +324,7 @@ export default function InvoiceDetailPage() {
 
   const emailLog = emailActivityResponse?.activities ?? [];
 
-  const balance = invoice
-    ? Math.max(0, invoice.total_amount - (invoice.total_received ?? 0))
-    : 0;
+  const balance = invoice?.balance_due ?? 0;
 
   async function handlePreviewPdf() {
     if (!invoice) return;
@@ -336,10 +334,12 @@ export default function InvoiceDetailPage() {
       const props = buildPdfProps(invoice);
       const blob = await generateInvoicePdf(props);
       const url = URL.createObjectURL(blob);
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       setPdfUrl(url);
       setShowPdfModal(true);
     } catch (err) {
       console.error("PDF generation failed:", err);
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
       setIsPdfGenerating(false);
     }
@@ -366,6 +366,7 @@ export default function InvoiceDetailPage() {
       downloadBlob(blob, `WODO-${ref}.pdf`);
     } catch (err) {
       console.error("PDF download failed:", err);
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
       setIsPdfGenerating(false);
     }

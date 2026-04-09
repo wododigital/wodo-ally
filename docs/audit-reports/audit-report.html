@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WODO Ally - Production Audit Report</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-elevated: #12121a;
+    --bg-card: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: rgba(255,255,255,0.92);
+    --text-secondary: rgba(255,255,255,0.6);
+    --text-muted: rgba(255,255,255,0.38);
+    --accent: #fd7e14;
+    --accent-dim: rgba(253,126,20,0.15);
+    --critical: #ef4444;
+    --critical-bg: rgba(239,68,68,0.12);
+    --high: #f97316;
+    --high-bg: rgba(249,115,22,0.12);
+    --medium: #eab308;
+    --medium-bg: rgba(234,179,8,0.12);
+    --low: #3b82f6;
+    --low-bg: rgba(59,130,246,0.12);
+    --success: #22c55e;
+    --success-bg: rgba(34,197,94,0.12);
+    --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, rgba(253,126,20,0.08) 0%, rgba(253,126,20,0.02) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 40px;
+  }
+  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  .header-badge {
+    background: var(--critical-bg);
+    color: var(--critical);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { color: var(--text-secondary); font-size: 15px; }
+  .header-meta {
+    display: flex; flex-wrap: wrap; gap: 24px;
+    margin-top: 20px; font-size: 13px; color: var(--text-muted);
+  }
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Nav */
+  .sticky-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+  }
+  .nav-inner {
+    display: flex; gap: 0; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-inner::-webkit-scrollbar { display: none; }
+  .nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 14px 16px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+
+  /* Score cards */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 32px 0;
+  }
+  .score-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+  .score-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .score-card .value { font-size: 36px; font-weight: 700; }
+  .score-card .value.critical { color: var(--critical); }
+  .score-card .value.warning { color: var(--medium); }
+  .score-card .value.ok { color: var(--success); }
+  .score-card .sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Progress bar */
+  .health-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+  .health-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  /* Sections */
+  section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .section-num {
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 13px; font-weight: 700;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  h2 { font-size: 22px; font-weight: 700; }
+  h3 { font-size: 17px; font-weight: 600; margin: 24px 0 12px; color: var(--text); }
+  h4 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  p { color: var(--text-secondary); margin-bottom: 12px; font-size: 14px; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .card-title { font-size: 14px; font-weight: 600; }
+
+  /* Severity badges */
+  .badge {
+    display: inline-flex; align-items: center;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+    padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .badge-critical { background: var(--critical-bg); color: var(--critical); }
+  .badge-high { background: var(--high-bg); color: var(--high); }
+  .badge-medium { background: var(--medium-bg); color: var(--medium); }
+  .badge-low { background: var(--low-bg); color: var(--low); }
+  .badge-pass { background: var(--success-bg); color: var(--success); }
+
+  /* Issue list */
+  .issue-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: start;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .issue-item:last-child { border-bottom: none; }
+  .issue-num { color: var(--text-muted); font-size: 12px; font-weight: 600; min-width: 24px; }
+  .issue-text { color: var(--text-secondary); }
+  .issue-text strong { color: var(--text); font-weight: 600; }
+  .issue-file { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 14px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* Tier sections */
+  .tier { margin-bottom: 32px; }
+  .tier-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-weight: 700; font-size: 14px;
+  }
+  .tier-1 .tier-header { background: var(--critical-bg); color: var(--critical); }
+  .tier-2 .tier-header { background: var(--high-bg); color: var(--high); }
+  .tier-3 .tier-header { background: var(--medium-bg); color: var(--medium); }
+  .tier-4 .tier-header { background: var(--low-bg); color: var(--low); }
+  .tier-body {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .tier-count {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 2px; height: 32px;
+    border-radius: 6px; overflow: hidden;
+    margin: 16px 0;
+  }
+  .stats-bar > div {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    color: white;
+    min-width: 40px;
+  }
+
+  /* Module grid */
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+  .module-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+  .module-card .module-name {
+    font-size: 14px; font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .module-card .module-detail { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+  .module-card .module-issues { margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+  .module-card .module-issues li { margin-bottom: 3px; list-style: none; padding-left: 14px; position: relative; }
+  .module-card .module-issues li::before { content: '-'; position: absolute; left: 0; color: var(--text-muted); }
+
+  /* Callout */
+  .callout {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  .callout-critical { border-left-color: var(--critical); background: var(--critical-bg); }
+  .callout-success { border-left-color: var(--success); background: var(--success-bg); }
+
+  /* Data flow */
+  .flow-diagram {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* Summary cards */
+  .exec-summary {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin: 24px 0;
+  }
+  @media (max-width: 768px) {
+    .exec-summary { grid-template-columns: 1fr; }
+    .module-grid { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Expandable */
+  details { margin-bottom: 8px; }
+  summary {
+    cursor: pointer;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    list-style: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  summary::before { content: '+'; font-weight: 700; color: var(--accent); width: 16px; }
+  details[open] summary::before { content: '-'; }
+  details[open] summary { border-radius: var(--radius) var(--radius) 0 0; border-bottom: none; }
+  .details-body {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .highlight { color: var(--accent); font-weight: 600; }
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+  .text-critical { color: var(--critical); }
+  .text-warning { color: var(--medium); }
+  .text-success { color: var(--success); }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-24 { margin-bottom: 24px; }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .checklist li::before {
+    content: '';
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 32px 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="container">
+    <div class="header-top">
+      <span class="header-badge">Confidential</span>
+      <span class="header-badge" style="background:var(--accent-dim);color:var(--accent);">Production Audit</span>
+    </div>
+    <h1>WODO Ally Audit Report</h1>
+    <p class="subtitle">Comprehensive Production Audit - Internal Financial Management SaaS</p>
+    <div class="header-meta">
+      <span>Company: WODO Digital Private Limited</span>
+      <span>Date: April 9, 2026</span>
+      <span>Auditors: 7 AI Agents, 14 Phases</span>
+      <span>Tests: 302 automated + 195 manual checks</span>
+    </div>
+  </div>
+</div>
+
+<!-- STICKY NAV -->
+<nav class="sticky-nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#summary" class="nav-link">Summary</a>
+      <a href="#scores" class="nav-link">Scores</a>
+      <a href="#urgent" class="nav-link">Top 10 Fixes</a>
+      <a href="#financial" class="nav-link">Financial</a>
+      <a href="#modules" class="nav-link">Modules</a>
+      <a href="#crossmodule" class="nav-link">Integration</a>
+      <a href="#security" class="nav-link">Security</a>
+      <a href="#ux" class="nav-link">UX</a>
+      <a href="#email" class="nav-link">Email</a>
+      <a href="#pdf" class="nav-link">PDF</a>
+      <a href="#roadmap" class="nav-link">Fix Roadmap</a>
+      <a href="#positive" class="nav-link">What Works</a>
+      <a href="#registry" class="nav-link">All Issues</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- EXECUTIVE SUMMARY -->
+<section id="summary">
+  <div class="section-header">
+    <div class="section-num">0</div>
+    <h2>Executive Summary</h2>
+  </div>
+
+  <div class="exec-summary">
+    <div>
+      <p>WODO Ally is an ambitious internal financial management platform built with Next.js 14, Supabase, and React PDF. The application demonstrates strong foundational architecture - the tech stack choices are sound, the database schema is thoughtfully designed, the UI design language is visually polished with a distinctive dark glass-card aesthetic, and the codebase follows modern React patterns.</p>
+      <p>However, the platform has <strong class="text-critical">critical defects across financial calculations, security, and core workflows</strong> that prevent it from being trusted with real money or investor reporting in its current state. The most severe issues include invoice PDFs directing clients to the wrong bank account, floating-point arithmetic without rounding, and quarterly investor reports covering only 2 months instead of 3.</p>
+      <p>The good news: most issues are fixable with targeted effort. The architecture is clean enough that corrections can be made without major refactoring. With approximately <strong class="highlight">3-4 weeks of focused remediation</strong>, this platform could reach a state suitable for production use and investor reporting.</p>
+    </div>
+    <div>
+      <div class="card" style="text-align:center;">
+        <div class="label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Overall Health</div>
+        <div style="font-size:56px;font-weight:800;color:var(--critical);margin:8px 0;">38</div>
+        <div style="font-size:13px;color:var(--text-muted);">out of 100</div>
+        <div class="health-bar mt-8">
+          <div class="health-fill" style="width:38%;background:linear-gradient(90deg,var(--critical),var(--high));"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Issue stats bar -->
+  <h4>Issue Distribution</h4>
+  <div class="stats-bar">
+    <div style="background:var(--critical);flex:22;">22</div>
+    <div style="background:var(--high);flex:37;">37</div>
+    <div style="background:var(--medium);flex:56;">56</div>
+    <div style="background:var(--low);flex:32;">32</div>
+  </div>
+  <div style="display:flex;gap:24px;font-size:12px;color:var(--text-muted);">
+    <span><span style="color:var(--critical);">&#9679;</span> 22 Critical</span>
+    <span><span style="color:var(--high);">&#9679;</span> 37 High</span>
+    <span><span style="color:var(--medium);">&#9679;</span> 56 Medium</span>
+    <span><span style="color:var(--low);">&#9679;</span> 32 Low</span>
+    <span style="margin-left:auto;font-weight:600;">147 Total Issues</span>
+  </div>
+</section>
+
+<!-- SCORES -->
+<section id="scores">
+  <div class="section-header">
+    <div class="section-num">S</div>
+    <h2>Audit Scores</h2>
+  </div>
+  <div class="score-grid">
+    <div class="score-card">
+      <div class="label">Financial Accuracy</div>
+      <div class="value critical">3/10</div>
+      <div class="health-bar"><div class="health-fill" style="width:30%;background:var(--critical);"></div></div>
+      <div class="sub">Wrong bank, no rounding, TDS bug</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Security</div>
+      <div class="value critical">3/10</div>
+      <div class="health-bar"><div class="health-fill" style="width:30%;background:var(--critical);"></div></div>
+      <div class="sub">Missing headers, no RBAC, key exposure</div>
+    </div>
+    <div class="score-card">
+      <div class="label">UX & Accessibility</div>
+      <div class="value warning">4/10</div>
+      <div class="health-bar"><div class="health-fill" style="width:40%;background:var(--medium);"></div></div>
+      <div class="sub">6-9s loads, no ARIA, mobile overflow</div>
+    </div>
+    <div class="score-card">
+      <div class="label">PDF Quality</div>
+      <div class="value warning">4/10</div>
+      <div class="health-bar"><div class="health-fill" style="width:40%;background:var(--medium);"></div></div>
+      <div class="sub">Wrong bank, no CGST/SGST split</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Email Readiness</div>
+      <div class="value critical">15%</div>
+      <div class="health-bar"><div class="health-fill" style="width:15%;background:var(--critical);"></div></div>
+      <div class="sub">Invoice emails are stubs</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Investor Readiness</div>
+      <div class="value critical">3/10</div>
+      <div class="health-bar"><div class="health-fill" style="width:30%;background:var(--critical);"></div></div>
+      <div class="sub">Numbers cannot be trusted yet</div>
+    </div>
+  </div>
+</section>
+
+<!-- TOP 10 URGENT FIXES -->
+<section id="urgent">
+  <div class="section-header">
+    <div class="section-num">!</div>
+    <h2>Top 10 Most Urgent Fixes</h2>
+  </div>
+  <div class="callout-critical callout">These issues must be fixed before the platform can be trusted with real money or investor reports.</div>
+
+  <div class="card" style="padding:0;">
+    <div class="issue-item">
+      <span class="issue-num">1</span>
+      <div class="issue-text">
+        <strong>Bank account mismatch in invoice PDFs</strong> - Clients directed to pay into account 10113982735 instead of 10213871315. Money sent to wrong account.
+        <div class="issue-file">invoice-pdf.tsx:91-104 vs constants.ts:21-22</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">2</span>
+      <div class="issue-text">
+        <strong>No rounding on financial calculations</strong> - Tax, subtotal, total use raw IEEE 754 floating-point. Every non-round invoice has cent-level errors.
+        <div class="issue-file">new-invoice-modal.tsx:85-87, edit/page.tsx:117-120, use-invoices.ts:407-411</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">3</span>
+      <div class="issue-text">
+        <strong>Quarterly investor report covers 2 months</strong> - Date range bug (report_month + 1 instead of + 2) understates revenue/expenses by ~33%.
+        <div class="issue-file">use-reports.ts:110</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">4</span>
+      <div class="issue-text">
+        <strong>TDS excluded from balance_due</strong> - Indian client invoices with TDS never show as fully paid. Stuck in "partially_paid" forever.
+        <div class="issue-file">use-invoices.ts:852</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">5</span>
+      <div class="issue-text">
+        <strong>Invoice edit does not save line items</strong> - Editing recalculates totals but only saves invoice row. PDF shows stale line items.
+        <div class="issue-file">edit/page.tsx:150-172</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">6</span>
+      <div class="issue-text">
+        <strong>Invoice emails are stubs</strong> - Send endpoint returns { success: true } without sending anything. Users see "Sent" but clients never receive it.
+        <div class="issue-file">send-email/route.ts:50-51</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">7</span>
+      <div class="issue-text">
+        <strong>All HTTP security headers missing</strong> - No CSP, HSTS, X-Frame-Options. Combined with non-HttpOnly cookies and dangerouslySetInnerHTML: high XSS risk.
+        <div class="issue-file">next.config.mjs</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">8</span>
+      <div class="issue-text">
+        <strong>No overdue auto-detection</strong> - No mechanism transitions invoices to "overdue" when due_date passes. Overdue KPI always shows 0.
+        <div class="issue-file">Missing feature - needs cron or edge function</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">9</span>
+      <div class="issue-text">
+        <strong>React hydration errors on every page</strong> - Systematic SSR/CSR mismatch errors (#422, #425) causing layout jumps and degraded performance.
+        <div class="issue-file">Multiple files - SSR/CSR audit needed</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+    <div class="issue-item">
+      <span class="issue-num">10</span>
+      <div class="issue-text">
+        <strong>SERVICE_ROLE_KEY needs rotation</strong> - Full database bypass key exists in .env.local. Should be rotated immediately.
+        <div class="issue-file">.env.local (line 4)</div>
+      </div>
+      <span class="badge badge-critical">Critical</span>
+    </div>
+  </div>
+</section>
+
+<!-- FINANCIAL INTEGRITY -->
+<section id="financial">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>Financial Integrity Assessment</h2>
+  </div>
+  <p>Score: <strong class="text-critical">3/10</strong> - The financial logic has critical defects that will produce incorrect outcomes on real transactions.</p>
+
+  <details>
+    <summary><span class="badge badge-critical">Critical</span> Invoice Calculations</summary>
+    <div class="details-body">
+      <p><strong>No rounding on any calculation.</strong> All three paths (new invoice modal, edit page, retainer auto-draft) use raw floating-point arithmetic. The DB column NUMERIC(12,2) truncates (not rounds), creating systematic under-billing. Example: tax of 17999.9982 stored as 17999.99, not 18000.00.</p>
+      <p><strong>Edit page does not update line items.</strong> updateInvoice.mutate() only updates the invoices table. The invoice_line_items table retains old values. After edit: PDF shows old items, totals show new values.</p>
+      <p class="mono mt-8">Files: new-invoice-modal.tsx:85-87, edit/page.tsx:117-120, use-invoices.ts:407-411</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-critical">Critical</span> Payment & Balance Logic</summary>
+    <div class="details-body">
+      <p><strong>TDS not deducted from balance_due.</strong> Formula: balanceDue = Math.max(0, total_amount - totalReceived). TDS tracked separately but never subtracted. Every TDS-affected invoice stuck as "partially_paid".</p>
+      <p><strong>Floating-point accumulation.</strong> .reduce() on amount_received uses raw addition. Three payments of Rs.33.33 sum to 99.99000000000001.</p>
+      <p><strong>Overpayments silently accepted.</strong> No validation checks amount_received &lt;= balance_due. Rs.999,999 on a Rs.17,500 invoice accepted.</p>
+      <p><strong>No overdue auto-detection.</strong> No cron, trigger, or on-access check. Overdue KPI perpetually undercounts.</p>
+      <p class="mono mt-8">Files: use-invoices.ts:834-841, 811-891, 852</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-critical">Critical</span> Tax Handling (GST/IGST/TDS)</summary>
+    <div class="details-body">
+      <p><strong>GST split not implemented.</strong> Indian tax law requires CGST (9%) + SGST (9%) for intra-state, IGST (18%) for inter-state. System shows single "GST @ 18%" for all.</p>
+      <p><strong>GSTIN inconsistency.</strong> Email templates: 29AADCW8591N1ZA. Settings page: 29AAECW2882M1ZW. Different GSTINs in official communications is a compliance risk.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-high">High</span> Multi-Currency Issues</summary>
+    <div class="details-body">
+      <p><strong>Indian numbering on all currencies in PDF.</strong> Uses toLocaleString("en-IN") for USD/GBP. $1,234,567 displays as "$12,34,567".</p>
+      <p><strong>EUR falls through to Rs.</strong> No EUR case in switch - Euro amounts show "Rs." prefix.</p>
+      <p><strong>Revenue mixing currencies.</strong> Dashboard uses amount_received_inr ?? amount_received. A $5,000 payment without INR conversion counted as Rs.5,000.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-critical">Critical</span> Revenue Recognition & P&L</summary>
+    <div class="details-body">
+      <p><strong>Pro Forma conversion invisible.</strong> Marked "paid" but no invoice_payments record created. Zero contribution to revenue metrics.</p>
+      <p><strong>Transfers/loans counted as expenses.</strong> monthly_pl_view filters WHERE transaction_type != 'income' but still includes transfer, tax, loan. P&L overstates expenses.</p>
+      <p><strong>Client health scores double-counted.</strong> JOIN between invoices and payments produces one row per payment - 3 partial payments = invoice counted 3 times.</p>
+      <p><strong>Quarterly report: 2 months instead of 3.</strong> use-reports.ts:110 - quarterEnd uses month+1 instead of month+2. Every quarterly report understates by ~33%.</p>
+    </div>
+  </details>
+</section>
+
+<!-- MODULE RESULTS -->
+<section id="modules">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>Module-by-Module Results</h2>
+  </div>
+
+  <div class="module-grid">
+    <div class="module-card">
+      <div class="module-name">Dashboard <span class="badge badge-medium">Issues</span></div>
+      <div class="module-detail">Load time: 9,145ms | 4 console errors</div>
+      <ul class="module-issues">
+        <li>RSC payload fetch failures, Supabase auth timeout</li>
+        <li>"No data" for zero-value periods instead of helpful message</li>
+        <li>Quick Actions dropdown duplicates FAB</li>
+        <li>KPIs affected by revenue/expense calculation bugs</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Clients <span class="badge badge-pass">Functional</span></div>
+      <div class="module-detail">10 clients displayed | Search, filters, detail tabs work</div>
+      <ul class="module-issues">
+        <li>No GSTIN format validation</li>
+        <li>No pagination - won't scale past 50+ clients</li>
+        <li>Partial name search may miss entries</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Invoices <span class="badge badge-critical">Critical</span></div>
+      <div class="module-detail">Core CRUD works | Number formats correct | CSV export works</div>
+      <ul class="module-issues">
+        <li>Edit doesn't save line items</li>
+        <li>Zero-amount line items accepted</li>
+        <li>Auto-archive runs on page load without consent</li>
+        <li>Wrong bank account in PDFs</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Payments <span class="badge badge-critical">Critical</span></div>
+      <div class="module-detail">4 KPI cards | Multi-method support | Modal works</div>
+      <ul class="module-issues">
+        <li>No server-side amount validation</li>
+        <li>Overpayments silently accepted</li>
+        <li>TDS excluded from balance</li>
+        <li>Payment rows not clickable to invoice</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Expenses <span class="badge badge-pass">Functional</span></div>
+      <div class="module-detail">Bank upload works | Auto-categorization | Charts render</div>
+      <ul class="module-issues">
+        <li>Transactions page lacks filtering</li>
+        <li>No approval workflow for imports</li>
+        <li>Totals include transfers/loans</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Projects <span class="badge badge-medium">Gaps</span></div>
+      <div class="module-detail">10 projects listed | New project form works</div>
+      <ul class="module-issues">
+        <li>No project detail page</li>
+        <li>Not in main navigation</li>
+        <li>Hardcoded date in trajectory calculations</li>
+        <li>Missing billing day field for retainers</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Contracts <span class="badge badge-high">Partial</span></div>
+      <div class="module-detail">List works | Modal creation | PDF has legal structure</div>
+      <ul class="module-issues">
+        <li>/contracts/new returns 404</li>
+        <li>Not in main navigation</li>
+        <li>PDF lacks pricing section</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Analytics <span class="badge badge-medium">Data Issues</span></div>
+      <div class="module-detail">7 sub-pages | Charts render | FY filter works</div>
+      <ul class="module-issues">
+        <li>P&L overstates expenses (transfers/loans)</li>
+        <li>Client health scores inflated (double-count)</li>
+        <li>Revenue mixes currencies</li>
+        <li>All 7 pages overflow on mobile</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Reports <span class="badge badge-critical">Critical Bug</span></div>
+      <div class="module-detail">PDF generation works | CONFIDENTIAL badge | Email wired</div>
+      <ul class="module-issues">
+        <li>Quarterly report covers only 2 months</li>
+        <li>Title always says "Monthly"</li>
+        <li>No charts in PDF</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">TDS Certificates <span class="badge badge-critical">Missing</span></div>
+      <div class="module-detail">/tds route returns 404 - entirely unimplemented</div>
+      <ul class="module-issues">
+        <li>Database tables exist but no UI</li>
+        <li>Critical for Indian tax compliance</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Settings <span class="badge badge-high">localStorage Only</span></div>
+      <div class="module-detail">8 tabs render | Forms work visually</div>
+      <ul class="module-issues">
+        <li>All settings in localStorage, not database</li>
+        <li>Lost on browser clear or device switch</li>
+        <li>Email template editor is decorative</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Pipeline <span class="badge badge-pass">Functional</span></div>
+      <div class="module-detail">Invoices to raise | Forecast chart | Schedule</div>
+      <ul class="module-issues">
+        <li>Duplicate "New Invoice" buttons</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Targets <span class="badge badge-pass">Functional</span></div>
+      <div class="module-detail">9 targets | Progress tracking | Create/delete works</div>
+      <ul class="module-issues">
+        <li>FY hardcoded to "2025-26"</li>
+        <li>Unclear "Refresh" button purpose</li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="module-name">Onboarding <span class="badge badge-pass">Functional</span></div>
+      <div class="module-detail">Multi-step wizard | Invoice type config</div>
+      <ul class="module-issues">
+        <li>No visual step progress indicator</li>
+        <li>Not in main navigation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CROSS-MODULE INTEGRATION -->
+<section id="crossmodule">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>Cross-Module Integration</h2>
+  </div>
+
+  <h3>Data Flow Map</h3>
+  <div class="flow-diagram">auth.users --> profiles (CASCADE)
+      |
+      v
+   clients --> projects (CASCADE on client delete)
+      |            |
+      |            +--> contracts (no cascade - blocks delete)
+      |            +--> scheduled_invoices (project SET NULL)
+      |
+      +--> invoices (no cascade - blocks delete)
+      |       |
+      |       +--> invoice_line_items (CASCADE)
+      |       +--> invoice_payments (CASCADE)
+      |       +--> invoice_email_activity
+      |
+      +--> client_contacts (CASCADE)
+      +--> tds_certificates (no cascade)
+
+   bank_statements --> transactions (CASCADE)
+        |
+        +--> expense_categories --> expense_rules (CASCADE)
+
+   services --> invoice_line_items.service_id (SET NULL)
+             --> projects.service_id (SET NULL)</div>
+
+  <h3>Broken Linkages</h3>
+  <div class="card">
+    <div class="issue-item" style="border:none;">
+      <span class="badge badge-critical" style="grid-row:span 1;">Critical</span>
+      <div class="issue-text"><strong>Invoice PDF uses wrong bank account</strong> - Hardcoded 10113982735 vs actual 10213871315</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="issue-item" style="border:none;">
+      <span class="badge badge-critical" style="grid-row:span 1;">Critical</span>
+      <div class="issue-text"><strong>Pro Forma conversion breaks revenue</strong> - Marked "paid" but zero entries in invoice_payments. Invisible to all revenue queries.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="issue-item" style="border:none;">
+      <span class="badge badge-high" style="grid-row:span 1;">High</span>
+      <div class="issue-text"><strong>Settings templates disconnected</strong> - Email template editor saves to localStorage. Actual send flow uses hardcoded templates. Customizations silently ignored.</div>
+    </div>
+  </div>
+
+  <h3>Missing Connections</h3>
+  <div class="card">
+    <ul class="module-issues" style="padding:8px 0;">
+      <li><strong>No project profitability</strong> - Revenue and expenses per project exist separately but no combined view</li>
+      <li><strong>No client-level P&L</strong> - revenue_by_client_view exists for revenue but no expense attribution</li>
+      <li><strong>Expenses not linked to invoices</strong> - FK exists (transactions.linked_invoice_id) but not exposed in UI</li>
+      <li><strong>No real notification system</strong> - Dropdown shows hardcoded demo data, no backend</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>Security Assessment</h2>
+  </div>
+  <p>Score: <strong class="text-critical">3/10</strong> - Multiple critical gaps. 90 checks performed.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Area</th><th>Status</th><th>Key Finding</th></tr></thead>
+      <tbody>
+        <tr><td>Authentication</td><td><span class="badge badge-pass">Works</span></td><td>All 14 routes protected, redirects work. But no brute force protection, no password reset.</td></tr>
+        <tr><td>Authorization (RBAC)</td><td><span class="badge badge-critical">Fail</span></td><td>UI-only role checks. API routes check user exists, never role. Viewer can send emails, export data.</td></tr>
+        <tr><td>Row Level Security</td><td><span class="badge badge-high">Gaps</span></td><td>RLS on most tables. tds_certificates has NO RLS. profiles SELECT allows unauthenticated reads.</td></tr>
+        <tr><td>API Security</td><td><span class="badge badge-high">Risk</span></td><td>Middleware excludes all /api/* routes. Each route handles auth individually - no safety net.</td></tr>
+        <tr><td>HTTP Headers</td><td><span class="badge badge-critical">Missing</span></td><td>All 7 standard security headers missing (CSP, HSTS, X-Frame-Options, etc.)</td></tr>
+        <tr><td>Input Sanitization</td><td><span class="badge badge-high">Gaps</span></td><td>dangerouslySetInnerHTML in settings. Email templates don't escape variables. API accepts arbitrary HTML.</td></tr>
+        <tr><td>Secrets</td><td><span class="badge badge-critical">Exposed</span></td><td>SERVICE_ROLE_KEY in .env.local. Bank account numbers hardcoded across 5 files. SSLv3 ciphers.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Missing HTTP Security Headers</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Header</th><th>Status</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Security-Policy</td><td class="text-critical">MISSING</td><td>XSS, code injection</td></tr>
+        <tr><td>Strict-Transport-Security</td><td class="text-critical">MISSING</td><td>SSL stripping</td></tr>
+        <tr><td>X-Frame-Options</td><td class="text-critical">MISSING</td><td>Clickjacking</td></tr>
+        <tr><td>X-Content-Type-Options</td><td class="text-critical">MISSING</td><td>MIME-type sniffing</td></tr>
+        <tr><td>Referrer-Policy</td><td class="text-critical">MISSING</td><td>Information leakage</td></tr>
+        <tr><td>Permissions-Policy</td><td class="text-critical">MISSING</td><td>Feature policy</td></tr>
+        <tr><td>X-XSS-Protection</td><td class="text-critical">MISSING</td><td>Legacy XSS protection</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- UX -->
+<section id="ux">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>UX, Accessibility & Responsiveness</h2>
+  </div>
+  <p>Score: <strong class="text-warning">4/10</strong> - Visually polished but critical functional gaps. Average page load: 6.9 seconds.</p>
+
+  <h3>Page Load Performance</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Page</th><th>Load Time</th><th>UX Score</th><th>Key Issue</th></tr></thead>
+      <tbody>
+        <tr><td>/dashboard</td><td class="text-critical">9,145ms</td><td>7/10</td><td>Console errors, duplicated actions</td></tr>
+        <tr><td>/clients</td><td class="text-critical">7,745ms</td><td>8/10</td><td>No pagination</td></tr>
+        <tr><td>/invoices</td><td class="text-critical">7,606ms</td><td>8/10</td><td>Misleading KPI labels</td></tr>
+        <tr><td>/payments</td><td class="text-critical">7,024ms</td><td>7.5/10</td><td>No link to invoice detail</td></tr>
+        <tr><td>/expenses</td><td class="text-critical">7,413ms</td><td>8/10</td><td>Only 10 recent transactions</td></tr>
+        <tr><td>/analytics/*</td><td class="text-warning">6,100-6,900ms</td><td>7.5/10</td><td>All 7 overflow on mobile</td></tr>
+        <tr><td>/projects</td><td class="text-critical">7,597ms</td><td>8/10</td><td>Not in nav, no detail page</td></tr>
+        <tr><td>/settings</td><td class="text-warning">~6,500ms</td><td>7/10</td><td>localStorage only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Mobile Responsiveness (375px)</h3>
+  <div class="callout">9 of 21 pages have horizontal overflow on mobile. Analytics sub-nav uses min-w-max preventing wrapping.</div>
+
+  <h3>Accessibility</h3>
+  <div class="callout-critical callout">
+    <strong>Near-zero ARIA attributes.</strong> Only 3 instances of aria-label in entire src/ directory. No role attributes on interactive elements. No focus traps in modals. No keyboard navigation for dropdowns. No skip-to-content link.
+  </div>
+
+  <h3>Elements to Remove or Consolidate</h3>
+  <div class="card" style="padding:0;">
+    <div class="issue-item"><span class="issue-num">1</span><div class="issue-text"><strong>Hero Quick Actions dropdown</strong> - duplicates FAB entirely</div></div>
+    <div class="issue-item"><span class="issue-num">2</span><div class="issue-text"><strong>Duplicate "New Invoice" button on Pipeline</strong> - keep only contextual one</div></div>
+    <div class="issue-item"><span class="issue-num">3</span><div class="issue-text"><strong>Fake notification data</strong> in TopNavV2 - misleading hardcoded demo data</div></div>
+    <div class="issue-item"><span class="issue-num">4</span><div class="issue-text"><strong>Settings email template editor</strong> - gives illusion of customization that's never used</div></div>
+    <div class="issue-item"><span class="issue-num">5</span><div class="issue-text"><strong>"Total revenue: See invoices" placeholder card</strong> on Clients - shows no data</div></div>
+    <div class="issue-item"><span class="issue-num">6</span><div class="issue-text"><strong>6 entry points for "New Invoice"</strong> - consolidate to 2-3 contextual ones</div></div>
+  </div>
+</section>
+
+<!-- EMAIL -->
+<section id="email">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <h2>Email System</h2>
+  </div>
+  <p>Readiness: <strong class="text-critical">15%</strong> - Invoice email flow is completely broken (stub endpoint).</p>
+
+  <div class="callout-critical callout">
+    <strong>The invoice email flow is non-functional.</strong> The UI calls /api/invoices/[id]/send-email which is a stub containing a TODO comment. It returns { success: true } without sending. Users see "Email sent successfully" but nothing is dispatched. Only the investor report email flow is properly wired.
+  </div>
+
+  <h3>Before Activating SMTP</h3>
+  <ul class="checklist">
+    <li>Wire invoice email modal to /api/email/send instead of stub endpoint</li>
+    <li>Add PDF attachment generation for invoice emails</li>
+    <li>HTML-escape all template variables (XSS risk)</li>
+    <li>Remove tls: { ciphers: "SSLv3" } from SMTP config</li>
+    <li>Add SMTP credential detection with clear error messaging</li>
+    <li>Create Nodemailer transport singleton (currently recreated per email)</li>
+    <li>Add retry logic for transient SMTP failures</li>
+    <li>Replace display: flex with table layouts for Outlook compatibility</li>
+    <li>Update invoice status to "sent" after successful delivery</li>
+    <li>Add email format validation</li>
+    <li>Connect Settings template editor to send flow or remove it</li>
+  </ul>
+</section>
+
+<!-- PDF -->
+<section id="pdf">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <h2>PDF Quality</h2>
+  </div>
+  <p>Score: <strong class="text-warning">4/10</strong> - Professional structure but wrong bank details and formatting issues.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>PDF Type</th><th>Tax Line</th><th>Bank Details</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>GST Invoice</td><td>GST @ 18% (single)</td><td>Account 10113982735</td><td><span class="badge badge-critical">Wrong Account</span></td></tr>
+        <tr><td>International (USD)</td><td>None (0%)</td><td>Community Federal Savings</td><td><span class="badge badge-medium">Verify</span></td></tr>
+        <tr><td>International (AED)</td><td>None</td><td>Zand Bank PJSC</td><td><span class="badge badge-medium">Verify</span></td></tr>
+        <tr><td>International (GBP)</td><td>None</td><td>"Contact accounts@wodo.digital"</td><td><span class="badge badge-high">Incomplete</span></td></tr>
+        <tr><td>Non-GST</td><td>None</td><td>Account 10113982735</td><td><span class="badge badge-critical">Wrong - should be personal</span></td></tr>
+        <tr><td>Pro Forma</td><td>Per underlying type</td><td>Per underlying type</td><td><span class="badge badge-pass">OK</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Key PDF Issues</h3>
+  <div class="card" style="padding:0;">
+    <div class="issue-item"><span class="badge badge-critical">Critical</span><div class="issue-text">Bank account mismatch - most severe finding in entire audit</div></div>
+    <div class="issue-item"><span class="badge badge-high">High</span><div class="issue-text">Indian numbering ($12,34,567) on USD/GBP/AED amounts</div></div>
+    <div class="issue-item"><span class="badge badge-high">High</span><div class="issue-text">No CGST/SGST vs IGST split - single "GST @ 18%" for all</div></div>
+    <div class="issue-item"><span class="badge badge-medium">Medium</span><div class="issue-text">formatDate() crashes on null input, formatCurrency() lacks NaN check</div></div>
+    <div class="issue-item"><span class="badge badge-medium">Medium</span><div class="issue-text">No pagination for many line items - content overflows page</div></div>
+    <div class="issue-item"><span class="badge badge-medium">Medium</span><div class="issue-text">Report PDF title always says "Monthly Performance Report"</div></div>
+  </div>
+</section>
+
+<!-- FIX ROADMAP -->
+<section id="roadmap">
+  <div class="section-header">
+    <div class="section-num">R</div>
+    <h2>Prioritized Fix Roadmap</h2>
+  </div>
+  <p>Total estimated remediation: <strong class="highlight">14-17 working days</strong></p>
+
+  <!-- TIER 1 -->
+  <div class="tier tier-1">
+    <div class="tier-header">
+      Tier 1: Fix Immediately - Data/Money at Risk
+      <span class="tier-count">10 issues - ~1 day</span>
+    </div>
+    <div class="tier-body">
+      <div class="issue-item"><span class="issue-num">1</span><div class="issue-text"><strong>Fix bank account numbers in invoice PDF</strong><div class="issue-file">invoice-pdf.tsx:91-104 | 30 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">2</span><div class="issue-text"><strong>Add Math.round(value * 100) / 100 to all financial calculations</strong><div class="issue-file">new-invoice-modal.tsx:85-87, edit/page.tsx:117-120, use-invoices.ts:407-411 | 1 hour</div></div></div>
+      <div class="issue-item"><span class="issue-num">3</span><div class="issue-text"><strong>Fix quarterly report date range (report_month + 2)</strong><div class="issue-file">use-reports.ts:110 | 5 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">4</span><div class="issue-text"><strong>Fix TDS in balance_due formula</strong><div class="issue-file">use-invoices.ts:852 | 15 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">5</span><div class="issue-text"><strong>Fix edit page to save line items (upsert invoice_line_items)</strong><div class="issue-file">edit/page.tsx:150-172 | 2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">6</span><div class="issue-text"><strong>Wire invoice email to /api/email/send (not stub)</strong><div class="issue-file">send-invoice-email-modal.tsx, send-email/route.ts | 2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">7</span><div class="issue-text"><strong>Add HTTP security headers to next.config.mjs</strong><div class="issue-file">next.config.mjs | 30 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">8</span><div class="issue-text"><strong>Add server-side payment amount validation</strong><div class="issue-file">use-invoices.ts:811-891 | 2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">9</span><div class="issue-text"><strong>Rotate Supabase SERVICE_ROLE_KEY</strong><div class="issue-file">.env.local | 15 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">10</span><div class="issue-text"><strong>Fix formatDate() null safety</strong><div class="issue-file">src/lib/utils/format.ts | 10 min</div></div></div>
+    </div>
+  </div>
+
+  <!-- TIER 2 -->
+  <div class="tier tier-2">
+    <div class="tier-header">
+      Tier 2: Fix Before Production Use
+      <span class="tier-count">15 issues - ~4-5 days</span>
+    </div>
+    <div class="tier-body">
+      <div class="issue-item"><span class="issue-num">11</span><div class="issue-text"><strong>Add overdue auto-detection (cron or edge function)</strong><div class="issue-file">New implementation | 3 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">12</span><div class="issue-text"><strong>Fix Indian numbering on non-INR currencies in PDF</strong><div class="issue-file">invoice-pdf.tsx:44-54 | 30 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">13</span><div class="issue-text"><strong>Fix expense type filtering (exclude transfers/loans)</strong><div class="issue-file">004_analytics.sql:25, use-transactions.ts:275 | 1 hour</div></div></div>
+      <div class="issue-item"><span class="issue-num">14</span><div class="issue-text"><strong>Fix currency mixing in revenue aggregation</strong><div class="issue-file">use-analytics.ts:398-401 | 2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">15</span><div class="issue-text"><strong>Create payment record on proforma conversion</strong><div class="issue-file">use-invoices.ts:717-728 | 1 hour</div></div></div>
+      <div class="issue-item"><span class="issue-num">16</span><div class="issue-text"><strong>Add role-based authorization to API routes</strong><div class="issue-file">All src/app/api/ files | 3 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">17</span><div class="issue-text"><strong>Fix React hydration errors</strong><div class="issue-file">Multiple files | 4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">18</span><div class="issue-text"><strong>Fix infinite spinner on invalid invoice ID</strong><div class="issue-file">invoices/[id]/page.tsx:354-359 | 15 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">19</span><div class="issue-text"><strong>Migrate Settings from localStorage to database</strong><div class="issue-file">settings/page.tsx | 4-6 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">20</span><div class="issue-text"><strong>Implement TDS certificates page (/tds)</strong><div class="issue-file">New page needed | 8 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">21</span><div class="issue-text"><strong>Fix client_health_scores double-counting</strong><div class="issue-file">004_analytics.sql:94 | 1 hour</div></div></div>
+      <div class="issue-item"><span class="issue-num">22</span><div class="issue-text"><strong>Fix profiles RLS to require authentication</strong><div class="issue-file">001_schema.sql:21 | 10 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">23</span><div class="issue-text"><strong>Fix /contracts/new 404</strong><div class="issue-file">Remove empty directory or add redirect | 10 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">24</span><div class="issue-text"><strong>Add route-level error boundaries</strong><div class="issue-file">Add error.tsx per route group | 1-2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">25</span><div class="issue-text"><strong>HTML-escape email template variables</strong><div class="issue-file">src/lib/email/templates.ts | 1 hour</div></div></div>
+    </div>
+  </div>
+
+  <!-- TIER 3 -->
+  <div class="tier tier-3">
+    <div class="tier-header">
+      Tier 3: Fix Before Investor Demo
+      <span class="tier-count">15 issues - ~3-4 days</span>
+    </div>
+    <div class="tier-body">
+      <div class="issue-item"><span class="issue-num">26</span><div class="issue-text"><strong>Implement CGST/SGST vs IGST split</strong><div class="issue-file">invoice-pdf.tsx:597-605 | 4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">27</span><div class="issue-text"><strong>Add pagination to all list pages</strong><div class="issue-file">clients, invoices, payments, transactions | 3-4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">28</span><div class="issue-text"><strong>Add ARIA attributes to interactive elements</strong><div class="issue-file">Multiple components | 2-3 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">29</span><div class="issue-text"><strong>Fix mobile overflow on Analytics pages</strong><div class="issue-file">analytics-sub-nav.tsx | 30 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">30</span><div class="issue-text"><strong>Add Projects, Contracts, TDS to navigation</strong><div class="issue-file">TopNavV2.tsx NAV_TABS | 30 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">31</span><div class="issue-text"><strong>Fix report PDF title for report type</strong><div class="issue-file">report-pdf.tsx:346 | 10 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">32</span><div class="issue-text"><strong>Add charts to investor report PDF</strong><div class="issue-file">report-pdf.tsx | 4-6 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">33</span><div class="issue-text"><strong>Remove fake notification data</strong><div class="issue-file">TopNavV2.tsx:75-129 | 15 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">34</span><div class="issue-text"><strong>Fix SMTP TLS config (remove SSLv3)</strong><div class="issue-file">email/client.ts:14 | 5 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">35</span><div class="issue-text"><strong>Add Zod validation to invoice/payment forms</strong><div class="issue-file">new-invoice-modal.tsx, payment modal | 3-4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">36</span><div class="issue-text"><strong>Fix revenue_by_client_view foreign currency</strong><div class="issue-file">004_analytics.sql:47 | 30 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">37</span><div class="issue-text"><strong>Complete GBP bank details in invoice PDF</strong><div class="issue-file">invoice-pdf.tsx:124-130 | 15 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">38</span><div class="issue-text"><strong>Add middleware-level auth for API routes</strong><div class="issue-file">middleware.ts:39 | 2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">39</span><div class="issue-text"><strong>Fix hardcoded date in Projects page</strong><div class="issue-file">projects/page.tsx:55,73 | 2 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">40</span><div class="issue-text"><strong>Fix hardcoded FY in Targets page</strong><div class="issue-file">targets/page.tsx:23 | 10 min</div></div></div>
+    </div>
+  </div>
+
+  <!-- TIER 4 -->
+  <div class="tier tier-4">
+    <div class="tier-header">
+      Tier 4: Polish & Enhance
+      <span class="tier-count">15 issues - ~5-7 days</span>
+    </div>
+    <div class="tier-body">
+      <div class="issue-item"><span class="issue-num">41</span><div class="issue-text"><strong>Implement password reset flow</strong><div class="issue-file">New feature | 2-3 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">42</span><div class="issue-text"><strong>Add CSRF tokens for state-changing operations</strong><div class="issue-file">Multiple files | 3-4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">43</span><div class="issue-text"><strong>Add breadcrumbs to detail pages</strong><div class="issue-file">Detail page layouts | 1-2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">44</span><div class="issue-text"><strong>Move bank details to database config</strong><div class="issue-file">invoice-pdf.tsx, constants.ts | 3-4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">45</span><div class="issue-text"><strong>Add keyboard navigation to dropdowns</strong><div class="issue-file">All dropdown components | 2-3 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">46</span><div class="issue-text"><strong>Consolidate currency formatting</strong><div class="issue-file">6+ local implementations | 2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">47</span><div class="issue-text"><strong>Consolidate FY helpers to single function</strong><div class="issue-file">4 different implementations | 1 hour</div></div></div>
+      <div class="issue-item"><span class="issue-num">48</span><div class="issue-text"><strong>Add audit logging for sensitive operations</strong><div class="issue-file">New feature | 4-6 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">49</span><div class="issue-text"><strong>Add form dirty state protection</strong><div class="issue-file">All form pages | 2-3 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">50</span><div class="issue-text"><strong>Implement server-side rendering for initial loads</strong><div class="issue-file">Architectural change | 8-12 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">51</span><div class="issue-text"><strong>Add idle session timeout</strong><div class="issue-file">New feature | 1-2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">52</span><div class="issue-text"><strong>Register Unicode font for PDFs</strong><div class="issue-file">PDF components | 1-2 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">53</span><div class="issue-text"><strong>Split settings/page.tsx (2140 lines)</strong><div class="issue-file">settings/page.tsx | 3-4 hours</div></div></div>
+      <div class="issue-item"><span class="issue-num">54</span><div class="issue-text"><strong>Move Playwright to devDependencies</strong><div class="issue-file">package.json | 5 min</div></div></div>
+      <div class="issue-item"><span class="issue-num">55</span><div class="issue-text"><strong>Remove x-powered-by: Next.js header</strong><div class="issue-file">next.config.mjs | 2 min</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WORKS WELL -->
+<section id="positive">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--success-bg);color:var(--success);">+</div>
+    <h2>What Works Well</h2>
+  </div>
+
+  <div class="callout-success callout" style="margin-bottom:24px;">
+    Despite critical issues, WODO Ally demonstrates strong fundamentals that provide a solid base for remediation.
+  </div>
+
+  <div class="module-grid">
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Thoughtful Database Design</div>
+      <p class="mt-8">Proper data types (NUMERIC(12,2) for money, UUID for IDs), appropriate FK relationships, RLS policies on all major tables. Migration files well-organized.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Consistent Hook Architecture</div>
+      <p class="mt-8">All data access through TanStack Query with uniform error handling. Clean separation of concerns across hooks.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Professional PDF Structure</div>
+      <p class="mt-8">Contract PDF has 11 standard legal clauses. Invoice PDFs include proper Indian tax elements (GSTIN, CIN, signatory). Report PDF has investor-grade design.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Correct Indian FY Handling</div>
+      <p class="mt-8">April-March boundaries, quarter definitions, FY string formatting all correctly implemented throughout the codebase.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Strong Auth Foundation</div>
+      <p class="mt-8">All 14 routes protected. API routes check auth. Supabase client/server/admin separation correctly implemented.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Distinctive Visual Design</div>
+      <p class="mt-8">Dark glass-card design system with orange accent creates a professional, unique aesthetic. Dashboard KPI cards are visually impressive.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Comprehensive Feature Scope</div>
+      <p class="mt-8">Clients, projects, 4 invoice types, payments, expense import, contracts, 7 analytics pages, investor reports, pipeline, targets - ambitious and valuable.</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--success);">Clean Code Quality</div>
+      <p class="mt-8">No console.log in production. No commented-out code. No em dashes. TypeScript strict mode. ESLint passing.</p>
+    </div>
+  </div>
+</section>
+
+<!-- INVESTOR READINESS -->
+<section>
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <h2>Investor Readiness Assessment</h2>
+  </div>
+
+  <div class="score-card" style="max-width:300px;margin:0 auto 24px;">
+    <div class="label">Investor Readiness</div>
+    <div class="value critical">3/10</div>
+    <div class="sub">Numbers cannot be trusted yet</div>
+  </div>
+
+  <h3>Can You Trust The Numbers?</h3>
+  <div class="callout-critical callout">
+    <strong>No.</strong> In its current state, the financial data cannot be relied upon for investor reporting. Revenue is understated (TDS bug), expenses are overstated (transfers/loans counted), quarterly reports miss a month, currency mixing creates false aggregations, and client health scores are inflated.
+  </div>
+
+  <h3>Critical Blockers for Investor Presentation</h3>
+  <div class="card" style="padding:0;">
+    <div class="issue-item"><span class="issue-num">1</span><div class="issue-text">Fix quarterly date range calculation (single most impactful fix)</div></div>
+    <div class="issue-item"><span class="issue-num">2</span><div class="issue-text">Fix expense categorization to exclude transfers/loans</div></div>
+    <div class="issue-item"><span class="issue-num">3</span><div class="issue-text">Fix currency mixing in revenue aggregation</div></div>
+    <div class="issue-item"><span class="issue-num">4</span><div class="issue-text">Fix TDS balance calculation</div></div>
+    <div class="issue-item"><span class="issue-num">5</span><div class="issue-text">Create payment records for proforma conversions</div></div>
+    <div class="issue-item"><span class="issue-num">6</span><div class="issue-text">Fix bank account numbers in invoice PDFs</div></div>
+    <div class="issue-item"><span class="issue-num">7</span><div class="issue-text">Add charts/visualizations to report PDF</div></div>
+  </div>
+</section>
+
+<!-- FULL ISSUE REGISTRY -->
+<section id="registry">
+  <div class="section-header">
+    <div class="section-num">A</div>
+    <h2>Complete Issue Registry (147 Issues)</h2>
+  </div>
+
+  <details>
+    <summary><span class="badge badge-critical">22</span> Critical Issues</summary>
+    <div class="details-body">
+      <div class="table-wrap" style="border:none;">
+        <table>
+          <thead><tr><th>#</th><th>Module</th><th>Issue</th><th>File</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Invoices</td><td>Bank account mismatch in invoice PDFs</td><td><code>invoice-pdf.tsx:91-104</code></td></tr>
+            <tr><td>2</td><td>Invoices</td><td>No rounding on financial calculations</td><td><code>new-invoice-modal.tsx:85-87</code></td></tr>
+            <tr><td>3</td><td>Invoices</td><td>TDS excluded from balance_due calculation</td><td><code>use-invoices.ts:852</code></td></tr>
+            <tr><td>4</td><td>Invoices</td><td>Edit does not save line items to DB</td><td><code>edit/page.tsx:150-172</code></td></tr>
+            <tr><td>5</td><td>Reports</td><td>Quarterly report covers 2 months instead of 3</td><td><code>use-reports.ts:110</code></td></tr>
+            <tr><td>6</td><td>Invoices</td><td>Floating-point accumulation in payment totals</td><td><code>use-invoices.ts:834-841</code></td></tr>
+            <tr><td>7</td><td>Email</td><td>Invoice emails are stubs - not actually sent</td><td><code>send-email/route.ts:50-51</code></td></tr>
+            <tr><td>8</td><td>Security</td><td>SERVICE_ROLE_KEY exposed in .env.local</td><td><code>.env.local</code></td></tr>
+            <tr><td>9</td><td>Security</td><td>All HTTP security headers missing</td><td><code>next.config.mjs</code></td></tr>
+            <tr><td>10</td><td>Security</td><td>API routes bypass middleware auth</td><td><code>middleware.ts:39</code></td></tr>
+            <tr><td>11</td><td>Security</td><td>No role-based authorization on API routes</td><td><code>src/app/api/*</code></td></tr>
+            <tr><td>12</td><td>Payments</td><td>No server-side payment amount validation</td><td><code>use-invoices.ts:811-891</code></td></tr>
+            <tr><td>13</td><td>Error</td><td>React hydration errors on every page</td><td><code>Multiple files</code></td></tr>
+            <tr><td>14</td><td>Error</td><td>formatDate() crashes on null input</td><td><code>format.ts</code></td></tr>
+            <tr><td>15</td><td>Error</td><td>Invoice detail infinite spinner for invalid IDs</td><td><code>invoices/[id]/page.tsx:354</code></td></tr>
+            <tr><td>16</td><td>PDF</td><td>PDF generation return type inconsistency</td><td><code>src/lib/pdf/index.ts</code></td></tr>
+            <tr><td>17</td><td>Analytics</td><td>Transfers/loans counted as expenses in P&L</td><td><code>004_analytics.sql:25</code></td></tr>
+            <tr><td>18</td><td>Invoices</td><td>Pro forma conversion creates no payment record</td><td><code>use-invoices.ts:717-728</code></td></tr>
+            <tr><td>19</td><td>Analytics</td><td>Revenue mixes currencies without conversion</td><td><code>use-analytics.ts:398-401</code></td></tr>
+            <tr><td>20</td><td>Email</td><td>No HTML escaping in email templates</td><td><code>templates.ts</code></td></tr>
+            <tr><td>21</td><td>Security</td><td>tds_certificates table has no RLS</td><td><code>007_tds_certificates.sql</code></td></tr>
+            <tr><td>22</td><td>Functional</td><td>No server-side API validation layer</td><td><code>Architecture-wide</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-high">37</span> High Issues</summary>
+    <div class="details-body">
+      <p>See full report in <code>WODO_ALLY_AUDIT_REPORT.md</code> Appendix A for the complete list of 37 high-severity issues covering: overdue detection, Indian numbering on foreign currencies, auth cookie flags, CSRF, XSS risks, /contracts/new 404, /tds unimplemented, localStorage settings, payment links, health score double-counting, currency formatting duplication, pagination, PDF image paths, GST split, email attachments, retry logic, page load performance, ARIA accessibility, navigation gaps, and hardcoded notification data.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-medium">56</span> Medium Issues</summary>
+    <div class="details-body">
+      <p>56 medium-severity issues across: RLS gaps, input validation, TLS config, audit logging, type casts, FY helper duplication, xlsx vulnerabilities, Playwright in production deps, test coverage, sequential queries, search bugs, form validation, Zod mandates, mobile overflow, modal focus traps, email template compatibility, and more. See full report.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge badge-low">32</span> Low Issues</summary>
+    <div class="details-body">
+      <p>32 low-severity polish items: autocomplete attributes, x-powered-by header, mock UUIDs, session timeout, env var naming, non-null assertions, dead code, duplicate routes, image paths, GSTIN validation, billing day field, naming inconsistencies, upload limits, number formatting, cascade behaviors, breadcrumbs, and router.back() usage. See full report.</p>
+    </div>
+  </details>
+</section>
+
+<!-- TEST COVERAGE -->
+<section>
+  <div class="section-header">
+    <div class="section-num">B</div>
+    <h2>Test Coverage Matrix</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Tests Run</th><th>Passed</th><th>Failed</th><th>Warnings</th></tr></thead>
+      <tbody>
+        <tr><td>Auth & Security</td><td>90</td><td>56</td><td>34</td><td>0</td></tr>
+        <tr><td>Static Analysis</td><td>67 checks</td><td>-</td><td>67 issues</td><td>-</td></tr>
+        <tr><td>Clients</td><td>14</td><td>8</td><td>0</td><td>6</td></tr>
+        <tr><td>Projects</td><td>7</td><td>4</td><td>0</td><td>3</td></tr>
+        <tr><td>Services</td><td>3</td><td>2</td><td>0</td><td>1</td></tr>
+        <tr><td>Contracts</td><td>6</td><td>2</td><td>1</td><td>3</td></tr>
+        <tr><td>TDS Certificates</td><td>3</td><td>0</td><td>3</td><td>0</td></tr>
+        <tr><td>Financial Targets</td><td>6</td><td>4</td><td>0</td><td>2</td></tr>
+        <tr><td>Settings</td><td>5</td><td>3</td><td>0</td><td>2</td></tr>
+        <tr><td>Onboarding</td><td>5</td><td>3</td><td>0</td><td>2</td></tr>
+        <tr><td>Invoice Engine</td><td>30</td><td>26</td><td>0</td><td>4</td></tr>
+        <tr><td>Payment Flow</td><td>16</td><td>13</td><td>0</td><td>3</td></tr>
+        <tr><td>Expense Management</td><td>17</td><td>9</td><td>0</td><td>8</td></tr>
+        <tr><td>Financial Logic</td><td>42 calcs</td><td>-</td><td>12 issues</td><td>-</td></tr>
+        <tr><td>Cross-Module</td><td>15 checks</td><td>-</td><td>8 issues</td><td>-</td></tr>
+        <tr><td>Analytics & Reporting</td><td>18</td><td>-</td><td>7 issues</td><td>-</td></tr>
+        <tr><td>PDF Generation</td><td>19 checks</td><td>-</td><td>19 issues</td><td>-</td></tr>
+        <tr><td>Email System</td><td>23 checks</td><td>-</td><td>23 issues</td><td>-</td></tr>
+        <tr><td>UX & Responsiveness</td><td>123 checks</td><td>-</td><td>123 issues</td><td>-</td></tr>
+        <tr><td>Edge Cases</td><td>16</td><td>8</td><td>1</td><td>7</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer class="footer">
+  <div class="container">
+    <p>WODO Ally Production Audit Report - April 9, 2026</p>
+    <p>Compiled from 7 specialized AI audit agents across 14 phases</p>
+    <p style="margin-top:8px;color:var(--text-muted);">CONFIDENTIAL - WODO Digital Private Limited</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -77,7 +77,7 @@ export function PdfPreviewModal({ isOpen, onClose, title, pdfUrl, onDownload }: 
                 {title}
               </p>
               <p className="text-xs text-center max-w-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                PDF generation is coming in Phase 3. Reports will render here automatically once the engine is built.
+                Generating PDF preview...
               </p>
             </div>
           )}

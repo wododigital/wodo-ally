@@ -15,6 +15,7 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ["sent", "cancelled"],
   sent: ["paid", "overdue", "cancelled", "archived"],
   overdue: ["paid", "sent", "cancelled", "archived"],
+  partially_paid: ["paid", "overdue", "cancelled"],
   paid: [],
   cancelled: ["draft"],
   archived: ["draft"],

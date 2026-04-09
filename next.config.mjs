@@ -43,7 +43,8 @@ const nextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://oaujoosmbgcgacosqlhe.supabase.co; font-src 'self' data:; connect-src 'self' https://oaujoosmbgcgacosqlhe.supabase.co wss://oaujoosmbgcgacosqlhe.supabase.co https://*.sentry.io; frame-ancestors 'none';",
+            // TODO: Replace 'unsafe-inline' with nonce-based CSP for script-src in the future
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://oaujoosmbgcgacosqlhe.supabase.co; font-src 'self' data:; connect-src 'self' https://oaujoosmbgcgacosqlhe.supabase.co wss://oaujoosmbgcgacosqlhe.supabase.co https://*.sentry.io; frame-ancestors 'none';",
           },
         ],
       },

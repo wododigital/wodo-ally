@@ -85,6 +85,7 @@ export function useInvoiceKPI() {
       // ── 3. Payment pending (all outstanding invoices) ───────────────────────
       // Not month-scoped - reflects current total outstanding at any point in
       // time, which is the operationally useful figure for a collections view.
+      // Note: balance_due is in invoice currency. For non-INR invoices, these are approximate display values.
       const { data: pendingInvoices, error: pendingError } = await supabase
         .from("invoices")
         .select("balance_due")
@@ -99,6 +100,7 @@ export function useInvoiceKPI() {
       );
 
       // ── 4. Overdue amount ───────────────────────────────────────────────────
+      // Note: balance_due is in invoice currency. For non-INR invoices, these are approximate display values.
       const { data: overdueInvoices, error: overdueError } = await supabase
         .from("invoices")
         .select("balance_due")

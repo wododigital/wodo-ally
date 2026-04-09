@@ -46,6 +46,7 @@ const NAV_TABS: NavTab[] = [
   { href: "/contracts", label: "Contracts" },
   { href: "/pipeline",  label: "Pipeline"  },
   { href: "/targets",   label: "Goals"     },
+  { href: "/tds",       label: "TDS"       },
   { href: "/reports",   label: "Reports",  exact: true },
 ];
 
@@ -62,6 +63,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/analytics":           "Analytics",
   "/pipeline":            "Pipeline",
   "/targets":             "Goals",
+  "/tds":                 "TDS Certificates",
   "/reports":             "Reports",
   "/projects":            "Projects",
   "/settings":            "Settings",

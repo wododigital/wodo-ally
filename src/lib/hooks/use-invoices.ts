@@ -794,6 +794,7 @@ export function useConvertProformaToInvoice() {
         .insert({
           invoice_id: invoiceId,
           amount_received: inv.total_amount,
+          currency: inv.currency,
           payment_date: now.split("T")[0],
           payment_method: "bank_transfer" as any,
           notes: `Auto-created from proforma conversion (${inv.proforma_ref ?? "PF"})`,
@@ -906,7 +907,7 @@ export function useRecordPayment() {
       );
       const paymentTotal = (payload.payment.amount_received ?? 0) + (payload.payment.tds_amount ?? 0);
 
-      if (paymentTotal > currentBalance + 0.01) {
+      if (Math.round(paymentTotal * 100) > Math.round(currentBalance * 100)) {
         throw new Error(
           `Payment of ${paymentTotal.toFixed(2)} exceeds the outstanding balance of ${currentBalance.toFixed(2)}. Please enter a smaller amount.`
         );

@@ -1,0 +1,1516 @@
+{
+  "timestamp": "2026-04-08T19:09:24.541Z",
+  "pages": [
+    {
+      "path": "/dashboard",
+      "label": "dashboard",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 9145ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "4 console error(s)"
+        },
+        {
+          "severity": "medium",
+          "issue": "2 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 9145,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 0,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 2,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-dashboard.png",
+      "consoleErrors": [
+        "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/targets. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)",
+        "TypeError: Failed to fetch\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:23824\n    at tw (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:28079)\n    at tm (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:27823)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50993\n    at tD._useSession (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:49124)\n    at async tD._getUser (https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50811)\n    at async https://wodo-ally-production.up.railway.app/_next/static/chunks/5786-0ecc0926afd7905d.js:6:50662",
+        "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/pipeline. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)",
+        "Failed to fetch RSC payload for https://wodo-ally-production.up.railway.app/dashboard. Falling back to browser navigation. TypeError: Failed to fetch\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:46620)\n    at https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60172\n    at Object.o [as task] (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:32975)\n    at u.c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33680)\n    at u.enqueue (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:33105)\n    at c (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:60135)\n    at l (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:59675)\n    at s (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:66501)\n    at d (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:1:76415)\n    at Object.action (https://wodo-ally-production.up.railway.app/_next/static/chunks/725-faeefe0d37a77f65.js:2:10477)"
+      ]
+    },
+    {
+      "path": "/clients",
+      "label": "clients",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 7745ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 7745,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 10,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-clients.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/invoices",
+      "label": "invoices",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 7606ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 7606,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 1,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-invoices.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/payments",
+      "label": "payments",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 7024ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 7024,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-payments.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/expenses",
+      "label": "expenses",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 7413ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 7413,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-expenses.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/expenses/upload",
+      "label": "expenses-upload",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6130ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6130,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-expenses-upload.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/expenses/transactions",
+      "label": "expenses-transactions",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6461ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6461,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 1,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 6,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-expenses-transactions.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics",
+      "label": "analytics",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6765ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6765,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/pl",
+      "label": "analytics-pl",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6236ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6236,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics-pl.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/balance",
+      "label": "analytics-balance",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6869ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6869,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics-balance.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/invoices",
+      "label": "analytics-invoices",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6172ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6172,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 4,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics-invoices.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/expenses",
+      "label": "analytics-expenses",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6342ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6342,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics-expenses.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/clients",
+      "label": "analytics-clients",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6146ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6146,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 4,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics-clients.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/projects",
+      "label": "analytics-projects",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6543ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6543,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-analytics-projects.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/projects",
+      "label": "projects",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 7597ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 7597,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 10,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-projects.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/contracts",
+      "label": "contracts",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6975ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6975,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 1,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-contracts.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/reports",
+      "label": "reports",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6390ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6390,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-reports.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/pipeline",
+      "label": "pipeline",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 7128ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 7128,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 7,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-pipeline.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/targets",
+      "label": "targets",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6104ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6104,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-targets.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/settings",
+      "label": "settings",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6461ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6461,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-settings.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/onboard",
+      "label": "onboard",
+      "viewport": "desktop",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6294ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6294,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 5,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "desktop-onboard.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/dashboard",
+      "label": "dashboard",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5870ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "2 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 15 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5870,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 0,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 2,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 15,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-dashboard.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/clients",
+      "label": "clients",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5846ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 24 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5846,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 10,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 24,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-clients.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/invoices",
+      "label": "invoices",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5895ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 26 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5895,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 1,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 26,
+        "narrowFormFields": 1,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-invoices.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/payments",
+      "label": "payments",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5818ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 9 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5818,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 9,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-payments.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/expenses",
+      "label": "expenses",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5345ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 15 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5345,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 15,
+        "narrowFormFields": 0,
+        "truncatedElements": 11,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-expenses.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/expenses/upload",
+      "label": "expenses-upload",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5505ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5505,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 4,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-expenses-upload.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/expenses/transactions",
+      "label": "expenses-transactions",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5315ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 90 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5315,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 1,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 90,
+        "narrowFormFields": 0,
+        "truncatedElements": 81,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-expenses-transactions.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics",
+      "label": "analytics",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5689ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5689,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 2,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/pl",
+      "label": "analytics-pl",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5169ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5169,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics-pl.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/balance",
+      "label": "analytics-balance",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5802ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5802,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics-balance.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/invoices",
+      "label": "analytics-invoices",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5512ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5512,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 4,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics-invoices.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/expenses",
+      "label": "analytics-expenses",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5101ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5101,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 2,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics-expenses.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/clients",
+      "label": "analytics-clients",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5098ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5098,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 4,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics-clients.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/analytics/projects",
+      "label": "analytics-projects",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5460ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5460,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-analytics-projects.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/projects",
+      "label": "projects",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6175ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 14 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6175,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 10,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 14,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-projects.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/contracts",
+      "label": "contracts",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6623ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 6 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6623,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 1,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 6,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-contracts.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/reports",
+      "label": "reports",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5459ms"
+        },
+        {
+          "severity": "high",
+          "issue": "Horizontal overflow detected - content wider than viewport"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "high",
+          "issue": "Mobile: horizontal scrollbar detected"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 16 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5459,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": true,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 16,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-reports.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/pipeline",
+      "label": "pipeline",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 6326ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 9 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 6326,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 7,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 9,
+        "narrowFormFields": 0,
+        "truncatedElements": 5,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-pipeline.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/targets",
+      "label": "targets",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5188ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 8 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5188,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 3,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 8,
+        "narrowFormFields": 0,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-targets.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/settings",
+      "label": "settings",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5136ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 25 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5136,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 2,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 25,
+        "narrowFormFields": 12,
+        "truncatedElements": 0,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-settings.png",
+      "consoleErrors": []
+    },
+    {
+      "path": "/onboard",
+      "label": "onboard",
+      "viewport": "mobile",
+      "issues": [
+        {
+          "severity": "high",
+          "issue": "Slow page load: 5255ms"
+        },
+        {
+          "severity": "medium",
+          "issue": "3 button(s) without text, aria-label, or title"
+        },
+        {
+          "severity": "medium",
+          "issue": "Mobile: 21 touch targets smaller than 44x44px"
+        }
+      ],
+      "metrics": {
+        "loadTimeMs": 5255,
+        "pageTitle": "WODO Ally - Internal Management Platform",
+        "glassCardCount": 5,
+        "visibleSpinners": 0,
+        "horizontalOverflow": false,
+        "buttonsWithoutLabels": 3,
+        "brokenLinks": 0,
+        "imagesWithoutAlt": 0,
+        "smallTouchTargets": 21,
+        "narrowFormFields": 0,
+        "truncatedElements": 1,
+        "emptyStateVisible": false
+      },
+      "screenshotFile": "mobile-onboard.png",
+      "consoleErrors": []
+    }
+  ],
+  "navigation": [
+    {
+      "label": "Dashboard",
+      "expectedPath": "/dashboard",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/dashboard",
+      "success": true
+    },
+    {
+      "label": "Clients",
+      "expectedPath": "/clients",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/clients",
+      "success": true
+    },
+    {
+      "label": "Expenses",
+      "expectedPath": "/expenses",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/expenses",
+      "success": true
+    },
+    {
+      "label": "Pipeline",
+      "expectedPath": "/pipeline",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/pipeline",
+      "success": true
+    },
+    {
+      "label": "Goals",
+      "expectedPath": "/targets",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/targets",
+      "success": true
+    },
+    {
+      "label": "Reports",
+      "expectedPath": "/reports",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/reports",
+      "success": true
+    },
+    {
+      "test": "active_state",
+      "currentPage": "/clients",
+      "activeNavLabel": "Clients",
+      "success": true
+    },
+    {
+      "test": "browser_back",
+      "expectedPath": "/dashboard",
+      "actualUrl": "https://wodo-ally-production.up.railway.app/dashboard",
+      "success": true
+    }
+  ],
+  "interactive": [
+    {
+      "test": "fab_open",
+      "success": true,
+      "menuItems": 6
+    },
+    {
+      "test": "new_invoice_modal",
+      "success": true,
+      "modalCount": 1
+    },
+    {
+      "test": "clients_search",
+      "success": true
+    },
+    {
+      "test": "notification_dropdown",
+      "success": false
+    },
+    {
+      "test": "invoice_status_filter",
+      "success": true
+    },
+    {
+      "test": "add_client_modal",
+      "success": true
+    }
+  ],
+  "consoleErrors": [],
+  "summary": {
+    "totalPages": 21,
+    "desktopScreenshots": 21,
+    "mobileScreenshots": 21,
+    "totalIssues": 123,
+    "critical": 0,
+    "high": 60,
+    "medium": 63,
+    "low": 0,
+    "consoleErrors": 4
+  }
+}

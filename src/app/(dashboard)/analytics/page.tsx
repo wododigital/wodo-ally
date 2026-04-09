@@ -11,6 +11,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { getFinancialYear } from "@/lib/utils/format";
 import {
   useMonthlyPL,
   useRevenueByService,
@@ -34,7 +35,8 @@ const AXIS  = { fill: "#9ca3af", fontSize: 11 };
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: 2025 });
+  const currentFyYear = parseInt(getFinancialYear().split("-")[0], 10);
+  const [filterState, setFilterState] = useState<DateFilterState>({ mode: "fy", fyYear: currentFyYear });
 
   const { data: plRows, isLoading: plLoading } = useMonthlyPL();
   const { data: serviceRows, isLoading: serviceLoading } = useRevenueByService();
@@ -159,7 +161,7 @@ export default function AnalyticsPage() {
                 {
                   label: "Total Revenue",
                   value: `Rs.${(revenue / 100000).toFixed(2)}L`,
-                  sub: filterState.mode === "fy" ? "FY 2025-26" : "Selected period",
+                  sub: filterState.mode === "fy" && filterState.fyYear ? `FY ${filterState.fyYear}-${String(filterState.fyYear + 1).slice(-2)}` : "Selected period",
                   icon: IndianRupee,
                   color: "#fd7e14",
                 },

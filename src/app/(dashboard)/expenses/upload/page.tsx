@@ -11,6 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { GlassCard } from "@/components/shared/glass-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils/cn";
@@ -169,6 +170,7 @@ export default function UploadStatementPage() {
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <div>
+        <Breadcrumbs items={[{ label: "Expenses", href: "/expenses" }, { label: "Upload" }]} />
         <Link
           href="/expenses"
           className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors mb-4"

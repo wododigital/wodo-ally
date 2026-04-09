@@ -63,7 +63,7 @@ const SECTION_BG = "#f8f8fc";
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Helvetica",
+    fontFamily: "NotoSans",
     backgroundColor: "#ffffff",
     paddingTop: 0,
     paddingBottom: 40,
@@ -83,14 +83,14 @@ const styles = StyleSheet.create({
   coverTagline: {
     color: ORANGE,
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 2,
     marginBottom: 8,
   },
   coverTitle: {
     color: "#ffffff",
     fontSize: 20,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     marginBottom: 4,
   },
   coverSubtitle: {
@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
   coverBadgeText: {
     color: "#ffffff",
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 1,
   },
 
   // Section heading
   sectionHeading: {
     fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -143,14 +143,14 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: 7.5,
     color: LIGHT_GRAY,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 0.8,
     marginBottom: 4,
     textTransform: "uppercase",
   },
   metricValue: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
   },
   metricSub: {
@@ -160,17 +160,17 @@ const styles = StyleSheet.create({
   },
   metricValueGreen: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: "#16a34a",
   },
   metricValueOrange: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
   },
   metricValueBlue: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: "#3b82f6",
   },
 
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   tableHeaderText: {
     color: "#ffffff",
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 0.5,
   },
   tableRow: {
@@ -216,13 +216,13 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: DARK,
     textAlign: "right",
-    fontFamily: "Helvetica",
+    fontFamily: "NotoSans",
   },
   rowValueGreen: {
     fontSize: 8.5,
     color: "#16a34a",
     textAlign: "right",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
 
   // Client summary
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   clientRankText: {
     color: "#ffffff",
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
   clientName: {
     flex: 3,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: DARK,
     textAlign: "right",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
 
   // Stats row
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 3,
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: GRAY,
     textAlign: "center",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
 });
 
@@ -337,7 +337,7 @@ const chartStyles = StyleSheet.create({
     width: 80,
     fontSize: 8.5,
     color: DARK,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
   barTrack: {
     flex: 1,
@@ -360,7 +360,7 @@ const chartStyles = StyleSheet.create({
     marginLeft: 8,
     width: 70,
     textAlign: "right",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
   // Client distribution
   clientBar: {
@@ -402,7 +402,7 @@ const chartStyles = StyleSheet.create({
     marginLeft: 4,
     width: 55,
     textAlign: "right",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
   },
   // Ratios
   ratiosGrid: {
@@ -422,14 +422,14 @@ const chartStyles = StyleSheet.create({
   ratioLabel: {
     fontSize: 7.5,
     color: GRAY,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   ratioValue: {
     fontSize: 20,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     marginBottom: 6,
   },
   ratioTrack: {

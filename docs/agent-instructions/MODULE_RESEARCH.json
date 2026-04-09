@@ -1,0 +1,1347 @@
+{
+  "project": "WODO Ally - Internal Accounting SaaS",
+  "research_date": "2026-03-04",
+  "status": "Phase 5 (Polish & Deploy) - IN PROGRESS",
+  "modules": [
+    {
+      "module_id": 1,
+      "name": "Projects",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-projects.ts",
+      "type": "hooks",
+      "loc": 184,
+      "hook_functions": [
+        {
+          "name": "useProjects",
+          "signature": "useProjects(clientId?: string): UseQueryResult<ProjectWithClient[]>",
+          "description": "Fetch all projects optionally filtered by client ID",
+          "parameters": ["clientId?: string"],
+          "returns": "ProjectWithClient[] - projects with enriched client names"
+        },
+        {
+          "name": "useProject",
+          "signature": "useProject(id: string): UseQueryResult<Project>",
+          "description": "Fetch single project by ID",
+          "parameters": ["id: string"],
+          "returns": "Project"
+        },
+        {
+          "name": "useCreateProject",
+          "signature": "useCreateProject(): UseMutationResult<Project>",
+          "description": "Create new project with automatic query invalidation",
+          "parameters": [],
+          "returns": "Project"
+        },
+        {
+          "name": "useUpdateProject",
+          "signature": "useUpdateProject(): UseMutationResult<Project>",
+          "description": "Update project fields with multi-key invalidation",
+          "parameters": [],
+          "returns": "Project"
+        },
+        {
+          "name": "useUpdateProjectStatus",
+          "signature": "useUpdateProjectStatus(id: string): UseMutationResult<Project>",
+          "description": "Update only project status (onboarding, design_phase, etc.)",
+          "parameters": ["id: string"],
+          "returns": "Project"
+        }
+      ],
+      "data_models": {
+        "Project": {
+          "source": "Database['public']['Tables']['projects']['Row']",
+          "fields": [
+            "id: UUID",
+            "client_id: UUID (FK)",
+            "name: TEXT",
+            "description: TEXT",
+            "project_type: ENUM (branding, ui_ux_design, web_development, seo, google_ads, social_media, gmb, content_marketing, full_service, other)",
+            "engagement_type: ENUM (one_time, retainer)",
+            "total_value: NUMERIC(12,2)",
+            "payment_split: JSONB",
+            "retainer_amount: NUMERIC(12,2)",
+            "retainer_currency: TEXT",
+            "billing_cycle: ENUM (monthly, quarterly, annual)",
+            "contract_start_date: DATE",
+            "contract_end_date: DATE",
+            "min_contract_months: INTEGER",
+            "status: ENUM (onboarding, design_phase, development_phase, deployment_qa, setup_strategy, active_execution, maintenance, completed, on_hold, cancelled)",
+            "projected_completion_date: DATE",
+            "actual_completion_date: DATE",
+            "timeline_days: INTEGER",
+            "notes: TEXT",
+            "progress_pct: INTEGER (0-100)",
+            "created_at: TIMESTAMPTZ",
+            "updated_at: TIMESTAMPTZ",
+            "created_by: UUID (FK to profiles)"
+          ]
+        },
+        "ProjectWithClient": {
+          "extends": "Project",
+          "additional_fields": [
+            "clients: { company_name: string } | null"
+          ]
+        },
+        "UpdateProjectStatusPayload": {
+          "fields": ["id: string", "status: Project['status']"]
+        }
+      },
+      "database_tables": ["projects", "clients"],
+      "views_used": [],
+      "pages": [
+        "/projects - list all projects",
+        "/clients/[id] - view single client with projects tab"
+      ],
+      "key_calculations": [
+        "Progress percentage (0-100) stored in DB, set manually",
+        "Retainer amount used in MRR calculations (financial_targets)"
+      ],
+      "integrations": [
+        "Linked to clients (FK: client_id)",
+        "Linked to contracts (contracts.project_id FK)",
+        "Linked to invoices (invoices.project_ids UUID[])",
+        "Linked to scheduled_invoices (scheduled_invoices.project_id FK)",
+        "Linked to financial_targets (revenue/mrr calculations)",
+        "Linked to transactions (transactions.project_id FK)"
+      ],
+      "status_enum_values": [
+        "onboarding - initial setup phase",
+        "design_phase - design work in progress",
+        "development_phase - development in progress",
+        "deployment_qa - deployment and QA",
+        "setup_strategy - setup & strategy (for retainers)",
+        "active_execution - active project delivery",
+        "maintenance - post-delivery maintenance",
+        "completed - project finished",
+        "on_hold - paused",
+        "cancelled - project cancelled"
+      ],
+      "form_fields": [
+        "name (required)",
+        "description (optional text)",
+        "client_id (required, FK)",
+        "project_type (required, dropdown)",
+        "engagement_type (required: one_time or retainer)",
+        "total_value (optional, for one-time)",
+        "payment_split (optional, JSONB)",
+        "retainer_amount (optional, for retainer)",
+        "retainer_currency (default INR)",
+        "billing_cycle (optional: monthly, quarterly, annual)",
+        "contract_start_date (optional)",
+        "contract_end_date (optional)",
+        "min_contract_months (optional)",
+        "projected_completion_date (optional)",
+        "timeline_days (optional)",
+        "progress_pct (optional, 0-100)",
+        "notes (optional)"
+      ],
+      "special_features": [
+        "Dual engagement model: one-time projects + retainer contracts",
+        "Payment split JSONB for flexible billing arrangements",
+        "Project progress percentage for manual tracking",
+        "Linked to multiple invoices via UUID array (project_ids)",
+        "Auto-refresh of MRR when retainer status changes"
+      ]
+    },
+    {
+      "module_id": 2,
+      "name": "Contracts",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-contracts.ts",
+      "type": "hooks",
+      "loc": 335,
+      "hook_functions": [
+        {
+          "name": "useContracts",
+          "signature": "useContracts(filters?: ContractFilters): UseQueryResult<ContractWithDetails[]>",
+          "description": "Fetch all contracts with optional status/client filters",
+          "parameters": ["filters?: { status?, clientId? }"],
+          "returns": "ContractWithDetails[] - enriched with client & project names"
+        },
+        {
+          "name": "useContract",
+          "signature": "useContract(id: string): UseQueryResult<ContractWithDetails>",
+          "description": "Fetch single contract with full details",
+          "parameters": ["id: string"],
+          "returns": "ContractWithDetails"
+        },
+        {
+          "name": "useCreateContract",
+          "signature": "useCreateContract(): UseMutationResult<ContractRow>",
+          "description": "Create new contract",
+          "parameters": [],
+          "returns": "ContractRow"
+        },
+        {
+          "name": "useUpdateContract",
+          "signature": "useUpdateContract(): UseMutationResult<ContractRow>",
+          "description": "Update contract fields",
+          "parameters": [],
+          "returns": "ContractRow"
+        },
+        {
+          "name": "useDeleteContract",
+          "signature": "useDeleteContract(): UseMutationResult<void>",
+          "description": "Delete contract (draft status only, with safety check)",
+          "parameters": [],
+          "returns": "void"
+        },
+        {
+          "name": "useClientContractSummaries",
+          "signature": "useClientContractSummaries(): UseQueryResult<Record<string, ContractStatus>>",
+          "description": "Lightweight map for client cards showing 'best' contract status per client",
+          "parameters": [],
+          "returns": "Map of clientId -> best contract status (terminated=0, draft=1, sent=2, signed=3, active=4, completed=5)"
+        },
+        {
+          "name": "useUpdateContractStatus",
+          "signature": "useUpdateContractStatus(): UseMutationResult<ContractRow>",
+          "description": "Update contract status (auto-sets signed_date when status='signed')",
+          "parameters": [],
+          "returns": "ContractRow"
+        }
+      ],
+      "data_models": {
+        "ContractRow": {
+          "source": "Database['public']['Tables']['contracts']['Row']",
+          "fields": [
+            "id: UUID",
+            "client_id: UUID (FK, required)",
+            "project_id: UUID | null (FK)",
+            "contract_type: ENUM (design_development, seo_retainer, custom)",
+            "title: TEXT",
+            "contract_data: JSONB",
+            "status: ENUM (draft, sent, signed, active, completed, terminated)",
+            "contract_date: DATE",
+            "signed_date: DATE",
+            "pdf_url: TEXT",
+            "notes: TEXT",
+            "created_at: TIMESTAMPTZ",
+            "updated_at: TIMESTAMPTZ",
+            "created_by: UUID (FK)"
+          ]
+        },
+        "ContractWithDetails": {
+          "extends": "ContractRow",
+          "additional_fields": [
+            "client: { company_name: string; currency: string }",
+            "project: { name: string } | null"
+          ]
+        },
+        "ContractFilters": {
+          "fields": ["status?: ContractStatus", "clientId?: string"]
+        }
+      },
+      "database_tables": ["contracts", "clients", "projects"],
+      "views_used": [],
+      "pages": [
+        "/contracts - list contracts with status filter"
+      ],
+      "key_calculations": [
+        "Contract lifecycle priority: terminated(0) < draft(1) < sent(2) < signed(3) < active(4) < completed(5)",
+        "Auto-set signed_date when transitioning to 'signed' status"
+      ],
+      "integrations": [
+        "Linked to clients (FK: client_id)",
+        "Linked to projects (optional FK: project_id)",
+        "Lifecycle tied to project phases"
+      ],
+      "status_enum_values": [
+        "draft - contract being prepared",
+        "sent - contract sent to client",
+        "signed - contract signed (auto-dates)",
+        "active - contract in effect",
+        "completed - contract fulfilled",
+        "terminated - contract ended/cancelled"
+      ],
+      "form_fields": [
+        "client_id (required, FK)",
+        "project_id (optional, FK)",
+        "contract_type (required: design_development, seo_retainer, custom)",
+        "title (required)",
+        "contract_data (JSONB, flexible schema)",
+        "contract_date (optional)",
+        "signed_date (auto-set, optional override)",
+        "pdf_url (optional, storage link)",
+        "notes (optional)"
+      ],
+      "special_features": [
+        "Contract lifecycle tracking (draft -> sent -> signed -> active -> completed/terminated)",
+        "Flexible contract_data as JSONB for multiple contract types",
+        "Safety check: can only delete draft contracts",
+        "Status-aware date management (auto-signs on status change)",
+        "Client contract summaries for quick health check",
+        "Multi-type support (design, retainer, custom)"
+      ]
+    },
+    {
+      "module_id": 3,
+      "name": "Reports (Investor Reports)",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-reports.ts",
+      "type": "hooks",
+      "loc": 400,
+      "hook_functions": [
+        {
+          "name": "useReports",
+          "signature": "useReports(): UseQueryResult<ReportRow[]>",
+          "description": "Fetch all investor reports sorted by date (newest first)",
+          "parameters": [],
+          "returns": "ReportRow[]"
+        },
+        {
+          "name": "useReport",
+          "signature": "useReport(id: string): UseQueryResult<ReportRow | null>",
+          "description": "Fetch single report by ID",
+          "parameters": ["id: string"],
+          "returns": "ReportRow | null"
+        },
+        {
+          "name": "useGenerateReport",
+          "signature": "useGenerateReport(): UseMutationResult<ReportRow>",
+          "description": "Generate new investor report (monthly/quarterly/annual) with complex calculations",
+          "parameters": [],
+          "returns": "ReportRow with computed ReportData"
+        },
+        {
+          "name": "useUpdateReport",
+          "signature": "useUpdateReport(): UseMutationResult<ReportRow>",
+          "description": "Update report metadata (status, sent_to, sent_at, pdf_url)",
+          "parameters": [],
+          "returns": "ReportRow"
+        },
+        {
+          "name": "useDeleteReport",
+          "signature": "useDeleteReport(): UseMutationResult<void>",
+          "description": "Delete entire report",
+          "parameters": [],
+          "returns": "void"
+        },
+        {
+          "name": "useSendReport",
+          "signature": "useSendReport(): UseMutationResult<void>",
+          "description": "Send report via email + update status to sent",
+          "parameters": [],
+          "returns": "void - calls /api/email/send then updates DB"
+        }
+      ],
+      "data_models": {
+        "ReportData": {
+          "fields": [
+            "month: string - human readable (e.g. 'Q1 FY2025-26')",
+            "year: number - report year",
+            "financialYear: string - Indian FY format (e.g. '2025-26')",
+            "revenue: number - sum of invoice_payments in period",
+            "expenses: number - sum of transaction.debit excluding income type",
+            "netProfit: number - revenue - expenses",
+            "mrr: number - monthly recurring revenue (sum of active retainer amounts)",
+            "newClients: number - count of new clients in period",
+            "activeClients: number - count of active clients",
+            "activeProjects: number - count of active/maintenance projects",
+            "outstandingInvoices: number - sum of balance_due for sent/overdue/partially_paid",
+            "topClients: Array<{ name: string; revenue: number }> - top 3 by revenue in period"
+          ]
+        },
+        "ReportRow": {
+          "source": "Database['public']['Tables']['investor_reports']['Row']",
+          "fields": [
+            "id: UUID",
+            "title: TEXT",
+            "report_month: INTEGER (1-12)",
+            "report_year: INTEGER",
+            "financial_year: TEXT (e.g. '2025-26')",
+            "report_data: JSONB",
+            "report_type: ENUM (monthly, quarterly, annual)",
+            "status: ENUM (draft, generated, sent)",
+            "pdf_url: TEXT",
+            "sent_to: TEXT[]",
+            "sent_at: TIMESTAMPTZ",
+            "generated_at: TIMESTAMPTZ",
+            "created_by: UUID (FK)"
+          ]
+        },
+        "GenerateReportPayload": {
+          "fields": [
+            "report_month: number",
+            "report_year: number",
+            "report_type: 'monthly' | 'quarterly' | 'annual'"
+          ]
+        },
+        "SendReportPayload": {
+          "fields": [
+            "id: string",
+            "to: string[]",
+            "cc?: string[]",
+            "subject?: string",
+            "reportData: ReportData"
+          ]
+        }
+      },
+      "database_tables": ["investor_reports", "invoice_payments", "invoices", "transactions", "clients", "projects"],
+      "views_used": [],
+      "pages": [
+        "/reports - list investor reports with quarterly/annual pickers"
+      ],
+      "key_calculations": [
+        "Revenue: SUM(invoice_payments.amount_received_inr) within date range",
+        "Expenses: SUM(transactions.debit) WHERE transaction_type != 'income' within date range",
+        "MRR: SUM(projects.retainer_amount) WHERE engagement_type='retainer' AND status IN (active_execution, maintenance)",
+        "New clients: COUNT(clients.id) WHERE status='active' AND created_at WITHIN period",
+        "Outstanding: SUM(invoices.balance_due) WHERE status IN (sent, overdue, partially_paid)",
+        "Indian FY logic: Apr-Dec = year-(year+1), Jan-Mar = (year-1)-year",
+        "Quarterly: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar",
+        "Top clients: aggregate payments by client, sort by revenue, take top 3"
+      ],
+      "integrations": [
+        "Reads invoice_payments for revenue calculation",
+        "Reads transactions for expense calculation",
+        "Reads clients for new client count",
+        "Reads projects for MRR/active project counts",
+        "Reads invoices for outstanding balance",
+        "Sends reports via /api/email/send"
+      ],
+      "status_enum_values": [
+        "draft - report created but not finalized",
+        "generated - report calculations complete",
+        "sent - report sent to recipients"
+      ],
+      "report_type_values": [
+        "monthly - single month",
+        "quarterly - 3 month quarter within Indian FY",
+        "annual - full Indian financial year (Apr-Mar)"
+      ],
+      "form_fields": [
+        "report_month (required, 1-12 for monthly, 1/4/7/10 for quarterly, 4 for annual)",
+        "report_year (required, calendar year)",
+        "report_type (required: monthly, quarterly, annual)",
+        "to: string[] (email recipients, required for send)",
+        "cc?: string[] (optional CC recipients)",
+        "subject?: string (email subject)"
+      ],
+      "special_features": [
+        "Complex period calculation for monthly/quarterly/annual with Indian FY logic",
+        "Automatic data aggregation from 6+ tables",
+        "Top 3 client revenue ranking within period",
+        "PDF generation and storage",
+        "Email sending with Nodemailer/Microsoft 365 SMTP",
+        "Flexible report types supporting multiple timeframes",
+        "Report data stored as JSONB for archival"
+      ]
+    },
+    {
+      "module_id": 4,
+      "name": "Expenses & Transactions",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-transactions.ts",
+      "type": "hooks",
+      "loc": 316,
+      "hook_functions": [
+        {
+          "name": "useTransactions",
+          "signature": "useTransactions(filters?: TransactionFilters): UseQueryResult<TransactionWithCategory[]>",
+          "description": "Fetch transactions with optional filters for statement/category/type/search",
+          "parameters": ["filters?: { statementId?, categoryId?, type?, search? }"],
+          "returns": "TransactionWithCategory[]"
+        },
+        {
+          "name": "useTransaction",
+          "signature": "useTransaction(id: string): UseQueryResult<TransactionWithCategory>",
+          "description": "Fetch single transaction",
+          "parameters": ["id: string"],
+          "returns": "TransactionWithCategory"
+        },
+        {
+          "name": "useUpdateTransaction",
+          "signature": "useUpdateTransaction(): UseMutationResult<Transaction>",
+          "description": "Update transaction (category, type, notes, reviewed flag)",
+          "parameters": [],
+          "returns": "Transaction"
+        },
+        {
+          "name": "useExpenseCategories",
+          "signature": "useExpenseCategories(): UseQueryResult<ExpenseCategory[]>",
+          "description": "Fetch all expense categories ordered by sort_order",
+          "parameters": [],
+          "returns": "ExpenseCategory[]"
+        },
+        {
+          "name": "useBankStatements",
+          "signature": "useBankStatements(): UseQueryResult<BankStatement[]>",
+          "description": "Fetch all bank statements newest first",
+          "parameters": [],
+          "returns": "BankStatement[]"
+        },
+        {
+          "name": "useUploadBankStatement",
+          "signature": "useUploadBankStatement(): UseMutationResult<BankStatement>",
+          "description": "Upload bank statement and auto-import transactions with auto-categorization",
+          "parameters": [],
+          "returns": "BankStatement with transaction_count"
+        },
+        {
+          "name": "useExpenseSummary",
+          "signature": "useExpenseSummary(period?: ExpenseSummaryPeriod): UseQueryResult<ExpenseSummaryItem[]>",
+          "description": "Get expense summary grouped by category within date range",
+          "parameters": ["period?: { from?, to? }"],
+          "returns": "ExpenseSummaryItem[] sorted by total_debit DESC"
+        }
+      ],
+      "data_models": {
+        "Transaction": {
+          "source": "Database['public']['Tables']['transactions']['Row']",
+          "fields": [
+            "id: UUID",
+            "statement_id: UUID (FK to bank_statements)",
+            "transaction_date: DATE",
+            "value_date: DATE",
+            "particulars: TEXT - transaction description",
+            "cheque_number: TEXT",
+            "debit: NUMERIC(12,2) - outgoing amount",
+            "credit: NUMERIC(12,2) - incoming amount",
+            "balance: NUMERIC(12,2) - running balance",
+            "category_id: UUID (FK to expense_categories)",
+            "is_auto_categorized: BOOLEAN",
+            "is_manually_reviewed: BOOLEAN",
+            "matched_rule_id: UUID (FK to expense_rules)",
+            "linked_invoice_id: UUID (FK to invoices)",
+            "transaction_type: ENUM (expense, income, transfer, tax, loan, uncategorized)",
+            "notes: TEXT",
+            "project_id: UUID (FK to projects)",
+            "created_at: TIMESTAMPTZ",
+            "updated_at: TIMESTAMPTZ"
+          ]
+        },
+        "TransactionWithCategory": {
+          "extends": "Transaction",
+          "additional_fields": [
+            "expense_categories: { id: string; name: string; color: string | null } | null"
+          ]
+        },
+        "BankStatement": {
+          "source": "Database['public']['Tables']['bank_statements']['Row']",
+          "fields": [
+            "id: UUID",
+            "filename: TEXT",
+            "bank_name: TEXT (default IDFC FIRST)",
+            "account_number: TEXT",
+            "statement_period_start: DATE",
+            "statement_period_end: DATE",
+            "opening_balance: NUMERIC(12,2)",
+            "closing_balance: NUMERIC(12,2)",
+            "total_debit: NUMERIC(12,2)",
+            "total_credit: NUMERIC(12,2)",
+            "transaction_count: INTEGER",
+            "status: ENUM (processing, completed, error)",
+            "uploaded_at: TIMESTAMPTZ",
+            "uploaded_by: UUID (FK)"
+          ]
+        },
+        "ExpenseCategory": {
+          "source": "Database['public']['Tables']['expense_categories']['Row']",
+          "fields": [
+            "id: UUID",
+            "name: TEXT (unique)",
+            "description: TEXT",
+            "is_default: BOOLEAN",
+            "color: TEXT - hex color for UI",
+            "sort_order: INTEGER",
+            "created_at: TIMESTAMPTZ"
+          ]
+        },
+        "ExpenseSummaryItem": {
+          "fields": [
+            "category_id: string | null",
+            "category_name: string",
+            "category_color: string | null",
+            "total_debit: number"
+          ]
+        },
+        "TransactionFilters": {
+          "fields": [
+            "statementId?: string",
+            "categoryId?: string",
+            "type?: string",
+            "search?: string - matches particulars or category name"
+          ]
+        }
+      },
+      "database_tables": ["transactions", "bank_statements", "expense_categories", "expense_rules"],
+      "views_used": ["expenses_by_category_view"],
+      "pages": [
+        "/expenses - bank statements list + upload",
+        "/expenses/upload - CSV/PDF bank statement upload interface",
+        "/expenses/transactions - transaction list with categorization & review"
+      ],
+      "key_calculations": [
+        "Expense summary: SUM(transaction.debit) GROUP BY category_id WHERE debit > 0 AND transaction_date WITHIN period",
+        "Auto-categorization: matches transaction particulars against expense_rules using match_type (contains, starts_with, regex, exact)",
+        "Period filtering: date range applied to transaction_date for summary"
+      ],
+      "integrations": [
+        "Bank statement CSV/PDF parser (lib/parsers/bank-statement.ts)",
+        "Auto-categorization engine (lib/parsers/auto-categorize.ts)",
+        "Expense rules for pattern matching",
+        "Linked to projects (optional FK)",
+        "Linked to invoices (optional FK for reconciliation)"
+      ],
+      "status_enum_values": [
+        "expense - money out",
+        "income - money in",
+        "transfer - internal transfer",
+        "tax - tax payment",
+        "loan - loan related",
+        "uncategorized - not yet classified"
+      ],
+      "form_fields": [
+        "category_id (optional, FK)",
+        "transaction_type (optional: expense, income, transfer, tax, loan, uncategorized)",
+        "notes (optional text)",
+        "is_manually_reviewed (boolean flag)"
+      ],
+      "special_features": [
+        "Bank statement upload with CSV/PDF parsing",
+        "Automatic transaction categorization using rule engine",
+        "Manual categorization override capability",
+        "Running balance calculation from CSV",
+        "Cheque number tracking",
+        "Debit/credit separation",
+        "TDS tracking (separate from transactions)",
+        "Project attribution (optional)",
+        "Invoice linking for reconciliation",
+        "Bulk import (1000+ transactions at once)",
+        "Review status tracking (is_manually_reviewed)"
+      ]
+    },
+    {
+      "module_id": 5,
+      "name": "Services",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-services.ts",
+      "type": "hooks",
+      "loc": 211,
+      "hook_functions": [
+        {
+          "name": "useServices",
+          "signature": "useServices(): UseQueryResult<Service[]>",
+          "description": "Fetch active services only, ordered by sort_order",
+          "parameters": [],
+          "returns": "Service[] - active services"
+        },
+        {
+          "name": "useAllServices",
+          "signature": "useAllServices(): UseQueryResult<Service[]>",
+          "description": "Fetch all services including inactive (for settings)",
+          "parameters": [],
+          "returns": "Service[] - all services"
+        },
+        {
+          "name": "useCreateService",
+          "signature": "useCreateService(): UseMutationResult<Service>",
+          "description": "Create new service",
+          "parameters": [],
+          "returns": "Service"
+        },
+        {
+          "name": "useUpdateService",
+          "signature": "useUpdateService(): UseMutationResult<Service>",
+          "description": "Update service fields",
+          "parameters": [],
+          "returns": "Service"
+        },
+        {
+          "name": "useDeleteService",
+          "signature": "useDeleteService(): UseMutationResult<void>",
+          "description": "Delete service with FK constraint error handling",
+          "parameters": [],
+          "returns": "void"
+        },
+        {
+          "name": "useToggleService",
+          "signature": "useToggleService(id: string): UseMutationResult<Service>",
+          "description": "Toggle is_active boolean for service",
+          "parameters": ["id: string"],
+          "returns": "Service with new is_active state"
+        }
+      ],
+      "data_models": {
+        "Service": {
+          "fields": [
+            "id: string",
+            "name: string",
+            "description: string | null",
+            "color: string | null - hex color for pill badges",
+            "hsn_code: string | null - GST HSN/SAC code",
+            "is_active: boolean",
+            "sort_order: number",
+            "created_at: string",
+            "updated_at: string"
+          ]
+        },
+        "ServiceInsert": {
+          "fields": [
+            "name: string",
+            "description?: string | null",
+            "color?: string | null",
+            "hsn_code?: string | null",
+            "is_active?: boolean",
+            "sort_order?: number"
+          ]
+        },
+        "ServiceUpdate": {
+          "fields": [
+            "name?: string",
+            "description?: string | null",
+            "color?: string | null",
+            "hsn_code?: string | null",
+            "is_active?: boolean",
+            "sort_order?: number"
+          ]
+        }
+      },
+      "database_tables": ["services"],
+      "views_used": [],
+      "pages": [
+        "/settings - services tab for CRUD"
+      ],
+      "key_calculations": [
+        "Ordering by sort_order (ASC) for consistent service list display"
+      ],
+      "integrations": [
+        "Referenced by invoices (invoice_line_items may link to services)",
+        "Referenced by projects (project services selection during onboarding)",
+        "Used in engagement configuration"
+      ],
+      "status_enum_values": [
+        "is_active: true - service available for use",
+        "is_active: false - service archived/inactive"
+      ],
+      "form_fields": [
+        "name (required, text)",
+        "description (optional, text)",
+        "color (optional, hex color picker)",
+        "hsn_code (optional, text - GST code)",
+        "sort_order (optional, for ordering)",
+        "is_active (toggle boolean)"
+      ],
+      "special_features": [
+        "Color-coded service pills for visual identification",
+        "HSN/SAC code support for GST invoicing",
+        "Sort order for consistent UI display",
+        "Active/inactive toggle (soft delete pattern)",
+        "FK constraint protection (prevents deleting in-use services)",
+        "Useful for invoice line item templates",
+        "Project engagement service selection during onboarding"
+      ]
+    },
+    {
+      "module_id": 6,
+      "name": "Targets (Financial Targets)",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-targets.ts",
+      "type": "hooks",
+      "loc": 335,
+      "hook_functions": [
+        {
+          "name": "useTargets",
+          "signature": "useTargets(financialYear?: string): UseQueryResult<TargetRow[]>",
+          "description": "Fetch financial targets for a financial year",
+          "parameters": ["financialYear?: string - default '2025-26'"],
+          "returns": "TargetRow[]"
+        },
+        {
+          "name": "useCreateTarget",
+          "signature": "useCreateTarget(): UseMutationResult<TargetRow>",
+          "description": "Create new financial target",
+          "parameters": [],
+          "returns": "TargetRow"
+        },
+        {
+          "name": "useUpdateTarget",
+          "signature": "useUpdateTarget(): UseMutationResult<TargetRow>",
+          "description": "Update target values and metadata",
+          "parameters": [],
+          "returns": "TargetRow"
+        },
+        {
+          "name": "useDeleteTarget",
+          "signature": "useDeleteTarget(): UseMutationResult<void>",
+          "description": "Delete target",
+          "parameters": [],
+          "returns": "void"
+        },
+        {
+          "name": "useRefreshTargetProgress",
+          "signature": "useRefreshTargetProgress(): UseMutationResult<void>",
+          "description": "Recalculate current_amount for all targets in FY from live data",
+          "parameters": [],
+          "returns": "void - updates all non-custom targets"
+        }
+      ],
+      "data_models": {
+        "TargetRow": {
+          "source": "Database['public']['Tables']['financial_targets']['Row']",
+          "fields": [
+            "id: UUID",
+            "title: TEXT",
+            "target_type: ENUM (revenue, mrr, new_clients, expense_reduction, custom)",
+            "period_type: ENUM (monthly, quarterly, annual)",
+            "financial_year: TEXT (e.g. '2025-26')",
+            "month: INTEGER (1-12 for monthly targets)",
+            "quarter: INTEGER (1-4 for quarterly targets)",
+            "target_amount: NUMERIC(12,2)",
+            "current_amount: NUMERIC(12,2) - recalculated on refresh",
+            "service_type: TEXT (optional, for filtering)",
+            "currency: TEXT (default INR)",
+            "notes: TEXT",
+            "created_at: TIMESTAMPTZ",
+            "updated_at: TIMESTAMPTZ",
+            "created_by: UUID (FK)"
+          ]
+        },
+        "UpdateTargetPayload": {
+          "fields": [
+            "id: string",
+            "financial_year: string",
+            "updates: { title?, target_amount?, notes?, current_amount? }"
+          ]
+        }
+      },
+      "database_tables": ["financial_targets", "invoice_payments", "projects", "clients", "transactions"],
+      "views_used": [],
+      "pages": [
+        "/targets - target list with FY picker and refresh button"
+      ],
+      "key_calculations": [
+        "Revenue targets: SUM(invoice_payments.amount_received_inr) within date range",
+        "MRR targets: SUM(projects.retainer_amount) WHERE engagement_type='retainer' AND status IN (active_execution, maintenance)",
+        "New clients targets: COUNT(clients.id) WHERE status='active' AND created_at WITHIN range",
+        "Expense reduction targets: SUM(transactions.debit) WHERE transaction_type != 'income' WITHIN range",
+        "Custom targets: manually set current_amount",
+        "Period bounds: monthly (single month), quarterly (Q1/2/3/4 in FY), annual (full FY Apr-Mar)"
+      ],
+      "integrations": [
+        "Reads invoice_payments for revenue calculations",
+        "Reads projects for MRR calculations",
+        "Reads clients for new client targets",
+        "Reads transactions for expense targets",
+        "Displayed on dashboard with progress bars"
+      ],
+      "status_enum_values": [
+        "revenue - revenue target",
+        "mrr - monthly recurring revenue target",
+        "new_clients - client acquisition target",
+        "expense_reduction - cost control target",
+        "custom - manually tracked target"
+      ],
+      "period_type_values": [
+        "monthly - single calendar month within FY",
+        "quarterly - FY quarter (Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar)",
+        "annual - full FY (Apr-Mar)"
+      ],
+      "form_fields": [
+        "title (required, text)",
+        "target_type (required: revenue, mrr, new_clients, expense_reduction, custom)",
+        "period_type (required: monthly, quarterly, annual)",
+        "financial_year (required, FY format)",
+        "month (optional, 1-12 for monthly)",
+        "quarter (optional, 1-4 for quarterly)",
+        "target_amount (required, numeric)",
+        "current_amount (optional, auto-updated on refresh)",
+        "service_type (optional, text)",
+        "currency (default INR)",
+        "notes (optional, text)"
+      ],
+      "special_features": [
+        "Multi-type targets: revenue, MRR, new clients, expense reduction, custom",
+        "Period flexibility: monthly, quarterly, annual within Indian FY",
+        "Auto-refresh of current_amount from live transactional data",
+        "Smart period calculation (Apr-Mar FY logic)",
+        "Dashboard progress visualization",
+        "Batch refresh all targets in FY",
+        "Custom targets for manual goals",
+        "Filtered calculation per period (not summing full year for monthly targets)"
+      ]
+    },
+    {
+      "module_id": 7,
+      "name": "TDS (Tax Deducted at Source)",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-tds.ts",
+      "type": "hooks",
+      "loc": 127,
+      "hook_functions": [
+        {
+          "name": "useTdsCertificates",
+          "signature": "useTdsCertificates(financialYear?: string): UseQueryResult<TdsCertificate[]>",
+          "description": "Fetch TDS certificates optionally filtered by FY",
+          "parameters": ["financialYear?: string"],
+          "returns": "TdsCertificate[] with enriched client names"
+        },
+        {
+          "name": "useCreateTdsCertificate",
+          "signature": "useCreateTdsCertificate(): UseMutationResult<void>",
+          "description": "Create new TDS certificate entry",
+          "parameters": [],
+          "returns": "void"
+        },
+        {
+          "name": "useDeleteTdsCertificate",
+          "signature": "useDeleteTdsCertificate(): UseMutationResult<void>",
+          "description": "Delete TDS certificate",
+          "parameters": [],
+          "returns": "void"
+        }
+      ],
+      "data_models": {
+        "TdsCertificate": {
+          "fields": [
+            "id: string",
+            "certificate_number: string",
+            "client_id: string | null",
+            "amount: number",
+            "financial_year: string (e.g. '2025-26')",
+            "quarter: string | null (e.g. 'Q1', 'Q2')",
+            "received_date: string | null (ISO date)",
+            "notes: string | null",
+            "created_at: string",
+            "client_name?: string - enriched"
+          ]
+        },
+        "CreateTdsCertificatePayload": {
+          "fields": [
+            "certificate_number: string",
+            "client_id: string | null",
+            "amount: number",
+            "financial_year: string",
+            "quarter: string | null",
+            "received_date: string | null",
+            "notes: string | null"
+          ]
+        }
+      },
+      "database_tables": ["tds_certificates", "clients"],
+      "views_used": [],
+      "pages": [
+        "/clients/[id]/page.tsx - TDS Certificates section in Overview tab",
+        "/settings - TDS management (future)"
+      ],
+      "key_calculations": [
+        "None - TDS is stored as-is, used for bookkeeping and audit trails"
+      ],
+      "integrations": [
+        "Linked to clients (FK: client_id)",
+        "Displayed in client detail page",
+        "Used in tax compliance reporting"
+      ],
+      "status_enum_values": [
+        "certificate_received: true - certificate has been received",
+        "certificate_received: false - certificate pending"
+      ],
+      "form_fields": [
+        "certificate_number (required, text)",
+        "client_id (optional, FK)",
+        "amount (required, numeric)",
+        "financial_year (required, FY format)",
+        "quarter (optional, Q1-Q4 string)",
+        "received_date (optional, ISO date)",
+        "notes (optional, text)"
+      ],
+      "special_features": [
+        "Client linking for tax audit trails",
+        "Quarter tracking for FY breakdown",
+        "Received date tracking",
+        "Multiple TDS certificates per client per FY",
+        "Notes field for tracking details (UTR numbers, bank details, etc.)",
+        "Used in client detail page for tax compliance",
+        "Supports file upload (future - currently in component layer)"
+      ]
+    },
+    {
+      "module_id": 8,
+      "name": "Auth",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/lib/hooks/use-auth.ts",
+      "type": "hooks",
+      "loc": 66,
+      "hook_functions": [
+        {
+          "name": "useAuth",
+          "signature": "useAuth(): AuthState",
+          "description": "Get current user + profile + role permissions on mount, subscribe to auth state changes",
+          "parameters": [],
+          "returns": "AuthState with user, profile, role, and permission booleans"
+        }
+      ],
+      "data_models": {
+        "AuthState": {
+          "fields": [
+            "user: { id: string; email: string } | null",
+            "profile: Profile | null",
+            "role: Profile['role'] | null",
+            "isAdmin: boolean",
+            "isManagerOrAbove: boolean",
+            "isAccountantOrAbove: boolean",
+            "loading: boolean"
+          ]
+        },
+        "Profile": {
+          "source": "Database['public']['Tables']['profiles']['Row']",
+          "fields": [
+            "id: UUID (PK, FK to auth.users)",
+            "full_name: TEXT",
+            "email: TEXT",
+            "role: ENUM (admin, manager, accountant, viewer)",
+            "avatar_url: TEXT",
+            "created_at: TIMESTAMPTZ",
+            "updated_at: TIMESTAMPTZ"
+          ]
+        }
+      },
+      "database_tables": ["profiles", "auth.users (Supabase auth)"],
+      "views_used": [],
+      "pages": [
+        "All protected pages - check useAuth() for role-based rendering"
+      ],
+      "key_calculations": [
+        "isAdmin: role === 'admin'",
+        "isManagerOrAbove: role IN (admin, manager)",
+        "isAccountantOrAbove: role IN (admin, manager, accountant)"
+      ],
+      "integrations": [
+        "Supabase Auth (JWT sessions)",
+        "RLS policies on all tables check auth.uid()",
+        "Role-based access control for all CRUD operations"
+      ],
+      "role_values": [
+        "admin - full access, user management, settings",
+        "manager - can manage clients, projects, contracts",
+        "accountant - can manage invoices, payments, transactions",
+        "viewer - read-only access"
+      ],
+      "form_fields": [],
+      "special_features": [
+        "Automatic profile creation on auth signup",
+        "Real-time auth state subscription",
+        "Role-based permission helpers",
+        "Loading state for async auth",
+        "Integrates with Supabase RLS for security"
+      ]
+    },
+    {
+      "module_id": 9,
+      "name": "Dashboard",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/app/(dashboard)/dashboard/page.tsx",
+      "type": "page",
+      "components": [
+        "HeroSectionV2 - greeting + current period",
+        "AnalyticsQuickBar - revenue/MRR/collections summary bar",
+        "KpiCardV2 - KPI stat cards",
+        "DarkSectionTabs - tabbed sections",
+        "NeedsAttentionV2 - overdue/pending invoices",
+        "FloatingFAB - quick actions"
+      ],
+      "data_dependencies": [
+        "useDashboardKPIs() - returns { revenue, collections, mrr, activeClients, activeProjects }",
+        "useCollectionsInvoices() - invoices needing attention",
+        "usePaymentsList() - recent payments (5 most recent)",
+        "useTargets() - financial targets with progress",
+        "useScheduledInvoices() - upcoming invoices (6 pending)"
+      ],
+      "sections": [
+        "Hero - greeting + current month",
+        "KPI Bar - revenue/MRR/collections/targets",
+        "Needs Attention - overdue/pending invoices (max 6)",
+        "Recent Payments - last 5 payments",
+        "Pipeline Upcoming - next 6 scheduled invoices",
+        "Targets Progress - active targets with bars"
+      ],
+      "key_calculations": [
+        "formatRevenue() - converts large numbers to K/L format",
+        "urgency classification - overdue/due_soon/upcoming based on days_label",
+        "target progress % - current_amount / target_amount * 100"
+      ],
+      "special_features": [
+        "Real-time KPI display",
+        "Attention items sorted by urgency",
+        "Quick invoice creation modal",
+        "Mobile responsive (hidden chart on small screens)",
+        "Color-coded urgency indicators",
+        "Floating action button for quick onboarding"
+      ]
+    },
+    {
+      "module_id": 10,
+      "name": "Pipeline",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/app/(dashboard)/pipeline/page.tsx",
+      "type": "page",
+      "components": [
+        "BarChart - revenue projection by month",
+        "DarkSection/DarkCard - scheduled invoices by urgency",
+        "GlassCard - invoice collections due",
+        "NewInvoiceModal - create invoice from scheduled item"
+      ],
+      "data_dependencies": [
+        "useScheduledInvoices() - all scheduled items",
+        "useCollectionsInvoices() - invoices due for payment",
+        "useUpdateScheduledInvoice() - mark as generated/skipped"
+      ],
+      "sections": [
+        "Revenue Projection Chart - scheduled invoices grouped by month",
+        "Overdue Collections - overdue invoices needing payment",
+        "Due Soon - invoices due within 7 days",
+        "Upcoming Invoices - scheduled invoices to be generated",
+        "Invoice Generation - mark scheduled items as generated/skipped"
+      ],
+      "key_calculations": [
+        "Chart data: group scheduled_invoices by billing_month, SUM amounts",
+        "Urgency grouping: overdue/due_soon/upcoming based on expected_payment_date",
+        "Days remaining: expected_payment_date - today"
+      ],
+      "special_features": [
+        "Visual revenue projection",
+        "Drag-and-drop invoice generation (future)",
+        "Quick invoice creation from scheduled items",
+        "Mark scheduled items as generated/skipped",
+        "Client linking for quick access"
+      ]
+    },
+    {
+      "module_id": 11,
+      "name": "Onboard",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/app/(dashboard)/onboard/page.tsx",
+      "type": "page",
+      "components": [
+        "Step 1: Client Details (company info, address, signing authority, contacts)",
+        "Step 2: Project Setup (engagements, services, dates)",
+        "Step 3: Next Steps (confirmation + links)"
+      ],
+      "data_dependencies": [
+        "useCreateClient() - create new client",
+        "useCreateProject() - create new project",
+        "useServices() - available services"
+      ],
+      "form_structure": {
+        "step_1_client": {
+          "company_info": [
+            "company_name (required)",
+            "display_name (optional)",
+            "client_type (required: indian_gst, indian_non_gst, international)",
+            "region (required: india, usa, uae, uk, other)",
+            "currency (required: INR, USD, AED, GBP, EUR)",
+            "gstin (conditional: required if indian_gst)"
+          ],
+          "address": [
+            "address",
+            "city",
+            "state",
+            "pincode"
+          ],
+          "signing_authority": [
+            "signing_authority (text - name)",
+            "designation (text - title)"
+          ],
+          "primary_contact": [
+            "contact_name",
+            "contact_phone",
+            "contact_email"
+          ],
+          "billing_emails": [
+            "billing_emails (multiple, text[])"
+          ]
+        },
+        "step_2_project": {
+          "project_setup": [
+            "project_name (required)",
+            "description (optional)",
+            "start_date (optional)",
+            "expected_close_date (optional)"
+          ],
+          "engagements": [
+            "engagement_type (required: one_time, retainer)",
+            "project_type (required: seo, web_dev, etc.)",
+            "service_ids (UUID[], from useServices)",
+            "repeatable: add multiple engagements"
+          ]
+        }
+      },
+      "validation_rules": [
+        "GSTIN required if client_type='indian_gst'",
+        "At least 1 billing email required",
+        "Email regex validation per field",
+        "e.preventDefault() on all forms - must validate manually"
+      ],
+      "special_features": [
+        "Multi-step wizard (3 steps)",
+        "Step indicator with checkmarks",
+        "Client details persistence across steps",
+        "Service selection per engagement",
+        "Multiple engagement types (one-time + retainer)",
+        "Automatic scheduled invoice creation post-setup"
+      ]
+    },
+    {
+      "module_id": 12,
+      "name": "Settings",
+      "file_path": "/Users/shyam/Desktop/GSC Connector/WODO Ally/src/app/(dashboard)/settings/page.tsx",
+      "type": "page",
+      "components": [
+        "Tabbed interface (8 tabs)",
+        "Tab 1: Company - company settings (name, logo, address)",
+        "Tab 2: Bank Details - bank account info",
+        "Tab 3: Invoice - invoice numbering sequence, payment terms",
+        "Tab 4: Services - CRUD for services",
+        "Tab 5: Email Templates - CRUD for email templates (future)",
+        "Tab 6: Contracts - contract templates (future)",
+        "Tab 7: Users - team member management + roles",
+        "Tab 8: Notifications - notification preferences"
+      ],
+      "tabs": [
+        {
+          "id": "company",
+          "label": "Company",
+          "icon": "Building2",
+          "features": [
+            "Company name",
+            "Logo upload",
+            "Address",
+            "Phone",
+            "Email"
+          ]
+        },
+        {
+          "id": "bank",
+          "label": "Bank Details",
+          "icon": "CreditCard",
+          "features": [
+            "Bank name",
+            "Account number",
+            "IFSC code",
+            "Account holder name"
+          ]
+        },
+        {
+          "id": "invoice",
+          "label": "Invoice",
+          "icon": "Tag",
+          "features": [
+            "Invoice prefix (e.g. 'G' for GST)",
+            "Current sequence number",
+            "Payment terms default",
+            "Invoice due days default"
+          ]
+        },
+        {
+          "id": "services",
+          "label": "Services",
+          "icon": "Layers",
+          "features": [
+            "List active services",
+            "Add new service",
+            "Edit service name/description/color/hsn_code",
+            "Toggle active/inactive",
+            "Delete service (with FK constraint handling)",
+            "Drag to reorder (sort_order)"
+          ]
+        },
+        {
+          "id": "email",
+          "label": "Email Templates",
+          "icon": "Mail",
+          "features": [
+            "Invoice email template",
+            "Payment reminder template",
+            "Thank you email template",
+            "Custom signature"
+          ]
+        },
+        {
+          "id": "contracts",
+          "label": "Contracts",
+          "icon": "FileText",
+          "features": [
+            "Standard contract templates",
+            "Custom clauses library",
+            "Template versioning"
+          ]
+        },
+        {
+          "id": "users",
+          "label": "Users",
+          "icon": "User",
+          "features": [
+            "List all users",
+            "Invite new user",
+            "Change user role (admin, manager, accountant, viewer)",
+            "Remove user",
+            "Last login tracking"
+          ]
+        },
+        {
+          "id": "notifications",
+          "label": "Notifications",
+          "icon": "Bell",
+          "features": [
+            "Email notifications toggle",
+            "Slack notifications",
+            "Notification frequency",
+            "Notification triggers (invoice overdue, payment received, etc.)"
+          ]
+        }
+      ],
+      "data_dependencies": [
+        "useAllServices() - all services including inactive",
+        "useCreateService(), useUpdateService(), useDeleteService()",
+        "useToggleService() - toggle is_active"
+      ],
+      "key_features": [
+        "Tab state persisted to localStorage",
+        "Service sort order drag-and-drop (future)",
+        "Bulk actions (activate/deactivate multiple)",
+        "Dark section styling for consistency",
+        "Confirm dialogs for destructive actions"
+      ],
+      "special_features": [
+        "Rich text editor for email templates (future)",
+        "Service color picker for visual identification",
+        "HSN code lookup (future integration)",
+        "User role management with permission matrix",
+        "Settings persist to localStorage for quick access",
+        "Real-time updates on service changes"
+      ]
+    }
+  ],
+  "summary": {
+    "total_modules": 12,
+    "hooks_count": 8,
+    "pages_count": 4,
+    "database_tables_primary": [
+      "projects",
+      "contracts",
+      "investor_reports",
+      "transactions",
+      "services",
+      "financial_targets",
+      "tds_certificates",
+      "profiles",
+      "scheduled_invoices",
+      "invoice_payments",
+      "invoices"
+    ],
+    "key_integrations": {
+      "dashboard": "Central hub for KPIs, attention items, payments, targets, pipeline",
+      "pipeline": "Revenue projection + collections + scheduled invoice generation",
+      "onboard": "Multi-step client+project creation wizard",
+      "settings": "Configuration for services, users, company, invoice rules",
+      "projects": "Core business unit, linked to contracts, invoices, targets",
+      "contracts": "Legal framework for projects, lifecycle tracking",
+      "reports": "Financial snapshots (monthly/quarterly/annual) for investors",
+      "transactions": "Bank statement import + auto-categorization",
+      "services": "Service library for projects + invoices",
+      "targets": "Financial goals with auto-refreshing progress",
+      "tds": "Tax compliance tracking per client"
+    },
+    "business_logic_patterns": [
+      "Indian FY logic (Apr-Mar) across reports and targets",
+      "Multi-currency support (INR, USD, AED, GBP, EUR)",
+      "Role-based access control (admin, manager, accountant, viewer)",
+      "State management: TanStack Query (server state) + Zustand (UI state)",
+      "Auto-categorization of transactions via rule engine",
+      "Scheduled invoice generation from pipeline",
+      "Real-time KPI calculations from transactional data",
+      "Financial target progress auto-refresh",
+      "Period-aware calculations (monthly/quarterly/annual)"
+    ]
+  }
+}

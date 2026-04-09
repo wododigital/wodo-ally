@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { getFinancialYear } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
 
 type TargetRow = Database["public"]["Tables"]["financial_targets"]["Row"];
@@ -14,6 +15,8 @@ type TargetUpdate = Database["public"]["Tables"]["financial_targets"]["Update"];
 /**
  * Returns the ISO date strings for the start and end of the given Indian FY.
  * FY '2025-26' => Apr 1 2025 - Mar 31 2026
+ * Canonical FY utilities live in @/lib/utils/format (getFinancialYear, getFinancialYearRange).
+ * This local helper returns string bounds for Supabase query compatibility.
  */
 function getFYBounds(financialYear: string): { start: string; end: string } {
   const [startYearStr] = financialYear.split("-");
@@ -39,6 +42,7 @@ function getMonthBounds(year: number, calendarMonth: number): { start: string; e
 /**
  * Returns ISO date bounds for a quarter within an Indian FY.
  * Q1 = Apr-Jun, Q2 = Jul-Sep, Q3 = Oct-Dec, Q4 = Jan-Mar
+ * See also: getQuarterBounds in @/lib/utils/format for the canonical Date-based version.
  */
 function getQuarterBounds(financialYear: string, quarter: number): { start: string; end: string } {
   const [startYearStr] = financialYear.split("-");
@@ -56,7 +60,7 @@ function getQuarterBounds(financialYear: string, quarter: number): { start: stri
 
 // ─── useTargets ───────────────────────────────────────────────────────────────
 
-export function useTargets(financialYear = "2025-26") {
+export function useTargets(financialYear = getFinancialYear()) {
   return useQuery({
     queryKey: ["financial_targets", financialYear],
     queryFn: async (): Promise<TargetRow[]> => {

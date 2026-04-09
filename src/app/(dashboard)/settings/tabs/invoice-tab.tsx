@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/shared/glass-card";
 import { FieldLabel, SaveButton } from "./company-tab";
 import { lsGetJson, lsSetJson } from "./company-tab";
 import { useUserSetting, useSaveUserSetting } from "@/lib/hooks/use-user-settings";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 
 // ---------------------------------------------------------------------------
 // Static data
@@ -24,7 +25,10 @@ const INVOICE_DEFAULTS = {
 
 export function InvoiceTab() {
   const [saved, setSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [fields, setFields] = useState(INVOICE_DEFAULTS);
+
+  useUnsavedChanges(isDirty);
 
   const { data: dbInvoice } = useUserSetting("invoice", INVOICE_DEFAULTS);
   const saveInvoice = useSaveUserSetting("invoice");
@@ -35,11 +39,13 @@ export function InvoiceTab() {
 
   function set(key: keyof typeof INVOICE_DEFAULTS, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }));
+    setIsDirty(true);
   }
 
   function handleSave() {
     saveInvoice.mutate(fields);
     lsSetJson("wodo_invoice_settings", fields);
+    setIsDirty(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }

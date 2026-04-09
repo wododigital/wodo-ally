@@ -86,7 +86,7 @@ export function NewInvoiceModal({
   const subtotal = Math.round(lineItems.reduce((s, item) => s + (parseFloat(item.amount) || 0) * item.quantity, 0) * 100) / 100;
   const tax = Math.round(subtotal * (taxRate / 100) * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
-  const currencyPrefix = effectiveCurrency === "USD" ? "$" : effectiveCurrency === "AED" ? "AED " : effectiveCurrency === "GBP" ? "GBP " : "Rs.";
+  const currencyPrefix = effectiveCurrency === "USD" ? "$" : effectiveCurrency === "AED" ? "AED " : effectiveCurrency === "GBP" ? "£" : effectiveCurrency === "EUR" ? "€" : "Rs.";
 
   function addLineItem() {
     setLineItems((p) => [...p, { id: Date.now().toString(), service_id: "", description: "", amount: "", quantity: 1 }]);

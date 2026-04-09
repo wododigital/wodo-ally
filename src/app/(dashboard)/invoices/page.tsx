@@ -238,7 +238,7 @@ function InvoicesContent() {
 
   const totals = {
     outstanding: invoices.filter((i) => ["sent", "overdue"].includes(i.status)).reduce((s, i) => s + (i.balance_due ?? 0), 0),
-    paid_this_month: invoices.filter((i) => i.status === "paid" && i.invoice_date >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)).reduce((s, i) => s + (i.total_amount ?? 0), 0),
+    paid_this_month: invoices.filter((i) => i.status === "paid" && i.paid_at && i.paid_at.slice(0, 10) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)).reduce((s, i) => s + (i.total_amount ?? 0), 0),
     overdue_count: invoices.filter((i) => i.status === "overdue").length,
   };
 

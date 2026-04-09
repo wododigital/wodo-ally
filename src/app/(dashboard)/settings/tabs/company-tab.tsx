@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Building2, Save, Check, Upload, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
 import { useUserSetting, useSaveUserSetting } from "@/lib/hooks/use-user-settings";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { cn } from "@/lib/utils/cn";
 
 // ---------------------------------------------------------------------------
@@ -176,10 +177,13 @@ const COMPANY_DEFAULTS = {
 
 export function CompanyTab() {
   const [saved, setSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [fields, setFields] = useState(COMPANY_DEFAULTS);
   const [logoLight, setLogoLight] = useState("");
   const [logoDark, setLogoDark] = useState("");
   const [stamp, setStamp] = useState("");
+
+  useUnsavedChanges(isDirty);
 
   // DB-backed settings with localStorage fallback
   const { data: dbCompany, isLoading } = useUserSetting("company", COMPANY_DEFAULTS);
@@ -198,6 +202,7 @@ export function CompanyTab() {
 
   function set(key: keyof typeof COMPANY_DEFAULTS, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }));
+    setIsDirty(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -208,6 +213,7 @@ export function CompanyTab() {
     lsSet("wodo_logo_light", logoLight);
     lsSet("wodo_logo_dark", logoDark);
     lsSet("wodo_stamp", stamp);
+    setIsDirty(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -347,20 +353,20 @@ export function CompanyTab() {
             label="Logo - Light Version"
             hint="Upload for dark backgrounds"
             value={logoLight}
-            onChange={setLogoLight}
+            onChange={(v) => { setLogoLight(v); setIsDirty(true); }}
           />
           <UploadBox
             label="Logo - Dark Version"
             hint="Upload for light backgrounds (used on PDF)"
             value={logoDark}
-            onChange={setLogoDark}
+            onChange={(v) => { setLogoDark(v); setIsDirty(true); }}
             darkBg={false}
           />
           <UploadBox
             label="Company Stamp"
             hint="Stamp/seal image for invoices"
             value={stamp}
-            onChange={setStamp}
+            onChange={(v) => { setStamp(v); setIsDirty(true); }}
           />
         </div>
 
@@ -371,6 +377,7 @@ export function CompanyTab() {
               lsSet("wodo_logo_light", logoLight);
               lsSet("wodo_logo_dark", logoDark);
               lsSet("wodo_stamp", stamp);
+              setIsDirty(false);
               setSaved(true);
               setTimeout(() => setSaved(false), 2500);
             }}

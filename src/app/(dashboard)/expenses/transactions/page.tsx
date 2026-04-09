@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Check, ChevronUp, ChevronDown, Search, X } from "lucide-react";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Pagination, paginateArray } from "@/components/shared/pagination";
 import { DateFilter, DateFilterState, resolveDateRange } from "@/components/shared/date-filter";
@@ -100,6 +101,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs items={[{ label: "Expenses", href: "/expenses" }, { label: "Transactions" }]} />
 
       {/* Search + date filter row */}
       <div className="flex flex-wrap items-center gap-3">

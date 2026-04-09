@@ -59,7 +59,7 @@ function formatCurrency(amount: number, currency: string): string {
       ? "\u00A3"
       : currency === "EUR"
       ? "\u20AC"
-      : "Rs.";
+      : "\u20B9";
   const locale = currency === "INR" ? "en-IN" : "en-US";
   return `${sym}${amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -176,7 +176,7 @@ const BORDER_COLOR = "#e0e0e0";
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Helvetica",
+    fontFamily: "NotoSans",
     backgroundColor: "#ffffff",
     paddingTop: 0,
     paddingBottom: 40,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   taglineText: {
     color: "#ffffff",
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 1.5,
   },
 
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 2,
   },
@@ -233,13 +233,13 @@ const styles = StyleSheet.create({
   },
   invoiceTitle: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     marginBottom: 6,
   },
   invoiceRef: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 3,
   },
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     letterSpacing: 1.2,
     marginBottom: 6,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   billToName: {
     fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 2,
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   billingPeriodLabel: {
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     letterSpacing: 0.8,
     marginRight: 8,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   tableHeaderText: {
     color: "#ffffff",
     fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     letterSpacing: 0.5,
   },
   tableRow: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: DARK,
     textAlign: "right",
-    fontFamily: "Helvetica",
+    fontFamily: "NotoSans",
   },
 
   // Totals
@@ -382,12 +382,12 @@ const styles = StyleSheet.create({
   },
   grandTotalLabel: {
     fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
   },
   grandTotalValue: {
     fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: ORANGE,
     textAlign: "right",
   },
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   },
   bankLabel: {
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: GRAY,
     width: 90,
   },
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   },
   signatureName: {
     fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans", fontWeight: 700,
     color: DARK,
     marginBottom: 1,
   },
@@ -503,7 +503,7 @@ export function InvoicePdf({ invoice, client, lineItems }: InvoicePdfProps) {
           <View style={styles.headerLeft}>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image
-              src="/public/wodo-logo.png"
+              src="/wodo-logo.png"
               style={styles.logo}
             />
             <Text style={styles.companyName}>WODO Digital Private Limited</Text>
@@ -619,7 +619,7 @@ export function InvoicePdf({ invoice, client, lineItems }: InvoicePdfProps) {
             // WODO Digital GSTIN starts with "29" (Karnataka)
             const companyStateCode = "29";
             const clientStateCode = client.gstin?.substring(0, 2) ?? "";
-            const isIntraState = clientStateCode === companyStateCode;
+            const isIntraState = clientStateCode === companyStateCode || (!client.gstin && client.state?.toLowerCase() === "karnataka");
             const halfRate = invoice.tax_rate / 2;
             const halfAmount = Math.round(invoice.tax_amount / 2 * 100) / 100;
             const remainderAmount = Math.round((invoice.tax_amount - halfAmount) * 100) / 100;
@@ -684,7 +684,7 @@ export function InvoicePdf({ invoice, client, lineItems }: InvoicePdfProps) {
           <View style={styles.stampBox}>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image
-              src="/public/wodo-stamp.png"
+              src="/wodo-stamp.png"
               style={styles.stampImage}
             />
             <Text style={styles.signatureName}>Shyam Singh Bhati</Text>

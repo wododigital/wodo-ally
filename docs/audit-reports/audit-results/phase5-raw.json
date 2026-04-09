@@ -1,0 +1,198 @@
+{
+  "results": [
+    {
+      "id": "5-01",
+      "test": "Invoice list loads",
+      "result": "PASS",
+      "details": "Found 10 invoices"
+    },
+    {
+      "id": "5-02",
+      "test": "Tab filters exist",
+      "result": "WARN",
+      "details": "Tabs: "
+    },
+    {
+      "id": "5-02-All",
+      "test": "Tab filter: All",
+      "result": "PASS",
+      "details": "10 invoices shown"
+    },
+    {
+      "id": "5-02-Draft",
+      "test": "Tab filter: Draft",
+      "result": "PASS",
+      "details": "0 invoices shown"
+    },
+    {
+      "id": "5-02-Sent",
+      "test": "Tab filter: Sent",
+      "result": "WARN",
+      "details": "Tab not found"
+    },
+    {
+      "id": "5-02-Paid",
+      "test": "Tab filter: Paid",
+      "result": "WARN",
+      "details": "Tab not found"
+    },
+    {
+      "id": "5-02-Overdue",
+      "test": "Tab filter: Overdue",
+      "result": "WARN",
+      "details": "Tab not found"
+    },
+    {
+      "id": "5-02-Partially Paid",
+      "test": "Tab filter: Partially Paid",
+      "result": "WARN",
+      "details": "Tab not found"
+    },
+    {
+      "id": "5-03",
+      "test": "Invoice search",
+      "result": "PASS",
+      "details": "Search \"G\" returned 0 results"
+    },
+    {
+      "id": "5-04",
+      "test": "CSV export button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "5-05",
+      "test": "New Invoice button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "5-06",
+      "test": "New invoice form opens",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/invoices"
+    },
+    {
+      "id": "5-07",
+      "test": "Client selection field",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "5-08",
+      "test": "Line items fields",
+      "result": "PASS",
+      "details": "1 line item fields found"
+    },
+    {
+      "id": "5-09",
+      "test": "Add line item button",
+      "result": "PASS",
+      "details": "Found"
+    },
+    {
+      "id": "5-10",
+      "test": "Subtotal/Tax/Total display",
+      "result": "PASS",
+      "details": "Subtotal: true, Tax: true, Total: true"
+    },
+    {
+      "id": "5-11",
+      "test": "Invoice detail page",
+      "result": "PASS",
+      "details": "URL: https://wodo-ally-production.up.railway.app/invoices/896c1aa0-b446-4b3d-a41f-20d4da88ab1b/edit"
+    },
+    {
+      "id": "5-12",
+      "test": "Invoice number format",
+      "result": "PASS",
+      "details": "Found: PF-20260305"
+    },
+    {
+      "id": "5-13",
+      "test": "Status badge on detail",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "5-14",
+      "test": "Record Payment button",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "5-15",
+      "test": "PDF button",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "5-16",
+      "test": "Email button",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "5-17",
+      "test": "Line items on detail",
+      "result": "WARN",
+      "details": "0 line items"
+    },
+    {
+      "id": "5-18",
+      "test": "Amount display",
+      "result": "WARN",
+      "details": "Amount elements: "
+    },
+    {
+      "id": "5-19",
+      "test": "Edit invoice button",
+      "result": "WARN",
+      "details": "Not found"
+    },
+    {
+      "id": "5-22",
+      "test": "Nonexistent invoice handling",
+      "result": "PASS",
+      "details": "Shows error/404"
+    },
+    {
+      "id": "5-23",
+      "test": "Invoice number formats",
+      "result": "PASS",
+      "details": "Numbers: PF-20260305-607, DRAFT, G00111, NG00201, G00110"
+    },
+    {
+      "id": "5-24",
+      "test": "Invoice number patterns",
+      "result": "INFO",
+      "details": "GST: 7, Non-GST: 1, Proforma: 1"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/nonexistent-id-12345",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/nonexistent-id-12345",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/nonexistent-id-12345",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/nonexistent-id-12345",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/nonexistent-id-12345",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "url": "https://wodo-ally-production.up.railway.app/invoices/nonexistent-id-12345",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    }
+  ]
+}

@@ -18,11 +18,11 @@ export function registerPdfFonts() {
     family: "NotoSans",
     fonts: [
       {
-        src: "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/latin-400-normal.ttf",
+        src: "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/latin-ext-400-normal.ttf",
         fontWeight: 400,
       },
       {
-        src: "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/latin-700-normal.ttf",
+        src: "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/latin-ext-700-normal.ttf",
         fontWeight: 700,
       },
     ],

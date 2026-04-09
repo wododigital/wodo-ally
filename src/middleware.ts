@@ -66,8 +66,9 @@ export async function middleware(request: NextRequest) {
         } else if (referer) {
           try { originValid = new URL(referer).host === host; } catch { /* invalid */ }
         } else {
-          // No Origin/Referer - allow server-side calls
-          originValid = true;
+          // No Origin/Referer - only allow if custom CSRF header is present
+          const csrfHeader = request.headers.get("x-csrf-protection");
+          originValid = csrfHeader === "1";
         }
         if (!originValid) {
           return NextResponse.json(
